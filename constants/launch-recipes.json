@@ -1,0 +1,1268 @@
+{
+  "$comment": "PureCraft launch library — 30 recipes + 5 curated lists. Brand voice: Aesop + Apple + Pinterest + TikTok.",
+  "version": "1.0.0",
+  "recipes": [
+    {
+      "id": "hotel-linen-mist",
+      "name": "Luxury Hotel Linen Mist",
+      "category": "Home",
+      "luxuryAlternateName": "Maison Linen Veil",
+      "premiumDescription": "The mist boutique hotels spray on freshly turned beds. Lavender, white tea, and a whisper of cedar that lingers exactly the right amount.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "Witch hazel", "amount": "3 tbsp" },
+        { "name": "Lavender essential oil", "amount": "20 drops" },
+        { "name": "White tea fragrance oil", "amount": "8 drops" },
+        { "name": "Cedarwood essential oil", "amount": "5 drops" },
+        { "name": "Vegetable glycerin", "amount": "½ tsp" }
+      ],
+      "tools": ["4 oz fine-mist glass bottle", "Small funnel", "Measuring spoons"],
+      "steps": [
+        "Pour witch hazel and glycerin into the spray bottle.",
+        "Add lavender, white tea, and cedarwood oils. Swirl 10 seconds.",
+        "Top off with distilled water, leaving a half-inch headspace.",
+        "Cap, shake, and rest in a cool spot for 1 hour before first use.",
+        "Mist sheets 12 inches above the bed before sleep."
+      ],
+      "timeRequired": "5 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Spot-test on hidden fabric — oils may mark silk or velvet.",
+        "Avoid spraying directly on memory foam or pillowcases worn to bed.",
+        "Store in a cool, dark place; replace after 6 months."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$4.20",
+      "shelfLife": "6 months",
+      "storageTips": "Cool, dark cabinet. UV breaks down essential oils.",
+      "premiumUpgrade": "Add 4 drops bergamot + 3 drops vetiver for a Le Labo–inspired hotel scent.",
+      "whyPeopleLoveIt": "Smells like the bed at the Edition. Costs less than a latte.",
+      "socialHook": "POV: your sheets smell like a 5-star hotel for $4.",
+      "beforeAfter": "Before: sheets that smell like detergent. After: sheets that smell like a Sunday at the Aman."
+    },
+    {
+      "id": "citrus-countertop-cleaner",
+      "name": "Citrus Countertop Cleaner",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Bergamot & Lemon Surface Élixir",
+      "premiumDescription": "A bright morning-light spray that lifts grease and leaves the kitchen smelling like a Tuscan farmhouse breakfast.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 cup" },
+        { "name": "White vinegar", "amount": "1 cup" },
+        { "name": "Lemon peels", "amount": "from 2 lemons" },
+        { "name": "Orange peels", "amount": "from 1 orange" },
+        { "name": "Castile soap", "amount": "1 tbsp" },
+        { "name": "Bergamot essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["Glass jar (lid)", "16 oz spray bottle", "Strainer"],
+      "steps": [
+        "Pack peels into the jar, cover fully with vinegar, seal.",
+        "Infuse 7 days in a dark cabinet (or skip — quick version is still beautiful).",
+        "Strain the citrus vinegar into the spray bottle.",
+        "Add water, castile soap, and bergamot oil. Swirl gently.",
+        "Spray, rest 30 seconds, wipe with a soft microfiber."
+      ],
+      "timeRequired": "4 min (active)",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Do not use on natural stone (granite, marble) — vinegar etches.",
+        "Test sealed wood in a hidden spot first.",
+        "Never combine with bleach."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 10,
+      "costEstimate": "$2.40",
+      "shelfLife": "3 months",
+      "storageTips": "Under-sink cool, away from direct sun.",
+      "premiumUpgrade": "Replace bergamot with 6 drops yuzu + 2 drops basil for a chef's-kitchen scent.",
+      "whyPeopleLoveIt": "Smells like Italy. Cleans like the chemical aisle.",
+      "socialHook": "Bottling sunlight — citrus-vinegar that cuts grease in 30 seconds.",
+      "beforeAfter": "Before: sticky residue and synthetic lemon. After: clear stone, fresh-zested air."
+    },
+    {
+      "id": "shower-glass-spray",
+      "name": "Shower Glass Miracle Spray",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Crystalline Shower Restorer",
+      "premiumDescription": "Daily mist that erases soap scum and water spots before they form. The reason hotel showers always look new.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 ½ cups" },
+        { "name": "White vinegar", "amount": "½ cup" },
+        { "name": "Rubbing alcohol", "amount": "¼ cup" },
+        { "name": "Castile soap", "amount": "1 tsp" },
+        { "name": "Tea tree essential oil", "amount": "10 drops" },
+        { "name": "Lemon essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["24 oz spray bottle", "Microfiber squeegee"],
+      "steps": [
+        "Combine water, vinegar, and rubbing alcohol in the spray bottle.",
+        "Add castile soap, then drop in tea tree and lemon oils.",
+        "Cap and gently invert to mix — never shake hard with castile.",
+        "After your shower, mist all glass + tile while still warm.",
+        "Wipe top-down with the squeegee. No rinse needed."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Flammable while wet (alcohol) — keep away from candles.",
+        "Not for natural stone showers.",
+        "Ventilate — vinegar fumes are sharp in small bathrooms."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$2.10",
+      "shelfLife": "4 months",
+      "storageTips": "Inside the shower caddy works — use within 30 days for best results.",
+      "premiumUpgrade": "Swap rubbing alcohol for vodka and add 6 drops eucalyptus for a spa finish.",
+      "whyPeopleLoveIt": "Daily use means you literally never scrub a shower again.",
+      "socialHook": "The 30-second habit that means I'll never deep-clean my shower again.",
+      "beforeAfter": "Before: weekly hard-water scrub-fest. After: glass that stays gallery-clean."
+    },
+    {
+      "id": "toilet-bomb-fizzies",
+      "name": "5-Minute Toilet Bomb Fizzies",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Effervescent Bowl Confetti",
+      "premiumDescription": "Drop-in fizz tablets that scrub, deodorize, and brighten while you brew coffee. Twelve to a jar — one for each week.",
+      "ingredients": [
+        { "name": "Baking soda", "amount": "1 cup" },
+        { "name": "Citric acid", "amount": "¼ cup" },
+        { "name": "Cornstarch", "amount": "1 tbsp" },
+        { "name": "Hydrogen peroxide (3%)", "amount": "1 tbsp" },
+        { "name": "Lemon essential oil", "amount": "20 drops" },
+        { "name": "Eucalyptus essential oil", "amount": "10 drops" }
+      ],
+      "tools": ["Mixing bowl", "Silicone half-sphere mold", "Glass jar"],
+      "steps": [
+        "Whisk baking soda, citric acid, and cornstarch in a dry bowl.",
+        "Drop in essential oils, then drizzle peroxide one bead at a time.",
+        "Mix to wet-sand consistency — should clump when squeezed.",
+        "Press firmly into mold. Let cure overnight.",
+        "Pop out, store in jar. Drop one in the bowl, walk away 5 min, brush, flush."
+      ],
+      "timeRequired": "10 min + 8 hr cure",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Citric acid + peroxide will fizz — add slowly.",
+        "Keep finished tabs out of reach of pets and toddlers (looks like candy).",
+        "Avoid eyes — splashes from the bowl can irritate."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$5.80 / 12 tabs",
+      "shelfLife": "3 months",
+      "storageTips": "Sealed glass jar with silica packet. Moisture is the enemy.",
+      "premiumUpgrade": "Add 1 tsp activated charcoal for a striking matte black tablet that deodorizes 2× longer.",
+      "whyPeopleLoveIt": "It looks like a wellness product. It works like bleach.",
+      "socialHook": "Toilet bombs that fizz like bath bombs and clean like industrial.",
+      "beforeAfter": "Before: scrubbing on Sunday. After: drop, walk away, brush once."
+    },
+    {
+      "id": "laundry-scent-crystals",
+      "name": "Laundry Scent Booster Crystals",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Linen Perfume Crystals",
+      "premiumDescription": "A scoop in the wash and your towels smell like a Provence boutique for two weeks.",
+      "ingredients": [
+        { "name": "Coarse sea salt", "amount": "2 cups" },
+        { "name": "Epsom salt", "amount": "1 cup" },
+        { "name": "Baking soda", "amount": "½ cup" },
+        { "name": "Lavender essential oil", "amount": "30 drops" },
+        { "name": "Bergamot essential oil", "amount": "15 drops" },
+        { "name": "Dried lavender buds", "amount": "2 tbsp" }
+      ],
+      "tools": ["Wide bowl", "Glass jar with scoop"],
+      "steps": [
+        "Combine salts and baking soda in the bowl.",
+        "Drop oils in slowly while stirring with a fork to disperse evenly.",
+        "Fold in dried lavender buds.",
+        "Transfer to jar. Let scent develop 24 hours before first use.",
+        "Add 2 tbsp directly to the drum before clothes go in."
+      ],
+      "timeRequired": "4 min + 24 hr rest",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Not for HE machines without dilution — 1 tbsp max.",
+        "Skip on baby clothing.",
+        "Wear gloves — salt can dry hands."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 9,
+      "costEstimate": "$3.40 / 24 loads",
+      "shelfLife": "6 months",
+      "storageTips": "Sealed jar in laundry room. Sunlight fades scent.",
+      "premiumUpgrade": "Layer in 4 drops vanilla absolute + 6 drops sandalwood for a Le Labo Rose 31 vibe.",
+      "whyPeopleLoveIt": "Towels smell like a hotel for two weeks. Detergent doesn't do that.",
+      "socialHook": "I made laundry crystals that smell like Loewe. My towels are a personality now.",
+      "beforeAfter": "Before: towels that smell clean. After: towels that smell like a destination."
+    },
+    {
+      "id": "vanilla-sugar-scrub",
+      "name": "Soft Skin Vanilla Sugar Scrub",
+      "category": "Beauty",
+      "luxuryAlternateName": "Tahitian Vanilla Body Polish",
+      "premiumDescription": "Whipped sugar, melted shea, and real vanilla — body scrub that melts into skin like dessert.",
+      "ingredients": [
+        { "name": "Granulated sugar", "amount": "1 cup" },
+        { "name": "Brown sugar", "amount": "½ cup" },
+        { "name": "Coconut oil", "amount": "½ cup, melted" },
+        { "name": "Sweet almond oil", "amount": "2 tbsp" },
+        { "name": "Vanilla extract (real)", "amount": "1 tsp" },
+        { "name": "Vitamin E oil", "amount": "½ tsp" }
+      ],
+      "tools": ["8 oz glass jar", "Wooden spoon", "Hand mixer (optional)"],
+      "steps": [
+        "Gently warm coconut oil to liquid (do not boil).",
+        "Combine sugars in a bowl, then pour in coconut + almond oil.",
+        "Stir in vanilla and vitamin E. Whip 1 minute for whipped texture.",
+        "Spoon into jar. Press flat.",
+        "In the shower: scoop, massage in circles 30 seconds, rinse warm."
+      ],
+      "timeRequired": "6 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Tub will get slippery — rinse and wipe after use.",
+        "Patch-test first if nut-sensitive (almond oil).",
+        "Avoid broken or sunburned skin."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 9,
+      "costEstimate": "$5.40",
+      "shelfLife": "8 weeks",
+      "storageTips": "Cool dry shelf. Use a wooden scoop, never wet fingers.",
+      "premiumUpgrade": "Add 1 tbsp Manuka honey + ¼ tsp Tahitian vanilla bean caviar.",
+      "whyPeopleLoveIt": "Smells like crème brûlée. Skin feels like silk for 12 hours.",
+      "socialHook": "Made a body scrub that smells like the Laduree café. Cost: $5.",
+      "beforeAfter": "Before: rough winter skin. After: glossy, soft, smells like a French pastry."
+    },
+    {
+      "id": "rosemary-hair-oil",
+      "name": "Hair Growth Rosemary Oil",
+      "category": "Beauty",
+      "luxuryAlternateName": "Romarin Scalp Serum",
+      "premiumDescription": "The stimulating scalp oil with research-backed rosemary, layered with castor and jojoba for thicker, shinier hair.",
+      "ingredients": [
+        { "name": "Jojoba oil", "amount": "3 tbsp" },
+        { "name": "Castor oil", "amount": "2 tbsp" },
+        { "name": "Sweet almond oil", "amount": "2 tbsp" },
+        { "name": "Rosemary essential oil", "amount": "20 drops" },
+        { "name": "Peppermint essential oil", "amount": "5 drops" },
+        { "name": "Vitamin E oil", "amount": "½ tsp" }
+      ],
+      "tools": ["2 oz amber dropper bottle"],
+      "steps": [
+        "Pour jojoba, castor, and almond oils into the dropper bottle via funnel.",
+        "Add rosemary and peppermint oils.",
+        "Top with vitamin E. Cap and roll between palms 30 seconds.",
+        "Massage 4–6 drops into scalp twice a week, 10 minutes before shampoo.",
+        "Wash out gently with sulfate-free shampoo."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Skip during pregnancy (rosemary contraindicated).",
+        "Do a 24-hour patch test — peppermint can tingle aggressively.",
+        "Castor oil stains pillowcases."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$6.20 / 2 oz",
+      "shelfLife": "6 months",
+      "storageTips": "Amber bottle, cool dark cabinet. Light degrades oils fast.",
+      "premiumUpgrade": "Add 4 drops cedarwood + 2 drops clary sage for the studied 'Beauty of Joseon hair tonic' blend.",
+      "whyPeopleLoveIt": "Backed by a 2015 clinical trial. Cheaper than Mielle. Tingles like it's working.",
+      "socialHook": "The rosemary oil that has Mielle on a 6-month waitlist — but I made mine.",
+      "beforeAfter": "Before: thinning edges. After: visibly thicker baby hairs in 8 weeks."
+    },
+    {
+      "id": "under-eye-gel",
+      "name": "Under-Eye Cooling Gel",
+      "category": "Beauty",
+      "luxuryAlternateName": "Iced Cucumber Eye Reviver",
+      "premiumDescription": "Refrigerated aloe + green tea gel that takes the puff out of late nights in 60 seconds.",
+      "ingredients": [
+        { "name": "Aloe vera gel (pure)", "amount": "3 tbsp" },
+        { "name": "Brewed green tea (cooled)", "amount": "1 tbsp" },
+        { "name": "Cucumber juice (fresh)", "amount": "1 tbsp" },
+        { "name": "Vitamin E oil", "amount": "¼ tsp" },
+        { "name": "Vegetable glycerin", "amount": "¼ tsp" }
+      ],
+      "tools": ["1 oz amber jar", "Small whisk"],
+      "steps": [
+        "Brew green tea, let cool fully. Juice cucumber by grating + pressing through cheesecloth.",
+        "Whisk aloe, tea, cucumber juice in a small bowl.",
+        "Add vitamin E + glycerin. Whisk until uniform.",
+        "Transfer to jar, refrigerate at least 2 hours before first use.",
+        "Tap two pearls under each eye morning + night with ring finger."
+      ],
+      "timeRequired": "8 min",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Discard after 7 days — fresh ingredients spoil fast.",
+        "Avoid direct contact with eyes; use under-eye only.",
+        "Patch test on the inner elbow first."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$3.10",
+      "shelfLife": "7 days",
+      "storageTips": "Refrigerated. The cold IS the product.",
+      "premiumUpgrade": "Stir in ½ tsp hyaluronic acid serum + 2 drops blue tansy oil for serious puff reduction.",
+      "whyPeopleLoveIt": "Cools like a $90 La Mer eye cream. Lasts a week. Costs $3.",
+      "socialHook": "I keep eye gel in my fridge and people think I sleep 8 hours.",
+      "beforeAfter": "Before: monday-morning eye bags. After: I-am-rested undertones."
+    },
+    {
+      "id": "stainless-steel-shine",
+      "name": "Stainless Steel Shine Spray",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Brushed Steel Polishing Mist",
+      "premiumDescription": "Mist + buff for fingerprint-free appliances that reflect sunlight like a showroom.",
+      "ingredients": [
+        { "name": "Olive oil", "amount": "2 tbsp" },
+        { "name": "White vinegar", "amount": "2 tbsp" },
+        { "name": "Distilled water", "amount": "1 cup" },
+        { "name": "Lemon essential oil", "amount": "6 drops" }
+      ],
+      "tools": ["8 oz spray bottle", "Microfiber cloth (lint-free)"],
+      "steps": [
+        "Combine olive oil and vinegar in the spray bottle.",
+        "Add water, then lemon essential oil.",
+        "Cap and shake hard for 15 seconds — emulsion will be cloudy.",
+        "Spray a fine mist on the appliance, wipe in the direction of the grain.",
+        "Buff dry with a second clean microfiber for showroom finish."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Always wipe with the grain — circles will leave streaks.",
+        "Shake before each use — oil separates.",
+        "Test in a hidden spot on coated finishes."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$1.80",
+      "shelfLife": "30 days",
+      "storageTips": "Pantry. Refrigeration not needed.",
+      "premiumUpgrade": "Replace olive with mineral oil + 3 drops cedarwood for a longer-lasting matte sheen.",
+      "whyPeopleLoveIt": "Two ingredients you have. Looks like Method but works better.",
+      "socialHook": "My fridge looks like a Sub-Zero showroom and I made the spray for $2.",
+      "beforeAfter": "Before: fingerprint chaos. After: zero-prints, even from the toddler."
+    },
+    {
+      "id": "shoe-odor-spray",
+      "name": "Shoe Odor Destroyer Spray",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Boot Odor Antidote",
+      "premiumDescription": "Mist before and after wear — kills odor at the source instead of masking with synthetic powder.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "Vodka or rubbing alcohol", "amount": "¼ cup" },
+        { "name": "Tea tree essential oil", "amount": "20 drops" },
+        { "name": "Eucalyptus essential oil", "amount": "10 drops" },
+        { "name": "Lavender essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["4 oz spray bottle"],
+      "steps": [
+        "Pour vodka into the spray bottle.",
+        "Add all essential oils. Swirl 10 seconds.",
+        "Top with distilled water, leaving a half-inch headspace.",
+        "Cap, shake well, label.",
+        "Mist insides of shoes before storing. Repeat post-workout."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Flammable — keep from candles and stove.",
+        "Tea tree is toxic to cats and dogs — don't spray pet beds.",
+        "Air shoes dry before wearing."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$3.20",
+      "shelfLife": "6 months",
+      "storageTips": "Cool, dark cabinet. Vodka extends shelf life.",
+      "premiumUpgrade": "Add 6 drops cypress + 4 drops cedarwood for a high-performance hiking-boot blend.",
+      "whyPeopleLoveIt": "Actually kills odor, not just covers it. One bottle = a year.",
+      "socialHook": "POV: my running shoes don't smell like a crime scene anymore.",
+      "beforeAfter": "Before: nose-from-five-feet-away. After: Le Labo for sneakers."
+    },
+    {
+      "id": "mattress-refresh-mist",
+      "name": "Mattress Refresh Mist",
+      "category": "Home",
+      "luxuryAlternateName": "Sleep Sanctuary Reset",
+      "premiumDescription": "Strip the bed, mist the mattress, walk away — wake up to a hotel-fresh bed without lifting a vacuum.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 cup" },
+        { "name": "Witch hazel", "amount": "¼ cup" },
+        { "name": "Lavender essential oil", "amount": "20 drops" },
+        { "name": "Roman chamomile oil", "amount": "10 drops" },
+        { "name": "Tea tree essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["12 oz spray bottle", "HEPA vacuum (after)"],
+      "steps": [
+        "Combine witch hazel and oils in the spray bottle. Swirl to disperse.",
+        "Top with distilled water; cap and shake gently.",
+        "Strip the bed completely.",
+        "Mist the mattress lightly, focusing on the head + foot quadrants.",
+        "Let dry 1 hour, vacuum the surface, remake bed."
+      ],
+      "timeRequired": "5 min + 1 hr dry",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Don't oversaturate — heavy water on mattresses can grow mold.",
+        "Tea tree unsafe for pets — keep cats off the bed until fully dry.",
+        "Shake before each use."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$4.10",
+      "shelfLife": "6 months",
+      "storageTips": "Bedside drawer. Use monthly with sheet changes.",
+      "premiumUpgrade": "Add 4 drops bergamot + 6 drops vetiver for a Westin Heavenly Bed scent dupe.",
+      "whyPeopleLoveIt": "Your bed feels like a 5-star hotel. Takes 5 minutes a month.",
+      "socialHook": "I refresh my mattress monthly and now my bed smells like the Four Seasons.",
+      "beforeAfter": "Before: dusty old mattress. After: hotel turn-down service energy."
+    },
+    {
+      "id": "fridge-odor-pods",
+      "name": "Fridge Odor Eliminator Pods",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Cold Storage Air Pods",
+      "premiumDescription": "Tucked behind the milk, these pods absorb odors and quietly leave behind clean lemon air. One per shelf, one per month.",
+      "ingredients": [
+        { "name": "Baking soda", "amount": "1 cup" },
+        { "name": "Activated charcoal powder", "amount": "2 tbsp" },
+        { "name": "Lemon essential oil", "amount": "6 drops" },
+        { "name": "Cornstarch (binder)", "amount": "1 tbsp" },
+        { "name": "Distilled water", "amount": "2 tbsp" }
+      ],
+      "tools": ["Silicone half-sphere mold", "Small bowl"],
+      "steps": [
+        "Whisk baking soda, charcoal, and cornstarch in a bowl.",
+        "Drop in lemon oil, then drizzle water 1 tsp at a time.",
+        "Press firmly into mold — should hold shape like wet sand.",
+        "Cure uncovered for 24 hours.",
+        "Pop out, place 1 pod per shelf. Replace every 30 days."
+      ],
+      "timeRequired": "8 min + 24 hr cure",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Charcoal stains — wear an apron.",
+        "Pods crumble if dropped; keep on a small saucer.",
+        "Replace immediately if exposed to spills."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$2.40 / 6 pods",
+      "shelfLife": "30 days each",
+      "storageTips": "Saucer in fridge. Compost or sprinkle in trash bin when done.",
+      "premiumUpgrade": "Add 1 tsp matcha powder for a soft sage tint and a subtle green-tea note.",
+      "whyPeopleLoveIt": "Replaces the open box of baking soda with something actually elegant.",
+      "socialHook": "I made fridge pods that look like macarons and absorb every onion smell.",
+      "beforeAfter": "Before: leftover-curry-fridge. After: walk-in flower-shop fridge."
+    },
+    {
+      "id": "drain-refresh-mix",
+      "name": "Natural Drain Refresh Mix",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Drain Reviver Effervescence",
+      "premiumDescription": "The Sunday ritual that keeps every drain in the home running clear and odor-free without chemicals.",
+      "ingredients": [
+        { "name": "Baking soda", "amount": "1 cup" },
+        { "name": "Coarse salt", "amount": "½ cup" },
+        { "name": "White vinegar", "amount": "1 cup, warmed" },
+        { "name": "Lemon peel strips", "amount": "from 1 lemon" },
+        { "name": "Boiling water", "amount": "4 cups" }
+      ],
+      "tools": ["Kettle", "Glass jar (premix)", "Funnel"],
+      "steps": [
+        "Premix baking soda + salt in a jar — keep on hand.",
+        "Drop ¼ cup of the dry mix into the drain.",
+        "Tuck lemon peel strips in next.",
+        "Pour warm vinegar slowly. Cap drain with a small bowl. Wait 10 minutes.",
+        "Chase with the kettle of boiling water."
+      ],
+      "timeRequired": "12 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Wear oven mitts when pouring boiling water.",
+        "Skip if you've used commercial drain cleaner in the last 24 hours.",
+        "Not for septic systems weekly — once a month max."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$0.80",
+      "shelfLife": "Premix lasts indefinitely",
+      "storageTips": "Jar of premix on the laundry shelf.",
+      "premiumUpgrade": "Add 6 drops peppermint + 4 drops lemon EO to the premix for a cooling spa scent.",
+      "whyPeopleLoveIt": "It actually fizzes. Drains run faster within 24 hours.",
+      "socialHook": "Sunday drain reset that looks like a science experiment.",
+      "beforeAfter": "Before: slow drain + sour smell. After: glass-clear pipe + lemon air."
+    },
+    {
+      "id": "sneaker-brightener",
+      "name": "White Sneakers Brightener Paste",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Court Shoe Restoration Paste",
+      "premiumDescription": "Three-ingredient paste that takes scuffed Stan Smiths back to fresh-out-of-box white in 4 minutes.",
+      "ingredients": [
+        { "name": "Baking soda", "amount": "2 tbsp" },
+        { "name": "Hydrogen peroxide (3%)", "amount": "1 tbsp" },
+        { "name": "Dish soap", "amount": "1 tsp" },
+        { "name": "Warm water", "amount": "1 tsp" }
+      ],
+      "tools": ["Small bowl", "Old toothbrush", "Microfiber cloth"],
+      "steps": [
+        "Mix baking soda + peroxide into a thick paste.",
+        "Add dish soap and water. Stir to a yogurt consistency.",
+        "Brush onto canvas/leather in circular motion.",
+        "Let sit in sunlight 20 minutes — UV activates the peroxide.",
+        "Wipe clean with damp cloth, air dry."
+      ],
+      "timeRequired": "4 min + 20 min sun",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Test colored panels first — peroxide is bleaching.",
+        "Wear gloves if you're sensitive — peroxide can dry skin.",
+        "Don't use on suede or nubuck."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$0.60",
+      "shelfLife": "Use immediately",
+      "storageTips": "Make per use — peroxide degrades fast.",
+      "premiumUpgrade": "Finish with 1 drop tea tree oil rubbed into the leather + a beeswax buff.",
+      "whyPeopleLoveIt": "Stan Smiths to new in 24 minutes. Better than Crep Protect.",
+      "socialHook": "60-cent shoe paste that beat my $30 sneaker cleaner.",
+      "beforeAfter": "Before: yellowed canvas, scuffed toes. After: factory-fresh, no joke."
+    },
+    {
+      "id": "kitchen-grease-melter",
+      "name": "Kitchen Grease Melter Spray",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Hood + Hob Degreasing Élixir",
+      "premiumDescription": "The spray that erases stovetop splatter and range-hood film without scrubbing — chef-tested, kitchen-loved.",
+      "ingredients": [
+        { "name": "Hot water", "amount": "1 ½ cups" },
+        { "name": "White vinegar", "amount": "½ cup" },
+        { "name": "Castile soap", "amount": "2 tbsp" },
+        { "name": "Baking soda", "amount": "1 tbsp" },
+        { "name": "Lemon essential oil", "amount": "10 drops" }
+      ],
+      "tools": ["16 oz spray bottle", "Microfiber cloth", "Soft brush"],
+      "steps": [
+        "Pour hot water into the spray bottle (not boiling).",
+        "Add castile soap. Cap and rotate gently.",
+        "Open cap, sprinkle baking soda, then add vinegar slowly — it'll fizz.",
+        "Add lemon oil, swirl, label.",
+        "Spray, wait 60 seconds, wipe with microfiber. Stubborn film: brush + repeat."
+      ],
+      "timeRequired": "4 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Vent the kitchen — hot vinegar steam is sharp.",
+        "Avoid bare aluminum cookware finish.",
+        "Don't use on natural stone counters."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 9,
+      "costEstimate": "$1.90",
+      "shelfLife": "60 days",
+      "storageTips": "Under the sink. Shake before each use.",
+      "premiumUpgrade": "Add 5 drops orange + 3 drops thyme oil for a chef-grade degreaser.",
+      "whyPeopleLoveIt": "Cuts a week of bacon-grease film in 60 seconds. Smells like fresh peel.",
+      "socialHook": "The 60-second spray that made my range hood look new again.",
+      "beforeAfter": "Before: sticky stovetop you avoid. After: glass-clear, gallery-clean."
+    },
+    {
+      "id": "pet-safe-floor-cleaner",
+      "name": "Pet-Safe Floor Cleaner",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Paw-Friendly Floor Wash",
+      "premiumDescription": "Castile + chamomile-water mop solution that's safe for paws and noses — no oils that harm cats or dogs.",
+      "ingredients": [
+        { "name": "Warm water", "amount": "1 gallon" },
+        { "name": "Castile soap (unscented)", "amount": "¼ cup" },
+        { "name": "Chamomile tea (cooled, strong)", "amount": "1 cup" },
+        { "name": "White vinegar", "amount": "¼ cup (skip if stone)" }
+      ],
+      "tools": ["Bucket", "Microfiber mop"],
+      "steps": [
+        "Brew 4 chamomile tea bags in 1 cup hot water; let cool 20 min.",
+        "Fill bucket with warm water. Stir in castile soap.",
+        "Add chamomile tea + vinegar (omit on stone/marble).",
+        "Wring mop nearly dry — pets walk on it.",
+        "Mop in sections. Air dry — no rinse needed."
+      ],
+      "timeRequired": "6 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Truly pet-safe only if you skip essential oils.",
+        "Wait until floors are fully dry for paws + crawling babies.",
+        "Vinegar damages unsealed wood, marble, travertine."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$2.10",
+      "shelfLife": "Use within 2 days",
+      "storageTips": "Mix per use. Chamomile water keeps 2 days refrigerated.",
+      "premiumUpgrade": "Swap chamomile for cooled green tea + 1 tsp colloidal oatmeal for soothed paws after.",
+      "whyPeopleLoveIt": "Truly pet-safe — most 'natural' cleaners aren't. Vet-approved tone.",
+      "socialHook": "The pet-safe floor cleaner my vet actually approved.",
+      "beforeAfter": "Before: paw-ick + chemical guilt. After: clean floors, calm pup."
+    },
+    {
+      "id": "baby-toy-spray",
+      "name": "Baby-Safe Toy Surface Spray",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Tiny Hands Surface Refresh",
+      "premiumDescription": "Three ingredients only. Sanitizes toys, high chairs, and changing tables without anything you wouldn't put on baby's skin.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 ¼ cups" },
+        { "name": "Castile soap (unscented)", "amount": "1 tbsp" },
+        { "name": "White vinegar", "amount": "¼ cup" }
+      ],
+      "tools": ["8 oz spray bottle", "Soft microfiber cloth"],
+      "steps": [
+        "Pour water into the spray bottle.",
+        "Add castile soap; cap and gently rotate.",
+        "Add vinegar slowly. Cap, swirl.",
+        "Spray onto cloth (never directly on plush toys), wipe surfaces.",
+        "Let air dry 5 minutes before baby plays."
+      ],
+      "timeRequired": "2 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Skip essential oils — many are unsafe under age 2.",
+        "Replace bottle every 30 days for freshness.",
+        "Not a hospital-grade disinfectant."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$1.10",
+      "shelfLife": "30 days",
+      "storageTips": "Diaper-bag friendly. Cool, dark drawer.",
+      "premiumUpgrade": "Add 1 tbsp colloidal silver for added antimicrobial action.",
+      "whyPeopleLoveIt": "Three ingredients. Zero anxiety. Baby-safe and actually clean.",
+      "socialHook": "The 3-ingredient spray every new mom asks me for.",
+      "beforeAfter": "Before: rotation of disinfectant guilt. After: peace of mind in a bottle."
+    },
+    {
+      "id": "luxury-room-spray",
+      "name": "Luxury Room Spray (Hotel Inspired)",
+      "category": "Home",
+      "luxuryAlternateName": "Suite 101 Atmosphere Spray",
+      "premiumDescription": "Layered hotel-lobby scent: bergamot top, jasmine heart, vetiver base. Three sprays = an entire room transformed.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "Vodka", "amount": "¼ cup" },
+        { "name": "Bergamot essential oil", "amount": "15 drops" },
+        { "name": "Jasmine absolute", "amount": "8 drops" },
+        { "name": "Vetiver essential oil", "amount": "6 drops" },
+        { "name": "Sandalwood essential oil", "amount": "4 drops" }
+      ],
+      "tools": ["4 oz amber glass spray bottle"],
+      "steps": [
+        "Pour vodka into the bottle — it carries scent.",
+        "Layer oils in order: bergamot, jasmine, vetiver, sandalwood.",
+        "Cap, swirl 30 seconds (do not shake).",
+        "Top with distilled water, cap, label.",
+        "Rest 48 hours for scent to bloom. 3 sprays per room."
+      ],
+      "timeRequired": "5 min + 48 hr rest",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Flammable while wet (vodka).",
+        "Spot-test on fabrics — jasmine can mark light textiles.",
+        "Cat-toxic (vetiver, jasmine) — keep cats out of the room while spraying."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$8.40",
+      "shelfLife": "12 months",
+      "storageTips": "Amber bottle on dresser. Light + heat fade scent.",
+      "premiumUpgrade": "Replace bergamot with neroli + add 4 drops oud accord for a Le Labo Santal 33 vibe.",
+      "whyPeopleLoveIt": "Smells like the lobby of the Soho House. Costs 4% of a Diptyque.",
+      "socialHook": "I made the Diptyque Baies dupe. People literally ask for the perfumer's name.",
+      "beforeAfter": "Before: stale bedroom. After: hotel-lobby olfactive moment."
+    },
+    {
+      "id": "anti-stress-pillow-mist",
+      "name": "Anti-Stress Pillow Mist",
+      "category": "Wellness",
+      "luxuryAlternateName": "Restorative Pillow Vapor",
+      "premiumDescription": "Studies-backed lavender + chamomile + valerian to coax sleep faster — three sprays on the pillow corner.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "Witch hazel", "amount": "2 tbsp" },
+        { "name": "Lavender essential oil", "amount": "20 drops" },
+        { "name": "Roman chamomile oil", "amount": "8 drops" },
+        { "name": "Valerian root oil", "amount": "4 drops" },
+        { "name": "Vegetable glycerin", "amount": "¼ tsp" }
+      ],
+      "tools": ["3 oz fine-mist glass bottle"],
+      "steps": [
+        "Pour witch hazel + glycerin into the bottle.",
+        "Add lavender, chamomile, and valerian oils.",
+        "Top with distilled water; cap and swirl.",
+        "Rest 30 minutes before first use.",
+        "Mist the pillow corner 12 inches away, 30 minutes before sleep."
+      ],
+      "timeRequired": "4 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Valerian is potent — start with half the dose if scent-sensitive.",
+        "Skip in pregnancy without OB approval.",
+        "Don't mist directly on skin — it's for fabric only."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$5.10",
+      "shelfLife": "6 months",
+      "storageTips": "Bedside drawer. Light + heat ruin oils.",
+      "premiumUpgrade": "Add 3 drops bergamot for a brighter, This Works Deep Sleep–style top note.",
+      "whyPeopleLoveIt": "Backed by research. Replaces the £25 This Works Pillow Spray.",
+      "socialHook": "I'm sleeping 7 hrs again — and it's because of $5 of pillow spray.",
+      "beforeAfter": "Before: 1 a.m. doom-scroll. After: out by 10:45."
+    },
+    {
+      "id": "focus-workspace-spray",
+      "name": "Focus Workspace Spray",
+      "category": "Wellness",
+      "luxuryAlternateName": "Concentration Atmospheric Mist",
+      "premiumDescription": "Peppermint, rosemary, and lemon — a cognitive-clarity blend you can mist around the desk before deep work.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 cup" },
+        { "name": "Witch hazel", "amount": "3 tbsp" },
+        { "name": "Peppermint essential oil", "amount": "12 drops" },
+        { "name": "Rosemary essential oil", "amount": "10 drops" },
+        { "name": "Lemon essential oil", "amount": "10 drops" },
+        { "name": "Frankincense essential oil", "amount": "4 drops" }
+      ],
+      "tools": ["4 oz fine-mist glass bottle"],
+      "steps": [
+        "Combine witch hazel + oils in the bottle. Swirl.",
+        "Top with distilled water.",
+        "Cap, shake gently, rest 30 min before use.",
+        "Mist 2–3 sprays around the desk before a focus block.",
+        "Re-mist every 90 minutes — your brain will know."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Skip during pregnancy (rosemary).",
+        "Pet-toxic — never spray near cat lounging spots.",
+        "Avoid eyes."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$5.60",
+      "shelfLife": "9 months",
+      "storageTips": "Cool drawer; the brighter the bottle, the faster oils fade.",
+      "premiumUpgrade": "Add 3 drops basil + 2 drops black pepper for the Aesop Istros studio scent.",
+      "whyPeopleLoveIt": "Productivity-app energy in a bottle. Smells like a Notion office.",
+      "socialHook": "Misted my desk and finally finished the deck.",
+      "beforeAfter": "Before: brain fog at 3 p.m. After: clear-headed for the next hour."
+    },
+    {
+      "id": "spa-steam-tabs",
+      "name": "Bathroom Spa Steam Tabs",
+      "category": "Wellness",
+      "luxuryAlternateName": "Eucalyptus Shower Tablets",
+      "premiumDescription": "Drop one on the shower floor and turn your morning into a 4-minute steam-room ritual.",
+      "ingredients": [
+        { "name": "Baking soda", "amount": "1 cup" },
+        { "name": "Citric acid", "amount": "½ cup" },
+        { "name": "Cornstarch", "amount": "2 tbsp" },
+        { "name": "Eucalyptus essential oil", "amount": "30 drops" },
+        { "name": "Peppermint essential oil", "amount": "15 drops" },
+        { "name": "Witch hazel (mister)", "amount": "as needed" }
+      ],
+      "tools": ["Bowl", "Silicone mold", "Spray bottle of witch hazel"],
+      "steps": [
+        "Whisk baking soda, citric acid, cornstarch.",
+        "Add oils, mix evenly.",
+        "Spritz witch hazel a little at a time, mixing constantly until wet-sand consistency.",
+        "Press into mold firmly.",
+        "Cure 12 hours. Pop one on the shower floor (out of the spray) before turning on hot water."
+      ],
+      "timeRequired": "10 min + 12 hr cure",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Eucalyptus is toxic to cats — keep them out of the bathroom during steam.",
+        "Avoid asthma triggers — start with a smaller dose.",
+        "Place out of the direct shower spray to maximize steam."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$4.20 / 8 tabs",
+      "shelfLife": "3 months",
+      "storageTips": "Sealed jar, dry place. Moisture activates them prematurely.",
+      "premiumUpgrade": "Add 8 drops menthol crystals dissolved in oil for Bath & Body Works–style intensity.",
+      "whyPeopleLoveIt": "Turns a regular shower into a Six Senses spa morning.",
+      "socialHook": "I put a steam tab in my shower and turned my apartment into Aman.",
+      "beforeAfter": "Before: rushed morning shower. After: deep-breath spa moment."
+    },
+    {
+      "id": "car-interior-cleaner",
+      "name": "Car Interior Luxe Cleaner",
+      "category": "Cleaning",
+      "luxuryAlternateName": "Cabin Detail Mist",
+      "premiumDescription": "Wipe-down spray for leather + vinyl + dashboards. Conditions while it cleans, leaves a soft cedar finish.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "White vinegar", "amount": "2 tbsp" },
+        { "name": "Castile soap", "amount": "1 tsp" },
+        { "name": "Olive oil", "amount": "1 tsp" },
+        { "name": "Cedarwood essential oil", "amount": "8 drops" },
+        { "name": "Lemon essential oil", "amount": "6 drops" }
+      ],
+      "tools": ["8 oz spray bottle", "Two microfiber cloths"],
+      "steps": [
+        "Combine water, vinegar, and castile soap.",
+        "Add olive oil and oils — cap and shake hard for 20 seconds.",
+        "Spray on cloth, never on screens or fabric directly.",
+        "Wipe leather + vinyl in straight lines; buff with the second cloth.",
+        "Spray once on the floor mats and quick-vacuum after."
+      ],
+      "timeRequired": "8 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Don't spray on infotainment screens or matte trim.",
+        "Test on a hidden seat seam first.",
+        "Shake before each spray — oil settles."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 8,
+      "costEstimate": "$3.10",
+      "shelfLife": "60 days",
+      "storageTips": "Glove compartment OK in moderate climates.",
+      "premiumUpgrade": "Replace olive with jojoba + add 3 drops sandalwood for a CarPlay-era luxury cabin scent.",
+      "whyPeopleLoveIt": "Detail-shop quality at home. Smells like a new Range Rover.",
+      "socialHook": "I detailed my car in 8 minutes and it smells like a $200K SUV.",
+      "beforeAfter": "Before: dust-line dashboard. After: showroom-fresh interior."
+    },
+    {
+      "id": "closet-sachets",
+      "name": "Closet Freshener Sachets",
+      "category": "Home",
+      "luxuryAlternateName": "Lavender Cedar Drawer Sachets",
+      "premiumDescription": "Hand-tied muslin sachets that perfume your wardrobe and quietly repel moths. The Anthropologie shelf, but yours.",
+      "ingredients": [
+        { "name": "Dried lavender buds", "amount": "½ cup" },
+        { "name": "Cedar shavings", "amount": "¼ cup" },
+        { "name": "Dried rose petals", "amount": "2 tbsp" },
+        { "name": "Lavender essential oil", "amount": "10 drops" },
+        { "name": "Cedarwood essential oil", "amount": "6 drops" }
+      ],
+      "tools": ["3 muslin drawstring bags (4×6)", "Bowl"],
+      "steps": [
+        "Mix lavender buds, cedar shavings, and rose petals in a bowl.",
+        "Drop oils evenly across the dry mix; toss with a wooden spoon.",
+        "Let sit uncovered 1 hour to absorb.",
+        "Spoon into bags, pull drawstring closed, knot.",
+        "Tuck one in each drawer + closet shelf."
+      ],
+      "timeRequired": "5 min + 1 hr rest",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Cedarwood EO can stain — don't pack with white silk.",
+        "Replace every 3 months for active scent + moth deterrence.",
+        "Keep out of reach of pets."
+      ],
+      "babySafe": true,
+      "petSafe": false,
+      "ecoScore": 10,
+      "costEstimate": "$5.20 / 3 sachets",
+      "shelfLife": "3 months active",
+      "storageTips": "Inside drawers — shake monthly to refresh.",
+      "premiumUpgrade": "Tie with linen ribbon + dried bay leaves for an heirloom aesthetic.",
+      "whyPeopleLoveIt": "Smells like grandma's good drawer + Loro Piana.",
+      "socialHook": "Hand-tied closet sachets that look like Anthropologie and smell like Maison Margiela.",
+      "beforeAfter": "Before: stale wardrobe. After: opening drawers becomes a moment."
+    },
+    {
+      "id": "jewelry-sparkle-dip",
+      "name": "Jewelry Sparkle Dip",
+      "category": "Home",
+      "luxuryAlternateName": "Heirloom Brilliance Dip",
+      "premiumDescription": "Two-minute dip restores the shine on rings, earrings, and chains — without harsh ammonia.",
+      "ingredients": [
+        { "name": "Warm water", "amount": "1 cup" },
+        { "name": "Dish soap", "amount": "½ tsp" },
+        { "name": "Baking soda", "amount": "1 tsp" },
+        { "name": "Sea salt", "amount": "1 tsp" },
+        { "name": "Aluminum foil", "amount": "1 small piece" }
+      ],
+      "tools": ["Glass bowl", "Soft toothbrush", "Lint-free cloth"],
+      "steps": [
+        "Line bowl with the foil shiny-side up.",
+        "Add baking soda + salt. Pour in warm water — fizzes briefly.",
+        "Stir in dish soap.",
+        "Submerge gold/silver pieces 2–3 minutes (skip pearls + opals + soft stones).",
+        "Lift, brush gently, rinse warm, dry with lint-free cloth."
+      ],
+      "timeRequired": "5 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Skip pearls, opals, turquoise, emeralds — soft stones don't tolerate the dip.",
+        "Not for plated costume jewelry — can lift the plating.",
+        "Dispose of solution down the drain (not septic-safe in volume)."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$0.30",
+      "shelfLife": "Use immediately",
+      "storageTips": "Mix per session.",
+      "premiumUpgrade": "Finish with a 30-second buff using a soft jewelry rouge cloth.",
+      "whyPeopleLoveIt": "Engagement-ring sparkle in 3 minutes for 30 cents.",
+      "socialHook": "I dipped my ring in 30¢ of pantry stuff and it sparkles like the day he proposed.",
+      "beforeAfter": "Before: dulled gold. After: lit-from-within shine."
+    },
+    {
+      "id": "wood-revival-polish",
+      "name": "Wood Revival Polish",
+      "category": "Home",
+      "luxuryAlternateName": "Heritage Wood Reviver",
+      "premiumDescription": "Olive + lemon + beeswax polish that brings life back to dining tables, antiques, and butcher blocks.",
+      "ingredients": [
+        { "name": "Olive oil", "amount": "½ cup" },
+        { "name": "Beeswax pellets", "amount": "2 tbsp" },
+        { "name": "Lemon juice (fresh)", "amount": "1 tbsp" },
+        { "name": "Lemon essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["Double boiler", "4 oz tin or jar", "Microfiber cloth"],
+      "steps": [
+        "Melt beeswax + olive oil in a double boiler over low heat.",
+        "Remove from heat. Stir in lemon juice + oil — mixture will lighten.",
+        "Pour into the tin, let cool 1 hour to a soft balm.",
+        "Apply a thin layer with cloth, rub in circles.",
+        "Buff dry with a clean cloth for satin finish."
+      ],
+      "timeRequired": "8 min + 1 hr cool",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Skip on raw or unfinished wood (will go blotchy).",
+        "Hot wax burns — handle the double boiler carefully.",
+        "Test in a hidden corner first."
+      ],
+      "babySafe": true,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$4.80",
+      "shelfLife": "12 months",
+      "storageTips": "Cool, dark cabinet. Hardens fully when cold — warm in palms before use.",
+      "premiumUpgrade": "Add 4 drops cedarwood + 2 drops orange for an heirloom-furniture scent.",
+      "whyPeopleLoveIt": "Makes thrift-store wood look intentional.",
+      "socialHook": "Restored a $50 thrift table to $500 energy with this polish.",
+      "beforeAfter": "Before: dry, faded grain. After: deep, rich, hand-rubbed glow."
+    },
+    {
+      "id": "scalp-reset-oil",
+      "name": "Scalp Reset Oil",
+      "category": "Beauty",
+      "luxuryAlternateName": "Apothecary Scalp Tonic",
+      "premiumDescription": "Pre-wash treatment that decongests buildup and balances oil. The reason your hair looks glassy on day one and great on day three.",
+      "ingredients": [
+        { "name": "Jojoba oil", "amount": "3 tbsp" },
+        { "name": "Argan oil", "amount": "1 tbsp" },
+        { "name": "Tea tree essential oil", "amount": "8 drops" },
+        { "name": "Peppermint essential oil", "amount": "6 drops" },
+        { "name": "Lavender essential oil", "amount": "8 drops" },
+        { "name": "Vitamin E oil", "amount": "¼ tsp" }
+      ],
+      "tools": ["2 oz amber dropper bottle"],
+      "steps": [
+        "Combine jojoba and argan oils in the bottle.",
+        "Add tea tree, peppermint, lavender, vitamin E.",
+        "Cap, roll between palms 30 seconds.",
+        "Section dry hair, apply 6–8 drops directly to scalp.",
+        "Massage 2 minutes, rest 20–30 min, then double-shampoo out."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Pet-toxic (tea tree, peppermint) — avoid pets sniffing while you treat.",
+        "Patch-test for sensitivity.",
+        "Skip during pregnancy with the peppermint."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$7.20",
+      "shelfLife": "9 months",
+      "storageTips": "Amber bottle, dry cabinet.",
+      "premiumUpgrade": "Add 2 drops black pepper + 4 drops cedarwood for the Hair Rituel by Sisley dupe.",
+      "whyPeopleLoveIt": "Hair looks salon-clean for 3 days. Cures itchy buildup overnight.",
+      "socialHook": "Pre-wash scalp oil that turned my hair into glass.",
+      "beforeAfter": "Before: itchy, flat second-day hair. After: glossy day three."
+    },
+    {
+      "id": "dry-shampoo-powder",
+      "name": "Dry Shampoo Powder",
+      "category": "Beauty",
+      "luxuryAlternateName": "Day-Two Hair Refresher",
+      "premiumDescription": "Cornstarch + clay base that absorbs oil without the alcohol-spray crunch. Tinted versions for blondes and brunettes.",
+      "ingredients": [
+        { "name": "Arrowroot powder", "amount": "3 tbsp" },
+        { "name": "Cornstarch", "amount": "2 tbsp" },
+        { "name": "Kaolin clay", "amount": "1 tbsp" },
+        { "name": "Cocoa powder (brunettes only)", "amount": "1 tsp" },
+        { "name": "Lavender essential oil", "amount": "4 drops" }
+      ],
+      "tools": ["Small jar with shaker top", "Soft makeup brush"],
+      "steps": [
+        "Whisk arrowroot, cornstarch, kaolin clay in a bowl.",
+        "Brunettes: add cocoa to match shade — taste-test on a paper plate.",
+        "Drop in lavender oil, mix until distributed.",
+        "Transfer to shaker jar.",
+        "Dust onto roots with the brush. Wait 30 seconds. Massage. Tousle."
+      ],
+      "timeRequired": "3 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Avoid the eye area — clay is irritating.",
+        "Less is more — over-applying = visible powder.",
+        "Skip if you have a corn allergy."
+      ],
+      "babySafe": false,
+      "petSafe": true,
+      "ecoScore": 10,
+      "costEstimate": "$2.40",
+      "shelfLife": "6 months",
+      "storageTips": "Sealed jar, vanity drawer.",
+      "premiumUpgrade": "Add 1 tsp activated charcoal for an oil-magnet version for fine, oily hair.",
+      "whyPeopleLoveIt": "Better than Batiste, no propellant cans, smells subtle.",
+      "socialHook": "I made dry shampoo that doesn't smell like a teen rave.",
+      "beforeAfter": "Before: greasy roots by hour 12. After: matte and full all day three."
+    },
+    {
+      "id": "bug-bite-balm",
+      "name": "Mosquito Bite Relief Balm",
+      "category": "Wellness",
+      "luxuryAlternateName": "After-Bite Calming Balm",
+      "premiumDescription": "Solid balm in a tin — cools, calms, stops the itch in 30 seconds. Travel-essentials shelf.",
+      "ingredients": [
+        { "name": "Coconut oil", "amount": "2 tbsp" },
+        { "name": "Beeswax pellets", "amount": "1 tbsp" },
+        { "name": "Shea butter", "amount": "1 tbsp" },
+        { "name": "Tea tree essential oil", "amount": "10 drops" },
+        { "name": "Lavender essential oil", "amount": "10 drops" },
+        { "name": "Peppermint essential oil", "amount": "5 drops" }
+      ],
+      "tools": ["Double boiler", "1 oz tin"],
+      "steps": [
+        "Melt coconut oil + beeswax + shea butter in a double boiler.",
+        "Remove from heat. Cool 1 minute (oils degrade in heat).",
+        "Stir in essential oils.",
+        "Pour into tin. Cool 1 hour to harden.",
+        "Dab a fingertip on bite — itch fades in seconds."
+      ],
+      "timeRequired": "8 min + 1 hr set",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Not for under age 6 (peppermint).",
+        "Avoid open wounds and broken skin.",
+        "Keep away from cats."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$3.60",
+      "shelfLife": "12 months",
+      "storageTips": "Cool drawer or travel pouch. Soft above 80°F.",
+      "premiumUpgrade": "Add 4 drops blue tansy for a deep-blue balm with extra anti-inflammatory hit.",
+      "whyPeopleLoveIt": "One tin replaces five After Bite tubes. Dad-bag essential.",
+      "socialHook": "The tin in my carry-on that makes mosquito bites disappear.",
+      "beforeAfter": "Before: 3 days of red welts. After: 30 seconds and gone."
+    },
+    {
+      "id": "allergy-air-mist",
+      "name": "Allergy Season Air Mist",
+      "category": "Wellness",
+      "luxuryAlternateName": "Pollen Reset Atmospheric Mist",
+      "premiumDescription": "Spray on pillows, drapes, and the entryway — settles airborne pollen and clears the breath at the door.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "1 cup" },
+        { "name": "Witch hazel", "amount": "2 tbsp" },
+        { "name": "Eucalyptus essential oil", "amount": "12 drops" },
+        { "name": "Peppermint essential oil", "amount": "8 drops" },
+        { "name": "Tea tree essential oil", "amount": "6 drops" },
+        { "name": "Lemon essential oil", "amount": "8 drops" }
+      ],
+      "tools": ["6 oz fine-mist glass bottle"],
+      "steps": [
+        "Combine witch hazel and oils in the bottle. Swirl.",
+        "Top with distilled water; cap and rest 30 minutes.",
+        "Mist drapes, doormats, and pillow corners during high-pollen days.",
+        "Pair with HEPA filter use for best results.",
+        "Refresh entryway daily during peak season."
+      ],
+      "timeRequired": "4 min",
+      "difficulty": "Easy",
+      "safetyNotes": [
+        "Pet-toxic blend — never spray near pet beds or cat lounging spots.",
+        "Avoid eyes.",
+        "Don't replace asthma medication — supplement only."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 9,
+      "costEstimate": "$5.40",
+      "shelfLife": "6 months",
+      "storageTips": "Entryway shelf — bottle visibility = habitual use.",
+      "premiumUpgrade": "Add 4 drops Roman chamomile + 4 drops blue tansy for an allergy-soothing version.",
+      "whyPeopleLoveIt": "Allergy-season survival in a bottle. Smells like a eucalyptus spa.",
+      "socialHook": "The spring mist that's saving my sinuses (and my couch).",
+      "beforeAfter": "Before: pollen-dust on every surface. After: settled air, easier breathing."
+    },
+    {
+      "id": "signature-welcome-spray",
+      "name": "Signature Home Welcome Spray",
+      "category": "Home",
+      "luxuryAlternateName": "Maison Threshold Atmosphere",
+      "premiumDescription": "Two sprays at the entry hall before guests arrive — your home's signature scent. Layered fig, cedar, and white florals.",
+      "ingredients": [
+        { "name": "Distilled water", "amount": "¾ cup" },
+        { "name": "Vodka", "amount": "¼ cup" },
+        { "name": "Fig fragrance oil", "amount": "10 drops" },
+        { "name": "Cedarwood essential oil", "amount": "8 drops" },
+        { "name": "Neroli essential oil", "amount": "6 drops" },
+        { "name": "White tea fragrance oil", "amount": "5 drops" }
+      ],
+      "tools": ["4 oz amber glass spray bottle"],
+      "steps": [
+        "Pour vodka in the bottle.",
+        "Add fig, cedar, neroli, white tea oils.",
+        "Cap, gently swirl 30 seconds.",
+        "Top with distilled water; rest 72 hours for the scent to bloom.",
+        "Two sprays at the entryway 5 minutes before guests."
+      ],
+      "timeRequired": "5 min + 72 hr rest",
+      "difficulty": "Medium",
+      "safetyNotes": [
+        "Cat-toxic (cedar, neroli) — avoid spraying low on furniture cats use.",
+        "Spot-test on rugs — can stain light fibers.",
+        "Flammable while wet."
+      ],
+      "babySafe": false,
+      "petSafe": false,
+      "ecoScore": 8,
+      "costEstimate": "$9.40",
+      "shelfLife": "12 months",
+      "storageTips": "Foyer console. Amber bottle protects from fading.",
+      "premiumUpgrade": "Add 3 drops black currant + 2 drops cassis for a Diptyque Philosykos-inspired entry.",
+      "whyPeopleLoveIt": "Guests ask: 'what does your house smell like?' — and remember it.",
+      "socialHook": "I gave my home a signature scent and my guests have not stopped texting.",
+      "beforeAfter": "Before: nothing. After: a moment people walk in and notice."
+    }
+  ],
+  "curatedLists": {
+    "topFreeForOnboarding": {
+      "title": "Top 10 Free Recipes for Onboarding",
+      "intent": "Easy wins. Pantry-priced. Build trust in the first 7 days.",
+      "picks": [
+        { "id": "stainless-steel-shine", "why": "2 ingredients you already own, instant before/after." },
+        { "id": "drain-refresh-mix", "why": "Visible fizz = perceived magic on day one." },
+        { "id": "jewelry-sparkle-dip", "why": "30¢ ring rescue. Massive emotional return." },
+        { "id": "baby-toy-spray", "why": "3 ingredients, parent-grade trust." },
+        { "id": "citrus-countertop-cleaner", "why": "Foundational kitchen win, smells incredible." },
+        { "id": "kitchen-grease-melter", "why": "Solves the most-Googled cleaning frustration." },
+        { "id": "fridge-odor-pods", "why": "Charming aesthetic, beats baking-soda box." },
+        { "id": "pet-safe-floor-cleaner", "why": "Builds trust with high-spending pet households." },
+        { "id": "vanilla-sugar-scrub", "why": "First taste of the beauty side — 5★ texture." },
+        { "id": "shower-glass-spray", "why": "Stops a chore forever. Recurring app-open trigger." }
+      ]
+    },
+    "topPremiumPaywall": {
+      "title": "Top 10 Premium Paywall Recipes",
+      "intent": "Luxury, layered, perceived-value items. Worth the subscription.",
+      "picks": [
+        { "id": "luxury-room-spray", "why": "Diptyque-tier blend, multi-step layering." },
+        { "id": "signature-welcome-spray", "why": "Bespoke home scent. Premium identity ritual." },
+        { "id": "rosemary-hair-oil", "why": "Mielle dupe with research backing — high LTV." },
+        { "id": "scalp-reset-oil", "why": "Sisley-dupe scalp tonic, repeats monthly." },
+        { "id": "anti-stress-pillow-mist", "why": "Replaces $30/bottle wellness staple." },
+        { "id": "hotel-linen-mist", "why": "Recurring monthly batch, hotel-aspirational." },
+        { "id": "wood-revival-polish", "why": "Heritage craft. Premium home audience." },
+        { "id": "spa-steam-tabs", "why": "Daily ritual, gift-able, high social value." },
+        { "id": "closet-sachets", "why": "Three-month replacement cycle = retention." },
+        { "id": "under-eye-gel", "why": "La Mer dupe, weekly batch, beauty halo product." }
+      ]
+    },
+    "topViral": {
+      "title": "Top 10 Viral TikTok / Reels Recipes",
+      "intent": "Visible reactions: fizz, foam, before/after, gasp moments.",
+      "picks": [
+        { "id": "toilet-bomb-fizzies", "why": "Pour-and-fizz watermark — pure ASMR." },
+        { "id": "sneaker-brightener", "why": "Most satisfying before/after on the platform." },
+        { "id": "drain-refresh-mix", "why": "Sunday-reset content lives here." },
+        { "id": "jewelry-sparkle-dip", "why": "Ring-on-foil shot is unbeatable." },
+        { "id": "spa-steam-tabs", "why": "Steam-cloud overhead shots are cinematic." },
+        { "id": "fridge-odor-pods", "why": "Aesthetic macaron-look + 'POV' pairing." },
+        { "id": "wood-revival-polish", "why": "Half-and-half wood swipes go off." },
+        { "id": "luxury-room-spray", "why": "Diptyque-dupe content has a guaranteed audience." },
+        { "id": "vanilla-sugar-scrub", "why": "Whip-and-scoop bowl shots = saves." },
+        { "id": "rosemary-hair-oil", "why": "Hair-thickness time-lapse is platform-native." }
+      ]
+    },
+    "topDailyHabit": {
+      "title": "Top 10 Daily-Habit Recipes",
+      "intent": "Used or refreshed daily — drives daily app opens.",
+      "picks": [
+        { "id": "shower-glass-spray", "why": "30-second post-shower habit, every day." },
+        { "id": "anti-stress-pillow-mist", "why": "Bedtime ritual, nightly mist." },
+        { "id": "focus-workspace-spray", "why": "Pre-work-block trigger, multiple times per day." },
+        { "id": "spa-steam-tabs", "why": "Morning shower ritual." },
+        { "id": "under-eye-gel", "why": "AM + PM skincare layer." },
+        { "id": "stainless-steel-shine", "why": "Post-cooking wipe-down." },
+        { "id": "citrus-countertop-cleaner", "why": "After every kitchen session." },
+        { "id": "dry-shampoo-powder", "why": "Day-2 + Day-3 hair routine." },
+        { "id": "baby-toy-spray", "why": "Post-meal high-chair ritual for parents." },
+        { "id": "signature-welcome-spray", "why": "Spritz before guests = a daily ritual when entertaining." }
+      ]
+    },
+    "topDiscoverLaunchWeek": {
+      "title": "Top 10 Discover Tab — Launch Week",
+      "intent": "Best mix of viral, premium, daily, and seasonal for the homepage feed.",
+      "picks": [
+        { "id": "hotel-linen-mist", "why": "Hero of the week — luxury + daily relevance." },
+        { "id": "spa-steam-tabs", "why": "Spring-spa moment, viral-ready." },
+        { "id": "rosemary-hair-oil", "why": "Beauty trend tap-in — high tap-through." },
+        { "id": "toilet-bomb-fizzies", "why": "Fizz video on the carousel = retention." },
+        { "id": "luxury-room-spray", "why": "Premium teaser anchor." },
+        { "id": "shower-glass-spray", "why": "Daily-habit feature for retention." },
+        { "id": "allergy-air-mist", "why": "Seasonal: spring pollen surge." },
+        { "id": "signature-welcome-spray", "why": "Identity recipe — drives profile completion." },
+        { "id": "vanilla-sugar-scrub", "why": "Beauty entry point, gateway recipe." },
+        { "id": "jewelry-sparkle-dip", "why": "30-second cleanest demo of perceived magic." }
+      ]
+    }
+  }
+}

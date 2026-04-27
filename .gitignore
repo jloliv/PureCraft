@@ -41,3 +41,9 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Claude Code personal settings (shared launch.json stays committed)
+.claude/settings.local.json
+
+# Static demo assets (kept out of app bundle; large)
+forge-hq/
