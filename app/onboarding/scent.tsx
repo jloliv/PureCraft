@@ -1,7 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
@@ -24,14 +23,34 @@ type Option = {
   key: string;
   label: string;
   hint: string;
-  emoji: string;
+  icon: ReturnType<typeof require>;
 };
 
 const OPTIONS: Option[] = [
-  { key: 'love-strong', label: 'Love strong scents', hint: 'Layered florals & spice', emoji: '🌹' },
-  { key: 'light', label: 'Prefer light scents', hint: 'Subtle, like a soft breeze', emoji: '🌿' },
-  { key: 'sensitive', label: 'Very scent sensitive', hint: 'Mild and rare only', emoji: '🌬️' },
-  { key: 'unscented', label: 'Unscented only', hint: 'Pure and clinical', emoji: '🤍' },
+  {
+    key: 'love-strong',
+    label: 'Love strong scents',
+    hint: 'Layered florals & spice',
+    icon: require('../../assets/images/strong-scents.png'),
+  },
+  {
+    key: 'light',
+    label: 'Prefer light scents',
+    hint: 'Subtle, like a soft breeze',
+    icon: require('../../assets/images/light-scents.png'),
+  },
+  {
+    key: 'sensitive',
+    label: 'Very scent sensitive',
+    hint: 'Mild and rare only',
+    icon: require('../../assets/images/scent-sensitivity.png'),
+  },
+  {
+    key: 'unscented',
+    label: 'Unscented only',
+    hint: 'Pure and clinical',
+    icon: require('../../assets/images/unscented.png'),
+  },
 ];
 
 export default function Scent() {
@@ -42,7 +61,7 @@ export default function Scent() {
       <OnboardingHeader step={4} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 4</Text>
-        <Text style={styles.headline}>How do you like{`\n`}things to smell?</Text>
+        <Text style={styles.headline}>How do you like things to smell?</Text>
         <Text style={styles.sub}>
           We tune fragrance load and oil concentration in every product.
         </Text>
@@ -60,8 +79,8 @@ export default function Scent() {
                   pressed && { transform: [{ scale: 0.99 }] },
                 ]}
               >
-                <View style={[styles.emojiWrap, isSelected && styles.emojiWrapSelected]}>
-                  <Text style={styles.emoji}>{o.emoji}</Text>
+                <View style={[styles.iconWrapper, isSelected && styles.iconWrapperSelected]}>
+                  <Image source={o.icon} style={styles.icon} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowLabel}>{o.label}</Text>
@@ -99,8 +118,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,
@@ -134,18 +153,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
-  emojiWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  iconWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: '#F2EDE3',
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: '#E6DFD2',
   },
-  emojiWrapSelected: { backgroundColor: 'rgba(255,255,255,0.5)', borderColor: PALETTE.sage },
-  emoji: { fontSize: 24 },
+  iconWrapperSelected: { borderColor: PALETTE.sage },
+  icon: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
   rowLabel: { fontSize: 15, fontWeight: '700', color: PALETTE.text, letterSpacing: -0.2 },
   rowHint: { fontSize: 12.5, color: PALETTE.textMuted, marginTop: 2 },
   radio: {

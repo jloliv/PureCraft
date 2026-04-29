@@ -207,14 +207,12 @@ export default function Discover() {
                 ]}
               >
                 <View style={[styles.bigSwatch, { backgroundColor: p.swatch }]}>
-                  <View style={styles.iconLayer}>
-                    <Image
-                      source={recipeIcon(t.id)}
-                      testID="pc-recipe-icon"
-                      style={[styles.cardIcon, RECIPE_ICON_BLEND]}
-                      resizeMode="contain"
-                    />
-                  </View>
+                  <Image
+                    source={recipeIcon(t.id)}
+                    testID="pc-recipe-icon"
+                    style={[styles.cardIcon, RECIPE_ICON_BLEND]}
+                    resizeMode="cover"
+                  />
                   <View style={styles.trendingBadge}>
                     <View style={styles.trendingPulse} />
                     <Text style={styles.trendingBadgeText}>Trending</Text>
@@ -257,14 +255,12 @@ export default function Discover() {
                 ]}
               >
                 <View style={[styles.smallSwatch, { backgroundColor: p.swatch }]}>
-                  <View style={styles.iconLayer}>
-                    <Image
-                      source={recipeIcon(id)}
-                      testID="pc-recipe-icon"
-                      style={[styles.cardIcon, RECIPE_ICON_BLEND]}
-                      resizeMode="contain"
-                    />
-                  </View>
+                  <Image
+                    source={recipeIcon(id)}
+                    testID="pc-recipe-icon"
+                    style={[styles.cardIcon, RECIPE_ICON_BLEND]}
+                    resizeMode="cover"
+                  />
                   <View style={styles.timePill}>
                     <Ionicons name="time-outline" size={11} color={PALETTE.text} />
                     <Text style={styles.timePillText}>{p.time}</Text>
@@ -305,14 +301,12 @@ export default function Discover() {
                 ]}
               >
                 <View style={[styles.smallSwatch, { backgroundColor: p.swatch }]}>
-                  <View style={styles.iconLayer}>
-                    <Image
-                      source={recipeIcon(id)}
-                      testID="pc-recipe-icon"
-                      style={[styles.cardIcon, RECIPE_ICON_BLEND]}
-                      resizeMode="contain"
-                    />
-                  </View>
+                  <Image
+                    source={recipeIcon(id)}
+                    testID="pc-recipe-icon"
+                    style={[styles.cardIcon, RECIPE_ICON_BLEND]}
+                    resizeMode="cover"
+                  />
                   <View style={[styles.costPill, { borderColor: p.accent }]}>
                     <Text style={[styles.costPillText, { color: p.accent }]}>
                       {formatMoney(cost, { currency })} to make
@@ -357,7 +351,7 @@ export default function Discover() {
                     source={recipeIcon(s.id)}
                     testID="pc-recipe-icon"
                     style={[styles.seasonalIcon, RECIPE_ICON_BLEND]}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   />
                 </View>
                 <View style={styles.seasonalBody}>
@@ -398,7 +392,7 @@ export default function Discover() {
                     source={recipeIcon(item.id)}
                     testID="pc-recipe-icon"
                     style={[styles.personalIcon, RECIPE_ICON_BLEND]}
-                    resizeMode="contain"
+                    resizeMode="cover"
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -417,7 +411,7 @@ export default function Discover() {
         <Pressable
           onPress={() => {
             tapLight();
-            router.push('/categories');
+            router.push('/pantry');
           }}
           style={({ pressed }) => [
             styles.pantryCard,
@@ -628,9 +622,6 @@ function SearchBar({
           editable={false}
           pointerEvents="none"
         />
-        <View style={styles.searchMic}>
-          <Ionicons name="mic" size={14} color="#FFFFFF" />
-        </View>
       </Pressable>
     </Animated.View>
   );
@@ -872,7 +863,7 @@ const styles = StyleSheet.create({
     gap: 12,
     height: 58,
     paddingLeft: 20,
-    paddingRight: 8,
+    paddingRight: 20,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
@@ -890,19 +881,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text,
     paddingVertical: 0,
     fontWeight: '500',
-  },
-  searchMic: {
-    width: 42,
-    height: 42,
-    borderRadius: 999,
-    backgroundColor: PALETTE.sageDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: PALETTE.sageDeep,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
   },
 
   // -- Hero card ----------------------------------------------------------
@@ -1073,8 +1051,6 @@ const styles = StyleSheet.create({
   },
   bigSwatch: {
     height: 158,
-    padding: 14,
-    justifyContent: 'space-between',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1087,9 +1063,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardIcon: { width: '82%', height: '82%' },
+  cardIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   trendingBadge: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 14,
+    left: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -1126,8 +1112,6 @@ const styles = StyleSheet.create({
   smallSwatch: {
     height: 138,
     borderRadius: 20,
-    padding: 12,
-    justifyContent: 'space-between',
     overflow: 'hidden',
     position: 'relative',
   },
@@ -1144,7 +1128,9 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   timePill: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -1155,7 +1141,9 @@ const styles = StyleSheet.create({
   },
   timePillText: { fontSize: 10.5, fontWeight: '700', color: PALETTE.text },
   costPill: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
@@ -1195,7 +1183,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  seasonalIcon: { width: '82%', height: '82%' },
+  seasonalIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   seasonalBody: { flex: 1, paddingLeft: 14, gap: 3 },
   seasonalTag: {
     fontSize: 9.5,
@@ -1235,7 +1231,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  personalIcon: { width: '82%', height: '82%' },
+  personalIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   personalReason: {
     fontSize: 10.5,
     letterSpacing: 1.2,

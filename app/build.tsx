@@ -210,7 +210,11 @@ export default function Build() {
                     style={({ pressed }) => [
                       styles.goalCard,
                       isOn && styles.goalCardActive,
-                      pressed && { transform: [{ scale: 0.98 }] },
+                      pressed
+                        ? { transform: [{ scale: 0.97 }] }
+                        : isOn
+                          ? { transform: [{ scale: 1.04 }] }
+                          : null,
                     ]}
                   >
                     <View
@@ -218,7 +222,7 @@ export default function Build() {
                     >
                       <Ionicons
                         name={g.icon}
-                        size={18}
+                        size={20}
                         color={isOn ? '#FFFFFF' : PALETTE.violet}
                       />
                     </View>
@@ -502,29 +506,35 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
 
-  goalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  goalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
   goalCard: {
-    width: '32%',
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    width: '31.5%',
+    aspectRatio: 1,
     borderRadius: 16,
     backgroundColor: PALETTE.surface,
     borderWidth: 1,
     borderColor: PALETTE.border,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
     gap: 8,
   },
   goalCardActive: { backgroundColor: PALETTE.violetSoft, borderColor: PALETTE.violet },
   goalIconWrap: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 999,
     backgroundColor: PALETTE.violetSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   goalLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '600',
     color: PALETTE.text,
     textAlign: 'center',

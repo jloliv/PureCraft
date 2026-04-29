@@ -7,6 +7,12 @@ import { useSyncExternalStore } from 'react';
 
 import { events } from './analytics';
 import { checkSaveGate, recordSave, recordUnsave } from './freemium';
+import {
+  guestSaveCount,
+  isGuestSaved,
+  toggleGuestSave,
+  useGuestSaves,
+} from './guest-saves';
 import { supabase, supabaseConfigured } from './supabase';
 
 export type SavedRecipe = {
@@ -84,11 +90,27 @@ function snapshot(): SavedState {
 }
 
 export function useSavedRecipes(): SavedState {
-  return useSyncExternalStore(subscribe, snapshot, snapshot);
+  // Subscribe to both stores so guest saves also re-render heart icons.
+  const supaState = useSyncExternalStore(subscribe, snapshot, snapshot);
+  const { ids: guestIds } = useGuestSaves();
+  if (guestIds.size === 0) return supaState;
+  const merged = new Map(supaState.saved);
+  for (const id of guestIds) {
+    if (!merged.has(id)) {
+      merged.set(id, {
+        recipe_id: id,
+        saved_at: new Date().toISOString(),
+        note: null,
+        made_count: 0,
+        last_made: null,
+      });
+    }
+  }
+  return { ...supaState, saved: merged };
 }
 
 export function isRecipeSaved(recipeId: string): boolean {
-  return state.saved.has(recipeId);
+  return state.saved.has(recipeId) || isGuestSaved(recipeId);
 }
 
 export async function saveRecipe(
@@ -163,13 +185,34 @@ export async function unsaveRecipe(
 
 export async function toggleSaved(
   recipeId: string,
-): Promise<{ saved: boolean; error: string | null; gated?: boolean }> {
+): Promise<{
+  saved: boolean;
+  error: string | null;
+  gated?: boolean;
+  needsAuth?: boolean;
+}> {
+  // Guest path — no Supabase user. Buffer up to GUEST_SAVE_LIMIT then prompt
+  // for an account. flushGuestSaves() promotes the buffer on sign-in.
+  if (!supabase) return { saved: false, error: 'Not configured' };
+  const { data: s } = await supabase.auth.getSession();
+  if (!s.session?.user) {
+    const result = toggleGuestSave(recipeId);
+    if (result.needsAuth) {
+      return { saved: false, error: null, needsAuth: true };
+    }
+    return { saved: result.saved, error: null };
+  }
+
   if (state.saved.has(recipeId)) {
     const { error } = await unsaveRecipe(recipeId);
     return { saved: false, error };
   }
   const { error, gated } = await saveRecipe(recipeId);
   return { saved: !gated && !error, error, gated };
+}
+
+export function getGuestSaveCount(): number {
+  return guestSaveCount();
 }
 
 export async function markMade(

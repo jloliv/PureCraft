@@ -13,6 +13,8 @@ import {
   View,
 } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { FreemiumModal } from './freemium-modal';
 import { checkPantryScanGate } from '@/lib/freemium';
 import { tapLight, tapMedium, tapSoft } from '@/lib/haptics';
@@ -324,6 +326,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
           end={{ x: 1, y: 1 }}
           style={styles.sheetGradient}
         >
+          <SafeAreaView edges={['top']} style={styles.sheetSafeArea}>
           <View style={styles.sheetHandle} />
 
           <View style={styles.sheetHeader}>
@@ -405,6 +408,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
           >
             <Text style={styles.closeBtnText}>Maybe later</Text>
           </Pressable>
+          </SafeAreaView>
         </LinearGradient>
       </Animated.View>
     </Modal>
@@ -515,9 +519,11 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   sheetGradient: {
-    paddingTop: 12,
     paddingBottom: 36,
     paddingHorizontal: 18,
+  },
+  sheetSafeArea: {
+    paddingTop: 24,
   },
   sheetHandle: {
     alignSelf: 'center',
@@ -553,15 +559,15 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: 26,
     lineHeight: 30,
-    fontWeight: '700',
+    fontWeight: '600',
     color: PALETTE.text,
     letterSpacing: -0.6,
+    marginBottom: 6,
   },
   sheetSub: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: PALETTE.textMuted,
-    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#6B6B6B',
   },
 
   actions: { gap: 10 },

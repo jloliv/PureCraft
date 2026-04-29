@@ -13,9 +13,9 @@ import { autoBullets, benefitsFor } from '@/constants/recipe-benefits';
 import { findRecipeById } from '@/constants/recipes-remote';
 import { shelfLifeFor } from '@/constants/recipe-shelf-life';
 import { computeSavings, formatRange } from '@/constants/savings';
+import { AuthPromptModal } from '@/components/auth-prompt-modal';
 import { FreemiumModal, type FreemiumKind } from '@/components/freemium-modal';
 import { events } from '@/lib/analytics';
-import { useAuth } from '@/lib/auth';
 import {
   avoidIfFromIngredients,
   bestForFromIngredients,
@@ -39,7 +39,6 @@ export default function Result() {
   const product = findProduct(id);
   const recipe = findRecipe(id);
   const { currency } = useCurrency();
-  const { user } = useAuth();
   const { saved: savedMap } = useSavedRecipes();
   const saved = savedMap.has(product.id);
   const [helpFor, setHelpFor] = useState<string | null>(null);
@@ -62,17 +61,14 @@ export default function Result() {
   }, [product.id]);
 
   const [gateModal, setGateModal] = useState<FreemiumKind | null>(null);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
 
   const onToggleSave = () => {
     tapLight();
-    if (!user) {
-      // Not signed in — punt to sign-in. (TODO: AsyncStorage saves for guests.)
-      router.push('/auth/sign-in');
-      return;
-    }
     void (async () => {
-      const { gated } = await toggleSaved(product.id);
+      const { gated, needsAuth } = await toggleSaved(product.id);
       if (gated) setGateModal('save');
+      else if (needsAuth) setAuthPromptOpen(true);
     })();
   };
   const savings = computeSavings(product.id);
@@ -137,6 +133,10 @@ export default function Result() {
         visible={gateModal !== null}
         kind={gateModal ?? 'save'}
         onClose={() => setGateModal(null)}
+      />
+      <AuthPromptModal
+        visible={authPromptOpen}
+        onClose={() => setAuthPromptOpen(false)}
       />
       <View style={styles.topBar}>
         <Pressable

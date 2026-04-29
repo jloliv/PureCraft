@@ -49,8 +49,6 @@ export default function Priorities() {
     });
   };
 
-  const remaining = MAX_PICKS - selected.length;
-
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <OnboardingHeader step={6} />
@@ -60,29 +58,11 @@ export default function Priorities() {
         <Text style={styles.sub}>
           The non-negotiables. We&apos;ll rank every recipe by these.
         </Text>
-
-        <View style={styles.counter}>
-          <View style={styles.counterDots}>
-            {Array.from({ length: MAX_PICKS }).map((_, i) => (
-              <View
-                key={i}
-                style={[styles.counterDot, i < selected.length && styles.counterDotFilled]}
-              />
-            ))}
-          </View>
-          <Text style={styles.counterLabel}>
-            {selected.length === MAX_PICKS
-              ? 'All set'
-              : remaining === MAX_PICKS
-                ? `Pick ${MAX_PICKS}`
-                : `${remaining} more to go`}
-          </Text>
-        </View>
+        <Text style={styles.selectHint}>Choose up to 3</Text>
 
         <View style={styles.grid}>
           {PRIORITIES.map((p) => {
             const isSelected = selected.includes(p.key);
-            const rank = isSelected ? selected.indexOf(p.key) + 1 : null;
             const disabled = !isSelected && selected.length >= MAX_PICKS;
             return (
               <Pressable
@@ -96,19 +76,15 @@ export default function Priorities() {
                   pressed && { transform: [{ scale: 0.97 }] },
                 ]}
               >
-                <View style={[styles.iconWrap, isSelected && styles.iconWrapSelected]}>
-                  <Ionicons
-                    name={p.icon}
-                    size={20}
-                    color={isSelected ? '#FFFFFF' : PALETTE.sageDeep}
-                  />
+                <View style={styles.iconWrap}>
+                  <Ionicons name={p.icon} size={26} color={PALETTE.sageDeep} />
                 </View>
                 <Text style={styles.label} numberOfLines={2}>
                   {p.label}
                 </Text>
-                {rank ? (
-                  <View style={styles.rankBadge}>
-                    <Text style={styles.rankText}>{rank}</Text>
+                {isSelected ? (
+                  <View style={styles.checkmark}>
+                    <Ionicons name="checkmark-circle" size={22} color={PALETTE.sageDeep} />
                   </View>
                 ) : null}
               </Pressable>
@@ -119,7 +95,7 @@ export default function Priorities() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label={selected.length === MAX_PICKS ? 'Continue' : `Pick ${remaining} more`}
+          label="Continue"
           trailingIcon={selected.length === MAX_PICKS ? 'arrow-forward' : undefined}
           disabled={selected.length < MAX_PICKS}
           onPress={() => router.push('/onboarding/routine')}
@@ -140,8 +116,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,
@@ -153,81 +129,53 @@ const styles = StyleSheet.create({
     color: PALETTE.textMuted,
     marginTop: 10,
   },
-  counter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  selectHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.textSubtle,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
     marginTop: 18,
-    marginBottom: 22,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border,
+    marginBottom: 18,
   },
-  counterDots: { flexDirection: 'row', gap: 6 },
-  counterDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: PALETTE.border,
-  },
-  counterDotFilled: {
-    backgroundColor: PALETTE.sageDeep,
-    borderColor: PALETTE.sageDeep,
-  },
-  counterLabel: { fontSize: 13, fontWeight: '600', color: PALETTE.text },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
   card: {
-    width: '31%',
-    minHeight: 112,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 22,
-    backgroundColor: PALETTE.surface,
+    width: '47%',
+    aspectRatio: 1,
+    borderRadius: 20,
+    backgroundColor: '#F6F1E8',
     borderWidth: 1,
-    borderColor: PALETTE.border,
-    alignItems: 'center',
+    borderColor: '#E6DFD2',
     justifyContent: 'center',
-    gap: 10,
+    alignItems: 'center',
+    padding: 16,
     position: 'relative',
   },
   cardSelected: {
-    backgroundColor: PALETTE.sageSoft,
-    borderColor: PALETTE.sage,
+    borderColor: PALETTE.sageDeep,
+    backgroundColor: 'rgba(95,135,106,0.08)',
   },
   iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    backgroundColor: PALETTE.sageSoft,
-    alignItems: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(95,135,106,0.08)',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  iconWrapSelected: { backgroundColor: PALETTE.sageDeep },
   label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: PALETTE.text,
-    letterSpacing: -0.2,
-    lineHeight: 17,
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
+    color: '#2F4F3E',
   },
-  rankBadge: {
+  checkmark: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: PALETTE.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: 10,
+    right: 10,
   },
-  rankText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF' },
 
   footer: {
     paddingHorizontal: 22,

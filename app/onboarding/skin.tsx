@@ -1,7 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
@@ -14,113 +13,29 @@ const PALETTE = {
   text: '#1F1F1F',
   textMuted: '#6B6B6B',
   textSubtle: '#7A8A7A',
-  border: 'rgba(0,0,0,0.05)',
-  indicatorBorder: '#CFC9BE',
   sageDeep: '#5F876A',
-  sageSoft: 'rgba(95, 135, 106, 0.04)',
 };
 
-type Concern = { key: string; label: string; hint: string };
+type Concern = { key: string; label: string };
 
 const CONCERNS: Concern[] = [
-  { key: 'sensitive', label: 'Sensitive Skin', hint: 'Reacts easily' },
-  { key: 'dry', label: 'Dry Skin', hint: 'Tight, flaky' },
-  { key: 'oily', label: 'Oily Skin', hint: 'Shine + breakouts' },
-  { key: 'acne', label: 'Acne Prone', hint: 'Breakouts often' },
-  { key: 'eczema', label: 'Eczema Prone', hint: 'Redness + dry patches' },
-  { key: 'mature', label: 'Mature Skin', hint: 'Lines + radiance' },
-  { key: 'scalp', label: 'Scalp Issues', hint: 'Itch + flake' },
+  { key: 'sensitive', label: 'Sensitive Skin' },
+  { key: 'dry', label: 'Dry Skin' },
+  { key: 'oily', label: 'Oily Skin' },
+  { key: 'acne', label: 'Acne Prone' },
+  { key: 'eczema', label: 'Eczema Prone' },
+  { key: 'mature', label: 'Mature Skin' },
+  { key: 'scalp', label: 'Scalp Issues' },
 ];
-
-function ConcernRow({
-  concern,
-  selected,
-  isLast,
-  onPress,
-}: {
-  concern: Concern;
-  selected: boolean;
-  isLast?: boolean;
-  onPress: () => void;
-}) {
-  const fade = useRef(new Animated.Value(selected ? 1 : 0)).current;
-  const textOpacity = useRef(new Animated.Value(selected ? 1 : 0.85)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade, {
-        toValue: selected ? 1 : 0,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(textOpacity, {
-        toValue: selected ? 1 : 0.85,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fade, selected, textOpacity]);
-
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 0.99,
-        duration: 60,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    onPress();
-  };
-
-  return (
-    <Animated.View
-      style={[
-        styles.rowFrame,
-        !isLast && styles.rowDivider,
-        { transform: [{ scale }] },
-      ]}
-    >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected }}
-        accessibilityLabel={concern.label}
-        onPress={handlePress}
-        style={({ pressed }) => [
-          styles.row,
-          selected && styles.rowSelected,
-          pressed && styles.rowPressed,
-        ]}
-      >
-        <Animated.View style={[styles.rowTextWrap, { opacity: textOpacity }]}>
-          <Text style={[styles.rowLabel, selected && styles.rowLabelSelected]}>
-            {concern.label}
-          </Text>
-          <Text style={styles.rowHint}>{concern.hint}</Text>
-        </Animated.View>
-        <View style={[styles.indicator, selected && styles.indicatorSelected]}>
-          <Animated.View style={{ opacity: fade }}>
-            <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-          </Animated.View>
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
-}
 
 export default function Skin() {
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (key: string) => {
     tapLight();
-    setSelected((prev) => {
-      return prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key];
-    });
+    setSelected((prev) =>
+      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
+    );
   };
 
   const saveAndContinue = () => {
@@ -135,22 +50,34 @@ export default function Skin() {
       <OnboardingHeader step={3} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 3</Text>
-        <Text style={styles.headline}>How does your{`\n`}skin behave?</Text>
+        <Text style={styles.headline}>How does your skin behave?</Text>
         <Text style={styles.sub}>
           Beauty recipes get tailored ingredients, gentler ratios, and smarter swaps.
         </Text>
         <Text style={styles.instruction}>Select all that apply.</Text>
 
-        <View style={styles.list}>
-          {CONCERNS.map((concern, index) => (
-            <ConcernRow
-              key={concern.key}
-              concern={concern}
-              selected={selected.includes(concern.key)}
-              isLast={index === CONCERNS.length - 1}
-              onPress={() => toggle(concern.key)}
-            />
-          ))}
+        <View style={styles.chipWrap}>
+          {CONCERNS.map((concern) => {
+            const isSelected = selected.includes(concern.key);
+            return (
+              <Pressable
+                key={concern.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={concern.label}
+                onPress={() => toggle(concern.key)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  isSelected && styles.chipSelected,
+                  pressed && { transform: [{ scale: 0.97 }] },
+                ]}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                  {concern.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </ScrollView>
 
@@ -178,8 +105,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,
@@ -196,47 +123,32 @@ const styles = StyleSheet.create({
     color: PALETTE.textMuted,
     marginTop: 8,
   },
-  list: { marginTop: 34 },
-  rowFrame: {
-    overflow: 'hidden',
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: PALETTE.border,
-  },
-  row: {
+  chipWrap: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 18,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 24,
   },
-  rowSelected: {
-    backgroundColor: PALETTE.sageSoft,
-  },
-  rowPressed: {
-    backgroundColor: PALETTE.sageSoft,
-  },
-  rowTextWrap: {
-    flex: 1,
-    paddingRight: 16,
-  },
-  rowLabel: { fontSize: 16, fontWeight: '500', color: PALETTE.text },
-  rowLabelSelected: { color: '#101510' },
-  rowHint: { fontSize: 13, color: PALETTE.textMuted, marginTop: 2 },
-  indicator: {
-    width: 22,
-    height: 22,
-    borderRadius: 999,
+  chip: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#F2EDE3',
     borderWidth: 1,
-    borderColor: PALETTE.indicatorBorder,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#E6DFD2',
   },
-  indicatorSelected: { backgroundColor: PALETTE.sageDeep, borderColor: PALETTE.sageDeep },
+  chipSelected: {
+    backgroundColor: PALETTE.sageDeep,
+    borderColor: PALETTE.sageDeep,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2F4F3E',
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
+  },
 
   footer: {
     paddingHorizontal: 20,

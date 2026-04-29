@@ -186,8 +186,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,

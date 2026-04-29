@@ -43,7 +43,7 @@ export default function Routine() {
       <OnboardingHeader step={7} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 7</Text>
-        <Text style={styles.headline}>How do you{`\n`}like to make?</Text>
+        <Text style={styles.headline}>How do you like to make?</Text>
         <Text style={styles.sub}>Sets the rhythm of recommendations and recipe length.</Text>
 
         <View style={styles.list}>
@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,

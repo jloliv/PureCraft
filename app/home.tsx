@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import {
+  Dimensions,
   Image,
   ImageBackground,
   ImageSourcePropType,
@@ -11,6 +12,11 @@ import {
   Text,
   View,
 } from 'react-native';
+
+// Fallback to 320 because on web SSR Dimensions.get can return 0 width.
+const _winWidth = Dimensions.get('window').width;
+const CARD_WIDTH = _winWidth > 0 ? Math.round(_winWidth * 0.8) : 320;
+const CARD_GAP = 12;
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MakeNav } from '@/components/make-nav';
@@ -19,6 +25,7 @@ import { findProduct } from '@/constants/products';
 import { tapLight } from '@/lib/haptics';
 import { computeMatch } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
+import { usePaywall } from '@/lib/paywall';
 import { recipeIcon } from '@/lib/recipe-icons';
 import { useMemo } from 'react';
 
@@ -167,16 +174,36 @@ export default function HomeScreen() {
 }
 
 function Header() {
+  const { isPremium } = usePaywall();
   return (
     <View style={styles.header}>
       <View style={{ flex: 1 }} />
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Notifications"
-        onPress={() => {}}
-        style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.6 }]}
+        accessibilityLabel={isPremium ? 'PureCraft+ membership' : 'Upgrade to PureCraft+'}
+        onPress={() => {
+          tapLight();
+          router.push('/premium');
+        }}
+        style={({ pressed }) => [
+          styles.plusBadge,
+          isPremium ? styles.plusBadgePaid : styles.plusBadgeFree,
+          pressed && { opacity: 0.85 },
+        ]}
       >
-        <Ionicons name="notifications-outline" size={20} color={PALETTE.text} />
+        <Ionicons
+          name="sparkles"
+          size={11}
+          color={isPremium ? '#FFFFFF' : PALETTE.goldDeep}
+        />
+        <Text
+          style={[
+            styles.plusBadgeText,
+            isPremium ? styles.plusBadgeTextPaid : styles.plusBadgeTextFree,
+          ]}
+        >
+          {isPremium ? 'PureCraft+ ✓' : 'PureCraft+'}
+        </Text>
       </Pressable>
     </View>
   );
@@ -220,6 +247,9 @@ function MakeNowSection() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.makeNowRow}
+        snapToInterval={CARD_WIDTH + CARD_GAP}
+        decelerationRate="fast"
+        snapToAlignment="start"
       >
         {ready.map(({ recipe }) => {
           const product = findProduct(recipe.id);
@@ -240,7 +270,7 @@ function MakeNowSection() {
                   source={recipeIcon(recipe.id, recipe.categoryKey)}
                   testID="pc-recipe-icon"
                   style={styles.makeNowIcon}
-                  resizeMode="contain"
+                  resizeMode="cover"
                 />
                 <View style={styles.makeNowReadyBadge}>
                   <View style={styles.makeNowReadyDot} />
@@ -353,16 +383,30 @@ const styles = StyleSheet.create({
     height: 88,
     marginVertical: -22,
   },
-  bellBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: PALETTE.surface,
+  plusBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: PALETTE.border,
   },
+  plusBadgeFree: {
+    backgroundColor: PALETTE.surface,
+    borderColor: '#E5DCC2',
+  },
+  plusBadgePaid: {
+    backgroundColor: PALETTE.gold,
+    borderColor: PALETTE.goldDeep,
+  },
+  plusBadgeText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  plusBadgeTextFree: { color: PALETTE.goldDeep },
+  plusBadgeTextPaid: { color: '#FFFFFF' },
 
   heroWrap: {
     marginTop: 16,
@@ -450,13 +494,11 @@ const styles = StyleSheet.create({
     color: PALETTE.textMuted,
     marginTop: 2,
   },
-  makeNowRow: { gap: 12, paddingRight: 12 },
-  makeNowCard: { width: 168, gap: 8 },
+  makeNowRow: { gap: CARD_GAP, paddingLeft: 16, paddingRight: 0 },
+  makeNowCard: { width: CARD_WIDTH, gap: 8 },
   makeNowSwatch: {
     height: 138,
     borderRadius: 20,
-    padding: 12,
-    justifyContent: 'flex-start',
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
@@ -464,13 +506,17 @@ const styles = StyleSheet.create({
   },
   makeNowIcon: {
     position: 'absolute',
-    top: '11%',
-    left: '11%',
-    width: '78%',
-    height: '78%',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   makeNowReadyBadge: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
