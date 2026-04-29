@@ -6,15 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  surface: '#FFFFFF',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  surface: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
   sageSoft: '#E4EDE5',
 };
 
@@ -88,7 +90,7 @@ export default function Scent() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 24, backgroundColor: PALETTE.bg },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -136,13 +138,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: PALETTE.border,
   },
-  emojiWrapSelected: { backgroundColor: '#FFFFFF', borderColor: PALETTE.sage },
+  emojiWrapSelected: { backgroundColor: 'rgba(255,255,255,0.5)', borderColor: PALETTE.sage },
   emoji: { fontSize: 24 },
   rowLabel: { fontSize: 15, fontWeight: '700', color: PALETTE.text, letterSpacing: -0.2 },
   rowHint: { fontSize: 12.5, color: PALETTE.textMuted, marginTop: 2 },
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: PALETTE.border,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },

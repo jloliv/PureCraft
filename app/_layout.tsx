@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 import 'react-native-reanimated';
 
-import { Colors } from '@/constants/theme';
+import { BACKGROUND_PRIMARY, Colors } from '@/constants/theme';
 
 export default function RootLayout() {
   const navTheme = useMemo(
@@ -12,8 +12,8 @@ export default function RootLayout() {
       ...DefaultTheme,
       colors: {
         ...DefaultTheme.colors,
-        background: Colors.light.background,
-        card: Colors.light.background,
+        background: BACKGROUND_PRIMARY,
+        card: BACKGROUND_PRIMARY,
         text: Colors.light.text,
         primary: Colors.light.sage,
         border: Colors.light.border,
@@ -27,11 +27,11 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: Colors.light.background },
+          contentStyle: { backgroundColor: BACKGROUND_PRIMARY },
           animation: 'slide_from_right',
         }}
       />
-      <StatusBar style="dark" />
+      <StatusBar style="dark" backgroundColor={BACKGROUND_PRIMARY} />
     </ThemeProvider>
   );
 }

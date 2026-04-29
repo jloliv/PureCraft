@@ -12,7 +12,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { tapLight, tapMedium, tapSoft, success } from '@/lib/haptics';
+import { refreshRecipes } from '@/constants/recipes-remote';
+import { useAiGenerator } from '@/lib/ai-recipe';
+import { useAuth } from '@/lib/auth';
+import { tapLight, tapMedium, tapSoft, success, warning } from '@/lib/haptics';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -76,6 +79,9 @@ export default function Build() {
   const [prompt, setPrompt] = useState(
     'Calming linen mist for the bedroom — lavender, no vinegar.',
   );
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { generateAndSave } = useAiGenerator();
+  const { user } = useAuth();
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
@@ -100,14 +106,39 @@ export default function Build() {
     setNotes((prev) => (prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n]));
   };
 
-  const generate = () => {
+  const generate = async () => {
     if (!goal) return;
+    if (!user) {
+      // AI generation requires auth (we tie generated recipes to a user_id).
+      router.push('/auth/sign-up');
+      return;
+    }
     tapMedium();
+    setErrorMsg(null);
     setPhase('thinking');
-    setTimeout(() => {
-      success();
-      setPhase('result');
-    }, 1800);
+    // Compose the model prompt: free-text brief + structured tags from
+    // chips so the model has a clean signal beyond the prose.
+    const fullPrompt = [
+      prompt.trim(),
+      `Type: ${GOALS.find((g) => g.key === goal)?.label ?? goal}`,
+      scent ? `Scent: ${scent}` : null,
+      notes.length ? `Constraints: ${notes.join(', ')}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    const { recipeId, error } = await generateAndSave(fullPrompt);
+    if (error || !recipeId) {
+      warning();
+      setErrorMsg(error ?? 'Generation failed');
+      setPhase('compose');
+      return;
+    }
+    success();
+    // Refresh the in-memory recipes cache so result.tsx can find it.
+    await refreshRecipes();
+    router.push({ pathname: '/result', params: { id: recipeId } });
+    // Defer phase reset until next focus
+    setPhase('compose');
   };
 
   const reset = () => {
@@ -191,7 +222,9 @@ export default function Build() {
                         color={isOn ? '#FFFFFF' : PALETTE.violet}
                       />
                     </View>
-                    <Text style={styles.goalLabel}>{g.label}</Text>
+                    <Text style={styles.goalLabel} numberOfLines={2}>
+                      {g.label}
+                    </Text>
                   </Pressable>
                 );
               })}
@@ -273,12 +306,19 @@ export default function Build() {
               )}
             </Pressable>
 
-            <View style={styles.disclaim}>
-              <Ionicons name="leaf-outline" size={12} color={PALETTE.sageDeep} />
-              <Text style={styles.disclaimText}>
-                Drafts are reviewed against allergy + safety rules from your profile before they appear.
-              </Text>
-            </View>
+            {errorMsg ? (
+              <View style={[styles.disclaim, { backgroundColor: '#FBEFEC', borderColor: '#F1D9D2' }]}>
+                <Ionicons name="alert-circle-outline" size={12} color="#C26B5A" />
+                <Text style={[styles.disclaimText, { color: '#C26B5A' }]}>{errorMsg}</Text>
+              </View>
+            ) : (
+              <View style={styles.disclaim}>
+                <Ionicons name="leaf-outline" size={12} color={PALETTE.sageDeep} />
+                <Text style={styles.disclaimText}>
+                  Drafts are reviewed against allergy + safety rules from your profile before they appear.
+                </Text>
+              </View>
+            )}
 
             <View style={{ height: 40 }} />
           </>

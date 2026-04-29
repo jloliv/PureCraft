@@ -481,7 +481,7 @@
       "name": "Natural Drain Refresh Mix",
       "category": "Cleaning",
       "luxuryAlternateName": "Drain Reviver Effervescence",
-      "premiumDescription": "The Sunday ritual that keeps every drain in the home running clear and odor-free without chemicals.",
+      "premiumDescription": "The Sunday routine that keeps every drain in the home running clear and odor-free without chemicals.",
       "ingredients": [
         { "name": "Baking soda", "amount": "1 cup" },
         { "name": "Coarse salt", "amount": "½ cup" },
@@ -792,7 +792,7 @@
       "name": "Bathroom Spa Steam Tabs",
       "category": "Wellness",
       "luxuryAlternateName": "Eucalyptus Shower Tablets",
-      "premiumDescription": "Drop one on the shower floor and turn your morning into a 4-minute steam-room ritual.",
+      "premiumDescription": "Drop one on the shower floor and turn your morning into a 4-minute steam-room routine.",
       "ingredients": [
         { "name": "Baking soda", "amount": "1 cup" },
         { "name": "Citric acid", "amount": "½ cup" },
@@ -1205,13 +1205,13 @@
       "intent": "Luxury, layered, perceived-value items. Worth the subscription.",
       "picks": [
         { "id": "luxury-room-spray", "why": "Diptyque-tier blend, multi-step layering." },
-        { "id": "signature-welcome-spray", "why": "Bespoke home scent. Premium identity ritual." },
+        { "id": "signature-welcome-spray", "why": "Bespoke home scent. Premium identity routine." },
         { "id": "rosemary-hair-oil", "why": "Mielle dupe with research backing — high LTV." },
         { "id": "scalp-reset-oil", "why": "Sisley-dupe scalp tonic, repeats monthly." },
         { "id": "anti-stress-pillow-mist", "why": "Replaces $30/bottle wellness staple." },
         { "id": "hotel-linen-mist", "why": "Recurring monthly batch, hotel-aspirational." },
         { "id": "wood-revival-polish", "why": "Heritage craft. Premium home audience." },
-        { "id": "spa-steam-tabs", "why": "Daily ritual, gift-able, high social value." },
+        { "id": "spa-steam-tabs", "why": "Daily routine, gift-able, high social value." },
         { "id": "closet-sachets", "why": "Three-month replacement cycle = retention." },
         { "id": "under-eye-gel", "why": "La Mer dupe, weekly batch, beauty halo product." }
       ]
@@ -1237,15 +1237,15 @@
       "intent": "Used or refreshed daily — drives daily app opens.",
       "picks": [
         { "id": "shower-glass-spray", "why": "30-second post-shower habit, every day." },
-        { "id": "anti-stress-pillow-mist", "why": "Bedtime ritual, nightly mist." },
+        { "id": "anti-stress-pillow-mist", "why": "Bedtime routine, nightly mist." },
         { "id": "focus-workspace-spray", "why": "Pre-work-block trigger, multiple times per day." },
-        { "id": "spa-steam-tabs", "why": "Morning shower ritual." },
+        { "id": "spa-steam-tabs", "why": "Morning shower routine." },
         { "id": "under-eye-gel", "why": "AM + PM skincare layer." },
         { "id": "stainless-steel-shine", "why": "Post-cooking wipe-down." },
         { "id": "citrus-countertop-cleaner", "why": "After every kitchen session." },
         { "id": "dry-shampoo-powder", "why": "Day-2 + Day-3 hair routine." },
-        { "id": "baby-toy-spray", "why": "Post-meal high-chair ritual for parents." },
-        { "id": "signature-welcome-spray", "why": "Spritz before guests = a daily ritual when entertaining." }
+        { "id": "baby-toy-spray", "why": "Post-meal high-chair routine for parents." },
+        { "id": "signature-welcome-spray", "why": "Spritz before guests = a daily routine when entertaining." }
       ]
     },
     "topDiscoverLaunchWeek": {

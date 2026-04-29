@@ -2,22 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+
+const LOGO = require('../../assets/images/logo-leaf.png');
+
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  textSubtle: '#A8A398',
-  surface: '#FFFFFF',
-  surfaceWarm: '#F1ECE0',
+  textMuted: '#6B6B6B',
+  textSubtle: '#8A8A8A',
+  surface: 'rgba(255,255,255,0.5)',
+  surfaceWarm: 'rgba(255,255,255,0.5)',
   border: '#E8E2D2',
   sage: '#A8B8A0',
   sageDeep: '#7E8F75',
   sageSoft: '#E4EDE5',
-  cream: '#F7F2E7',
-  creamDeep: '#EFE7D2',
+  cream: 'rgba(255,255,255,0.5)',
+  creamDeep: 'rgba(0,0,0,0.06)',
   gold: '#C7A96B',
 };
 
@@ -33,6 +37,8 @@ export default function OnboardingLoading() {
   const breathe = useRef(new Animated.Value(0)).current;
   const ringSpin = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+  const logoPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
@@ -50,7 +56,22 @@ export default function OnboardingLoading() {
         Animated.timing(glow, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       ]),
     ).start();
-  }, [breathe, ringSpin, glow]);
+    // Subtle logo pulse — 98% → 102%, slow and even. Makes the leaf feel
+    // alive without competing with the dashed ring's rotation.
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(logoPulse, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(logoPulse, { toValue: 0, duration: 1800, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    ).start();
+    // One-time fade-in on mount so the leaf settles into place.
+    Animated.timing(fade, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [breathe, ringSpin, glow, fade, logoPulse]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -67,12 +88,13 @@ export default function OnboardingLoading() {
 
   const scale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] });
   const rotate = ringSpin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.45, 0.85] });
+  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.32, 0.6] });
+  const logoScale = logoPulse.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.02] });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <LinearGradient
-        colors={['#F8F6F1', '#F1ECE0', '#E4EDE5']}
+        colors={[PALETTE.bg, PALETTE.bg, PALETTE.bg]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -87,17 +109,19 @@ export default function OnboardingLoading() {
             ]}
           >
             <LinearGradient
-              colors={['#FFFFFF', '#E4EDE5', 'transparent']}
+              colors={['rgba(255,255,255,0.5)', '#E4EDE5', 'transparent']}
               style={StyleSheet.absoluteFillObject}
             />
           </Animated.View>
           <Animated.View style={[styles.ring, { transform: [{ rotate }] }]} />
-          <View style={styles.bottle}>
-            <View style={styles.bottleInner}>
-              <Ionicons name="leaf" size={32} color={PALETTE.sageDeep} />
-            </View>
-            <View style={styles.bottleNeck} />
-          </View>
+          <Animated.Image
+            source={LOGO}
+            resizeMode="contain"
+            style={[
+              styles.logo,
+              { opacity: fade, transform: [{ scale: logoScale }] },
+            ]}
+          />
         </View>
 
         <View style={styles.copy}>
@@ -177,40 +201,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: PALETTE.sageDeep,
     borderStyle: 'dashed',
-    opacity: 0.5,
+    opacity: 0.35,
   },
-  bottle: {
-    width: 92,
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  bottleNeck: {
-    position: 'absolute',
-    top: -6,
-    width: 32,
-    height: 14,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    backgroundColor: PALETTE.surfaceWarm,
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-  },
-  bottleInner: {
-    width: 92,
-    height: 110,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-    shadowColor: '#1F1F1F',
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
+  logo: { width: 84, height: 84 },
 
   copy: { alignItems: 'center', gap: 6 },
   eyebrow: {

@@ -9,7 +9,11 @@ import { MakeNav } from '@/components/make-nav';
 import { SavingsDashboard } from '@/components/savings-dashboard';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { PRODUCTS, type Product } from '@/constants/products';
+import { useAllRecipes } from '@/constants/recipes-remote';
+import { useAuth } from '@/lib/auth';
 import { recipeIcon as iconFor, RECIPE_ICON_BLEND } from '@/lib/recipe-icons';
+import { useRecentRecipes } from '@/lib/recent-recipes';
+import { useSavedRecipes } from '@/lib/saved-recipes';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -38,7 +42,28 @@ type SavedItem = {
   custom?: boolean;
 };
 
-const SAVED: SavedItem[] = [
+// --- Live → SavedItem adapter ------------------------------------------------
+//
+// `saved_recipes` rows reference recipe IDs. For hero recipes (in PRODUCTS)
+// we wire in the full Product. For AI/user-generated recipes that don't
+// exist in PRODUCTS, we synthesize a minimal Product-shape from the
+// remote recipe row so the same renderer works across both sources.
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return 'Just saved';
+  const ms = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(ms / 86_400_000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  return `${Math.floor(days / 365)} years ago`;
+}
+
+// Fallback hero data so the "empty state" demo still feels alive when the
+// user hasn't saved anything yet.
+const DEMO_FALLBACK: SavedItem[] = [
   { product: PRODUCTS.find((p) => p.id === 'bathroom-cleaner')!, madeCount: 4, lastMade: '2 days ago', totalSavedUsd: 12.80 },
   { product: PRODUCTS.find((p) => p.id === 'kitchen-spray')!, madeCount: 3, lastMade: 'Last week', totalSavedUsd: 11.40 },
   { product: PRODUCTS.find((p) => p.id === 'sugar-scrub')!, madeCount: 2, lastMade: '3 weeks ago', totalSavedUsd: 17.00, premium: true },
@@ -73,7 +98,7 @@ const COLLECTIONS = [
     key: 'self-care',
     name: 'Self Care Sundays',
     count: 6,
-    sub: 'Slow rituals',
+    sub: 'Slow routines',
     accent: '#F1ECE0',
     accentDeep: '#9C7A4F',
     icon: 'sparkles-outline' as const,
@@ -89,23 +114,99 @@ const COLLECTIONS = [
   },
 ];
 
-const CONTINUE_MAKING = SAVED[0];
-
 export default function Saved() {
   const { currency } = useCurrency();
   const [filter, setFilter] = useState<Filter>('All');
+  const { user } = useAuth();
+  const { saved: savedMap } = useSavedRecipes();
+  const allRecipes = useAllRecipes();
+
+  // Build live SavedItem[] from the joined saved_recipes × recipes data.
+  // Recipes that map cleanly to a hero Product use the rich PRODUCTS row;
+  // others (AI / user-generated) use a synthetic minimal Product.
+  const liveSaved = useMemo<SavedItem[]>(() => {
+    const out: SavedItem[] = [];
+    for (const [recipeId, save] of savedMap) {
+      const product =
+        PRODUCTS.find((p) => p.id === recipeId) ??
+        (() => {
+          const recipe = allRecipes.find((r) => r.id === recipeId);
+          if (!recipe) return null;
+          // Synthesize a Product shape so the existing card renderer works.
+          // The 'group' has to be one of cleaning|beauty|home so filters land.
+          const group: Product['group'] =
+            recipe.categoryKey === 'cleaning' || recipe.categoryKey === 'laundry'
+              ? 'cleaning'
+              : recipe.categoryKey === 'beauty-skincare' ||
+                  recipe.categoryKey === 'hair-care'
+                ? 'beauty'
+                : 'home';
+          return {
+            id: recipe.id,
+            title: recipe.title,
+            group,
+            time: recipe.time,
+            difficulty: recipe.difficulty,
+            tags: recipe.tags,
+            blurb: recipe.title,
+            // Placeholder visuals — eventually we render recipeIcon by id.
+            swatch: '#F1ECE0',
+            colorAccent: '#A8B8A0',
+            accent: '#A8B8A0',
+            emoji: '✨',
+            savingsUsd: 0,
+            storeBoughtUsd: 0,
+          } as unknown as Product;
+        })();
+      if (!product) continue;
+      out.push({
+        product,
+        madeCount: save.made_count,
+        lastMade: timeAgo(save.last_made ?? save.saved_at),
+        totalSavedUsd: (product.savingsUsd ?? 0) * Math.max(1, save.made_count),
+        custom: !PRODUCTS.find((p) => p.id === recipeId),
+      });
+    }
+    return out.sort((a, b) => b.madeCount - a.madeCount);
+  }, [savedMap, allRecipes]);
+
+  // Show demo fallback when signed out OR when signed in but no saves yet
+  // (so the screen has visual life). Once they save something real, demo
+  // disappears.
+  const baseList = !user || liveSaved.length === 0 ? DEMO_FALLBACK : liveSaved;
 
   const filtered = useMemo(() => {
-    if (filter === 'All') return SAVED;
-    if (filter === 'Favorites') return SAVED.filter((s) => s.madeCount >= 2);
-    if (filter === 'Custom') return SAVED.filter((s) => s.custom);
-    if (filter === 'Premium') return SAVED.filter((s) => s.premium);
+    if (filter === 'All') return baseList;
+    if (filter === 'Favorites') return baseList.filter((s) => s.madeCount >= 2);
+    if (filter === 'Custom') return baseList.filter((s) => s.custom);
+    if (filter === 'Premium') return baseList.filter((s) => s.premium);
     const groupKey = filter.toLowerCase();
-    return SAVED.filter((s) => s.product.group === groupKey);
-  }, [filter]);
+    return baseList.filter((s) => s.product.group === groupKey);
+  }, [filter, baseList]);
 
-  const recent = [...SAVED].slice(0, 5);
+  const recent = [...baseList].slice(0, 5);
+  // Last-10-viewed list, persisted via AsyncStorage. Falls back to the
+  // saved-fallback list when there's no view history yet.
+  const recentIds = useRecentRecipes();
+  const recentlyViewed = useMemo(() => {
+    if (recentIds.length === 0) return recent;
+    return recentIds
+      .slice(0, 5)
+      .map((id) => {
+        const product = PRODUCTS.find((p) => p.id === id);
+        if (!product) return null;
+        // Reuse the SavedItem shape so the existing card renderer works.
+        return {
+          product,
+          madeCount: 0,
+          lastMade: 'Recently viewed',
+          totalSavedUsd: product.savingsUsd ?? 0,
+        };
+      })
+      .filter((x): x is SavedItem => x !== null);
+  }, [recentIds, recent]);
   const isEmpty = filtered.length === 0;
+  const CONTINUE_MAKING = baseList[0];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -168,7 +269,7 @@ export default function Saved() {
 
         <SectionHeader
           title="Your collections"
-          caption="Group recipes by ritual"
+          caption="Group recipes by routine"
           actionLabel="New folder"
           onAction={() => {}}
         />
@@ -200,8 +301,12 @@ export default function Saved() {
         </View>
 
         <SectionHeader
-          title="Recently saved"
-          caption="Your last 5"
+          title="Recently viewed"
+          caption={
+            recentIds.length > 0
+              ? `Your last ${Math.min(recentIds.length, 5)}`
+              : 'Your last 5'
+          }
           actionLabel="View all"
           onAction={() => setFilter('All')}
         />
@@ -210,7 +315,7 @@ export default function Saved() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recentRow}
         >
-          {recent.map((s) => (
+          {recentlyViewed.map((s) => (
             <Pressable
               key={s.product.id}
               onPress={() => router.push({ pathname: '/result', params: { id: s.product.id } })}

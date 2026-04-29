@@ -6,19 +6,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  textSubtle: '#A8A398',
-  surface: '#FFFFFF',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  textSubtle: '#8A8A8A',
+  surface: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
   sageSoft: '#E4EDE5',
-  cream: '#F7F2E7',
-  creamDeep: '#EFE7D2',
+  cream: 'rgba(255,255,255,0.5)',
+  creamDeep: 'rgba(0,0,0,0.06)',
   gold: '#C7A96B',
 };
 
@@ -28,7 +30,7 @@ const VIBE: Record<number, { eyebrow: string; tagline: string; icon: keyof typeo
   1: { eyebrow: 'Lightning', tagline: 'A splash and pour.', icon: 'flash-outline' },
   5: { eyebrow: 'Quick', tagline: 'Done before the kettle boils.', icon: 'time-outline' },
   10: { eyebrow: 'Easy', tagline: 'A song-length recipe.', icon: 'musical-notes-outline' },
-  15: { eyebrow: 'Crafted', tagline: 'A tea ritual.', icon: 'cafe-outline' },
+  15: { eyebrow: 'Crafted', tagline: 'A tea routine.', icon: 'cafe-outline' },
   20: { eyebrow: 'Indulgent', tagline: 'Slow Sunday energy.', icon: 'sunny-outline' },
   25: { eyebrow: 'Studio', tagline: 'Apothecary mode.', icon: 'flask-outline' },
   30: { eyebrow: 'Maker', tagline: 'Full artisan workshop.', icon: 'leaf-outline' },
@@ -117,9 +119,18 @@ export default function TimePref() {
         <PrimaryButton
           label="See my profile"
           trailingIcon="sparkles"
-          onPress={() => router.push('/onboarding/loading')}
+          onPress={() => {
+            void patchOnboardingAnswers({ routine: { time_minutes: value } });
+            router.push('/onboarding/loading');
+          }}
         />
-        <Pressable hitSlop={8} onPress={() => router.push('/onboarding/loading')}>
+        <Pressable
+          hitSlop={8}
+          onPress={() => {
+            void patchOnboardingAnswers({ routine: { time_minutes: value } });
+            router.push('/onboarding/loading');
+          }}
+        >
           <Text style={styles.skip}>Skip for now</Text>
         </Pressable>
       </View>
@@ -129,7 +140,7 @@ export default function TimePref() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 24, backgroundColor: PALETTE.bg },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -232,7 +243,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     borderWidth: 4,
     borderColor: PALETTE.sageDeep,
     shadowColor: '#1F1F1F',

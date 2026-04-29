@@ -4,12 +4,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 const PALETTE = {
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  surface: '#FFFFFF',
-  surfaceWarm: '#F1ECE0',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  surface: 'rgba(255,255,255,0.5)',
+  surfaceWarm: 'rgba(255,255,255,0.45)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
 };
 
 const TOTAL_STEPS = 8;

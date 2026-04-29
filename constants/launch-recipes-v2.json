@@ -704,7 +704,7 @@
       "id": "drain-refresh-mix",
       "title": "Natural Drain Refresh Mix",
       "category": "Cleaning",
-      "shortDescription": "The Sunday ritual that keeps every drain in the home running clear and odor-free without chemicals.",
+      "shortDescription": "The Sunday routine that keeps every drain in the home running clear and odor-free without chemicals.",
       "ingredients": [
         {
           "name": "Baking soda",
@@ -755,7 +755,7 @@
       "premiumUpgrade": "Add 6 drops peppermint + 4 drops lemon EO to the premix for a cooling spa scent.",
       "luxuryName": "Drain Reviver Effervescence",
       "scentProfile": "Citrus peel + baking soda fizz",
-      "featuredImagePrompt": "A glass jar of white salt-soda premix beside lemon peels at the edge of a porcelain sink, kettle steam in soft focus, sunday-morning ritual mood."
+      "featuredImagePrompt": "A glass jar of white salt-soda premix beside lemon peels at the edge of a porcelain sink, kettle steam in soft focus, sunday-morning routine mood."
     },
     {
       "id": "sneaker-brightener",
@@ -1083,7 +1083,7 @@
       "premiumUpgrade": "Add 3 drops bergamot for a brighter, This Works Deep Sleep–style top note.",
       "luxuryName": "Restorative Pillow Vapor",
       "scentProfile": "Lavender, chamomile, valerian",
-      "featuredImagePrompt": "A small mister on a turned-down pillow at twilight, lavender stalks beside it, dim warm bedside lamp glow, cinematic sleep-ritual mood."
+      "featuredImagePrompt": "A small mister on a turned-down pillow at twilight, lavender stalks beside it, dim warm bedside lamp glow, cinematic sleep-routine mood."
     },
     {
       "id": "focus-workspace-spray",
@@ -1148,7 +1148,7 @@
       "id": "spa-steam-tabs",
       "title": "Bathroom Spa Steam Tabs",
       "category": "Wellness",
-      "shortDescription": "Drop one on the shower floor and turn your morning into a 4-minute steam-room ritual.",
+      "shortDescription": "Drop one on the shower floor and turn your morning into a 4-minute steam-room routine.",
       "ingredients": [
         {
           "name": "Baking soda",
@@ -1828,7 +1828,7 @@
         },
         {
           "id": "signature-welcome-spray",
-          "why": "Bespoke home scent. Premium identity ritual."
+          "why": "Bespoke home scent. Premium identity routine."
         },
         {
           "id": "rosemary-hair-oil",
@@ -1852,7 +1852,7 @@
         },
         {
           "id": "spa-steam-tabs",
-          "why": "Daily ritual, gift-able, high social value."
+          "why": "Daily routine, gift-able, high social value."
         },
         {
           "id": "closet-sachets",

@@ -1,90 +1,126 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
-import { PrimaryButton } from '@/components/primary-button';
+import { tapLight } from '@/lib/haptics';
+import { INTENT_IMAGE_FALLBACK, INTENT_IMAGES } from '@/lib/intent-images';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
-  text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  surface: '#FFFFFF',
-  surfaceWarm: '#F1ECE0',
-  border: '#E8E2D2',
-  sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
-  sageSoft: '#E4EDE5',
+  bg: '#FFFFFF',
+  text: '#1A1A1A',
+  textMuted: '#6F6F6F',
+  surfaceWarm: 'rgba(255,255,255,0.5)',
+  border: '#E8E3D9',
+  sageDeep: '#5F876A',
+  sageSoft: '#E8F0EA',
 };
 
-type Intent = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap };
+const MAX_SELECTION = 3;
 
-const INTENTS: Intent[] = [
-  { key: 'safer-clean', label: 'Safer Cleaning', icon: 'sparkles-outline' },
-  { key: 'skin-care', label: 'Better Skin Care', icon: 'flower-outline' },
-  { key: 'home-scent', label: 'Luxury Home Scents', icon: 'rose-outline' },
-  { key: 'save-money', label: 'Save Money', icon: 'cash-outline' },
-  { key: 'allergy', label: 'Allergy Friendly', icon: 'medkit-outline' },
-  { key: 'eco', label: 'Eco Living', icon: 'leaf-outline' },
-  { key: 'beauty', label: 'DIY Beauty', icon: 'color-palette-outline' },
-  { key: 'wellness', label: 'Wellness Rituals', icon: 'moon-outline' },
+type IntentOption = { key: string; label: string };
+
+const INTENTS: IntentOption[] = [
+  { key: 'safer-cleaning', label: 'Safer Cleaning' },
+  { key: 'better-skin-care', label: 'Better Skin Care' },
+  { key: 'luxury-home-scents', label: 'Luxury Home Scents' },
+  { key: 'save-money', label: 'Save Money' },
+  { key: 'allergy-friendly', label: 'Allergy Friendly' },
+  { key: 'eco-living', label: 'Eco Living' },
+  { key: 'diy-beauty', label: 'DIY Beauty' },
+  { key: 'wellness-routines', label: 'Wellness Routines' },
+  // Power-user / creator intent for Build / Save / Pantry tools.
+  { key: 'create-recipes', label: 'Create & Save Recipes' },
 ];
 
 export default function Intent() {
   const [selected, setSelected] = useState<string[]>([]);
+  const { width: screenWidth } = useWindowDimensions();
+  const columns = screenWidth < 380 ? 2 : 3;
+  const cardBasis = columns === 2 ? '47%' : '30%';
 
-  const toggle = (key: string) =>
-    setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const handleSelect = (key: string) => {
+    tapLight();
+    setSelected((prev) => {
+      if (prev.includes(key)) {
+        return prev.filter((item) => item !== key);
+      }
+
+      if (prev.length < MAX_SELECTION) {
+        return [...prev, key];
+      }
+
+      return prev;
+    });
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <OnboardingHeader step={1} />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 1</Text>
-        <Text style={styles.headline}>What brings you{`\n`}to PureCraft?</Text>
-        <Text style={styles.sub}>Pick anything that sparks. We&apos;ll tune your feed around it.</Text>
+        <Text style={styles.title}>What would you like to create?</Text>
+        <Text style={styles.subtitle}>
+          Pick what interests you most. We&apos;ll personalize everything around it.
+        </Text>
 
         <View style={styles.grid}>
           {INTENTS.map((it) => {
             const isSelected = selected.includes(it.key);
+            const imageSource = INTENT_IMAGES[it.key] ?? INTENT_IMAGE_FALLBACK;
             return (
-              <Pressable
+              <TouchableOpacity
                 key={it.key}
-                onPress={() => toggle(it.key)}
-                style={({ pressed }) => [
-                  styles.card,
-                  isSelected && styles.cardSelected,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
+                activeOpacity={0.92}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={it.label}
+                onPress={() => handleSelect(it.key)}
+                style={[styles.card, { flexBasis: cardBasis }, isSelected && styles.selectedCard]}
               >
-                <View style={[styles.iconWrap, isSelected && styles.iconWrapSelected]}>
-                  <Ionicons
-                    name={it.icon}
-                    size={20}
-                    color={isSelected ? '#FFFFFF' : PALETTE.sageDeep}
-                  />
+                <View style={styles.imageWrapper}>
+                  <Image source={imageSource} style={styles.image} resizeMode="cover" />
                 </View>
-                <Text style={styles.label}>{it.label}</Text>
+                <Text style={styles.label} numberOfLines={2}>
+                  {it.label}
+                </Text>
                 {isSelected ? (
                   <View style={styles.check}>
-                    <Ionicons name="checkmark" size={11} color="#FFFFFF" />
+                    <View style={styles.checkMark} />
                   </View>
                 ) : null}
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton
-          label={selected.length > 0 ? 'Continue' : 'Pick at least one'}
-          trailingIcon={selected.length > 0 ? 'arrow-forward' : undefined}
+        <TouchableOpacity
+          activeOpacity={0.88}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: selected.length === 0 }}
           disabled={selected.length === 0}
-          onPress={() => router.push('/onboarding/avoidances')}
-        />
+          style={[styles.button, selected.length === 0 && styles.buttonDisabled]}
+          onPress={() => {
+            void patchOnboardingAnswers({ intent_categories: selected });
+            router.push('/onboarding/avoidances');
+          }}
+        >
+          <Text style={styles.buttonText}>
+            {selected.length > 0 ? 'Continue' : 'Pick at least one'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -92,7 +128,13 @@ export default function Intent() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  container: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 0,
+    backgroundColor: PALETTE.bg,
+  },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -100,72 +142,92 @@ const styles = StyleSheet.create({
     color: PALETTE.sageDeep,
     textTransform: 'uppercase',
   },
-  headline: {
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: '700',
+  title: {
+    fontSize: 28,
+    fontWeight: '600',
+    letterSpacing: -0.5,
     color: PALETTE.text,
-    letterSpacing: -0.6,
-    marginTop: 8,
-  },
-  sub: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: PALETTE.textMuted,
     marginTop: 10,
-    marginBottom: 28,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: PALETTE.textMuted,
+    lineHeight: 22,
+    marginTop: 6,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    marginTop: 50,
   },
   card: {
-    width: '48%',
-    minHeight: 120,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-    justifyContent: 'flex-start',
-    gap: 14,
+    marginBottom: 20,
+    alignItems: 'center',
     position: 'relative',
   },
-  cardSelected: {
-    backgroundColor: PALETTE.sageSoft,
-    borderColor: PALETTE.sage,
+  selectedCard: {
+    backgroundColor: '#FFFFFF',
   },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: PALETTE.sageSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  imageWrapper: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E6DFD2',
+    backgroundColor: '#F2EDE3',
   },
-  iconWrapSelected: {
-    backgroundColor: PALETTE.sageDeep,
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
-  label: { fontSize: 14, fontWeight: '600', color: PALETTE.text, lineHeight: 18 },
+  label: {
+    marginTop: 12,
+    color: '#2F4F3E',
+    fontSize: 17,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   check: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 20,
-    height: 20,
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
     borderRadius: 999,
     backgroundColor: PALETTE.sageDeep,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkMark: {
+    width: 6,
+    height: 10,
+    borderBottomWidth: 1.6,
+    borderRightWidth: 1.6,
+    borderColor: '#FFFFFF',
+    transform: [{ rotate: '45deg' }, { translateY: -1 }],
+  },
   footer: {
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 18,
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.border,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 0,
     backgroundColor: PALETTE.bg,
+  },
+  button: {
+    backgroundColor: PALETTE.sageDeep,
+    paddingVertical: 18,
+    borderRadius: 30,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.45,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

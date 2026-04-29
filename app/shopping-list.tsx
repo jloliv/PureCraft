@@ -1,13 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct, findRecipe } from '@/constants/products';
+import { extractIngredientName } from '@/constants/smart-swaps';
+import { tapLight } from '@/lib/haptics';
+import { recipeIcon } from '@/lib/recipe-icons';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+
+// Amazon affiliate tag — flip this on by setting EXPO_PUBLIC_AMAZON_TAG in
+// .env once the Amazon Associates account is approved. Until then we ship
+// the button without a tag (still works, just no commission).
+const AMAZON_TAG = process.env.EXPO_PUBLIC_AMAZON_TAG;
 
 export default function ShoppingList() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -28,6 +36,31 @@ export default function ShoppingList() {
 
   const toggle = (name: string) => {
     setChecked((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  // Build the Amazon search URL from the "to buy" list. We strip quantities
+  // and units via extractIngredientName so the search reads as plain
+  // ingredient names ("epsom salt+lavender oil") instead of "2+cups+epsom".
+  // Keeping this memoized is cheap but avoids re-encoding on every press.
+  const amazonUrl = useMemo(() => {
+    const terms = toBuy
+      .map((i) => extractIngredientName(i.name))
+      .filter((s) => s.length > 0)
+      .map((s) => encodeURIComponent(s))
+      .join('+');
+    if (!terms) return null;
+    const tag = AMAZON_TAG ? `&tag=${encodeURIComponent(AMAZON_TAG)}` : '';
+    return `https://www.amazon.com/s?k=${terms}${tag}`;
+  }, [toBuy]);
+
+  const onSearchAmazon = async () => {
+    if (!amazonUrl) return;
+    tapLight();
+    try {
+      await Linking.openURL(amazonUrl);
+    } catch {
+      // Browser/Amazon app missing — silently no-op rather than crash.
+    }
   };
 
   return (
@@ -57,7 +90,12 @@ export default function ShoppingList() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.heroCard, { backgroundColor: product.swatch }]}>
-          <Text style={styles.heroEmoji}>{product.emoji}</Text>
+          <Image
+            source={recipeIcon(product.id)}
+            testID="pc-recipe-icon"
+            style={styles.heroIcon}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.heroEyebrow}>For</Text>
             <Text style={styles.heroTitle}>{recipe.title}</Text>
@@ -144,6 +182,49 @@ export default function ShoppingList() {
           </View>
         </View>
 
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={
+            amazonUrl
+              ? 'Search all ingredients on Amazon'
+              : 'Add items to search'
+          }
+          onPress={onSearchAmazon}
+          disabled={!amazonUrl}
+          style={({ pressed }) => [
+            styles.amazonBtn,
+            !amazonUrl && styles.amazonBtnDisabled,
+            pressed && amazonUrl && { opacity: 0.92, transform: [{ scale: 0.99 }] },
+          ]}
+        >
+          <View style={styles.amazonIcon}>
+            <Ionicons
+              name="search"
+              size={16}
+              color={amazonUrl ? Colors.light.text : Colors.light.textSubtle}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[styles.amazonText, !amazonUrl && { color: Colors.light.textSubtle }]}
+            >
+              {amazonUrl ? 'Search on Amazon' : 'Add items to search'}
+            </Text>
+            <Text style={styles.amazonSub}>
+              {amazonUrl
+                ? `Find all ${toBuy.length} ${toBuy.length === 1 ? 'item' : 'items'} in one tap`
+                : 'No items currently need to be bought'}
+            </Text>
+          </View>
+          {amazonUrl ? (
+            <Ionicons
+              name="open-outline"
+              size={16}
+              color={Colors.light.textMuted}
+            />
+          ) : null}
+        </Pressable>
+
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
 
@@ -209,6 +290,7 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   heroEmoji: { fontSize: 38 },
+  heroIcon: { width: 64, height: 64 },
   heroEyebrow: { ...Type.caption, color: Colors.light.sageDeep, textTransform: 'uppercase' },
   heroTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: 2 },
   heroStat: { alignItems: 'flex-end' },
@@ -292,6 +374,43 @@ const styles = StyleSheet.create({
   },
   savingsTitle: { ...Type.bodyStrong, color: Colors.light.text },
   savingsSub: { ...Type.caption, color: Colors.light.textMuted, marginTop: 2 },
+
+  amazonBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    marginTop: Spacing.md,
+  },
+  amazonBtnDisabled: {
+    backgroundColor: Colors.light.cream,
+    borderColor: Colors.light.creamDeep,
+  },
+  amazonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.light.cream,
+    borderWidth: 1,
+    borderColor: Colors.light.creamDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  amazonText: {
+    ...Type.bodyStrong,
+    color: Colors.light.text,
+    letterSpacing: -0.1,
+  },
+  amazonSub: {
+    ...Type.caption,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
   footer: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.md,

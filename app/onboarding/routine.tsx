@@ -6,15 +6,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  surface: '#FFFFFF',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  surface: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
   sageSoft: '#E4EDE5',
 };
 
@@ -27,7 +29,7 @@ type Style = {
 
 const STYLES: Style[] = [
   { key: 'quick', label: 'Quick & Easy Only', hint: 'Sub-5-minute formulas', icon: 'flash-outline' },
-  { key: 'weekend', label: 'Weekend Projects', hint: 'I love a slow Sunday ritual', icon: 'sunny-outline' },
+  { key: 'weekend', label: 'Weekend Projects', hint: 'I love a slow Sunday routine', icon: 'sunny-outline' },
   { key: 'love-making', label: 'I Enjoy Making Things', hint: 'Send me the artisan recipes', icon: 'color-wand-outline' },
   { key: 'surprise', label: 'Surprise Me', hint: 'Curate based on my profile', icon: 'sparkles-outline' },
   { key: 'minimal', label: 'Minimal Effort', hint: '2-ingredient or fewer wins', icon: 'leaf-outline' },
@@ -91,7 +93,7 @@ export default function Routine() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 24, backgroundColor: PALETTE.bg },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -128,7 +130,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: PALETTE.border,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
   },

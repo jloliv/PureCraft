@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+import { events } from '@/lib/analytics';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,34 +12,61 @@ import { formatMoney, useCurrency } from '@/constants/currency';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
-  { icon: 'infinite-outline', title: 'Unlimited formulas', sub: 'Generate as many recipes as you need' },
-  { icon: 'people-outline', title: 'Family-safe profiles', sub: 'Save preferences for every person & pet' },
-  { icon: 'cart-outline', title: 'Smart shopping planner', sub: 'Auto-batch ingredients across recipes' },
-  { icon: 'lock-open-outline', title: 'Premium recipes', sub: 'Whipped butters, candles & artisan blends' },
-  { icon: 'cloud-download-outline', title: 'Print & export', sub: 'Beautiful PDFs and pantry lists' },
-  { icon: 'sparkles-outline', title: 'Early access', sub: 'New formulas before everyone else' },
+  { icon: 'lock-open-outline', title: '120+ premium recipes', sub: 'Whipped butters, candles, scrubs & artisan blends' },
+  { icon: 'leaf-outline', title: 'Seasonal recipe packs', sub: 'Spring reset, summer skin, holiday gifting' },
+  { icon: 'medkit-outline', title: 'Advanced allergy filtering', sub: 'Multi-allergen profiles auto-substitute every recipe' },
+  { icon: 'people-outline', title: 'Family household profiles', sub: 'Save preferences for every person & pet' },
+  { icon: 'restaurant-outline', title: 'Unlimited pantry matching', sub: 'Recipes from what you already have' },
+  { icon: 'cart-outline', title: 'Auto shopping lists', sub: 'Batches ingredients across selected recipes' },
+  { icon: 'flower-outline', title: 'Premium beauty recipes', sub: 'Spa-grade body butters, masks & scrubs' },
+  { icon: 'sparkles-outline', title: 'Deep cleaning bundles', sub: 'Bathroom, kitchen, mold rescue, pet odors' },
+  { icon: 'folder-open-outline', title: 'Saved favorites folders', sub: 'Organize recipes into routines + collections' },
+  { icon: 'flask-outline', title: 'AI custom recipe builder', sub: 'Generate one-of-one formulas from your prompts' },
+];
+
+// Locked premium recipes preview — visual proof of what they're unlocking.
+// Render with a blur/lock overlay so users want to tap "Start Free Trial".
+const LOCKED_RECIPES: { title: string; tag: string; accent: string }[] = [
+  { title: 'Luxury Glass Cleaner', tag: 'Cleaning', accent: '#E4EDE5' },
+  { title: 'Baby Nursery Sanitizer', tag: 'Baby-safe', accent: '#F1ECE0' },
+  { title: 'Sensitive Skin Body Butter', tag: 'Beauty', accent: '#F7F2E7' },
+  { title: 'Pet Couch Deodorizer', tag: 'Pet-safe', accent: '#EFE7D2' },
+  { title: 'Mold Rescue Spray', tag: 'Heavy duty', accent: '#E4EDE5' },
+  { title: 'Spa Linen Mist', tag: 'Bedroom', accent: '#F7F2E7' },
 ];
 
 const PLANS = [
   {
     id: 'monthly' as const,
     label: 'Monthly',
-    priceUsd: 5.99,
+    priceUsd: 4.99,
     cadence: '/ mo',
     badge: undefined as string | undefined,
   },
   {
     id: 'yearly' as const,
     label: 'Yearly',
-    priceUsd: 39,
+    priceUsd: 29.99,
     cadence: '/ yr',
-    badge: 'Best value' as string | undefined,
+    badge: 'Best Value' as string | undefined,
+  },
+  {
+    id: 'lifetime' as const,
+    label: 'Lifetime',
+    priceUsd: 49,
+    cadence: 'once',
+    badge: 'Founding Member Offer' as string | undefined,
   },
 ];
 
 export default function Premium() {
   const { currency } = useCurrency();
   const [plan, setPlan] = useState<(typeof PLANS)[number]['id']>('yearly');
+
+  // Paywall view is the most important conversion event — fire on mount.
+  useEffect(() => {
+    events.paywallViewed();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -86,6 +115,24 @@ export default function Premium() {
           </View>
         </LinearGradient>
 
+        <Text style={styles.sectionTitle}>Premium recipes preview</Text>
+        <Text style={styles.sectionSub}>
+          Tap into 120+ formulas you can&apos;t make yet. Here&apos;s a peek.
+        </Text>
+        <View style={styles.lockedGrid}>
+          {LOCKED_RECIPES.map((r) => (
+            <View key={r.title} style={[styles.lockedCard, { backgroundColor: r.accent }]}>
+              <View style={styles.lockedSwatch}>
+                <Ionicons name="lock-closed" size={16} color={Colors.light.sageDeep} />
+              </View>
+              <Text style={styles.lockedTitle} numberOfLines={2}>
+                {r.title}
+              </Text>
+              <Text style={styles.lockedTag}>{r.tag}</Text>
+            </View>
+          ))}
+        </View>
+
         <Text style={styles.sectionTitle}>What you unlock</Text>
         <View style={styles.featureList}>
           {FEATURES.map((f) => (
@@ -128,12 +175,19 @@ export default function Premium() {
                   <Text style={styles.planLabel}>{p.label}</Text>
                   <Text style={styles.planSub}>
                     {p.id === 'yearly'
-                      ? `Just ${formatMoney(p.priceUsd / 12, { currency })} / mo · save 46%`
-                      : 'Cancel anytime'}
+                      ? `Just ${formatMoney(p.priceUsd / 12, { currency })} / mo · save 50%`
+                      : p.id === 'lifetime'
+                        ? 'Pay once, keep forever'
+                        : 'Cancel anytime'}
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.planPrice}>{formatMoney(p.priceUsd, { currency, decimals: p.id === 'yearly' ? 0 : 2 })}</Text>
+                  <Text style={styles.planPrice}>
+                    {formatMoney(p.priceUsd, {
+                      currency,
+                      decimals: p.id === 'lifetime' ? 0 : 2,
+                    })}
+                  </Text>
                   <Text style={styles.planCadence}>{p.cadence}</Text>
                 </View>
               </Pressable>
@@ -153,14 +207,21 @@ export default function Premium() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label="Try free for 7 days"
+          label={plan === 'lifetime' ? 'Become a Founding Member' : 'Start Free Trial'}
           trailingIcon="arrow-forward"
-          onPress={() => router.back()}
+          onPress={() => {
+            // TODO: hook to RevenueCat purchase flow once paywall product
+            // IDs are configured. For now, capture the intent and show a
+            // success affordance via the back transition.
+            router.back();
+          }}
         />
         <Text style={styles.fineprint}>
-          Then {plan === 'yearly'
-            ? `${formatMoney(39, { currency, decimals: 0 })} / yr`
-            : `${formatMoney(5.99, { currency })} / mo`} · cancel anytime
+          {plan === 'lifetime'
+            ? `${formatMoney(49, { currency, decimals: 0 })} once · no recurring billing`
+            : plan === 'yearly'
+              ? `7 days free · then ${formatMoney(29.99, { currency })} / yr · cancel anytime`
+              : `7 days free · then ${formatMoney(4.99, { currency })} / mo · cancel anytime`}
         </Text>
       </View>
     </SafeAreaView>
@@ -223,7 +284,35 @@ const styles = StyleSheet.create({
   heroStatValue: { ...Type.title, color: '#FFFFFF' },
   heroStatLabel: { ...Type.caption, color: '#FFFFFFC0', marginTop: 2 },
   heroStatDivider: { width: 1, backgroundColor: '#FFFFFF35', marginHorizontal: Spacing.md },
-  sectionTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: Spacing.xxl, marginBottom: Spacing.lg },
+  sectionTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: Spacing.xxl, marginBottom: Spacing.sm },
+  sectionSub: { ...Type.caption, color: Colors.light.textMuted, marginBottom: Spacing.lg },
+
+  lockedGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: Spacing.sm,
+  },
+  lockedCard: {
+    width: '31.5%',
+    flexGrow: 1,
+    minHeight: 110,
+    borderRadius: Radius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    gap: 6,
+  },
+  lockedSwatch: {
+    width: 32,
+    height: 32,
+    borderRadius: Radius.pill,
+    backgroundColor: '#FFFFFFCC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockedTitle: { ...Type.bodyStrong, color: Colors.light.text, fontSize: 12.5, lineHeight: 16, marginTop: 6 },
+  lockedTag: { ...Type.caption, color: Colors.light.textMuted, fontSize: 10.5 },
   featureList: {
     backgroundColor: Colors.light.surface,
     borderRadius: Radius.lg,

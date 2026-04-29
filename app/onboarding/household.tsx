@@ -1,36 +1,89 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  surface: '#FFFFFF',
-  surfaceWarm: '#F1ECE0',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  surface: 'rgba(255,255,255,0.5)',
+  surfaceWarm: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
   sageSoft: '#E4EDE5',
-  cream: '#F7F2E7',
-  creamDeep: '#EFE7D2',
+  cream: 'rgba(255,255,255,0.5)',
+  creamDeep: 'rgba(0,0,0,0.06)',
 };
 
-type Member = { key: string; label: string; hint: string; emoji: string };
+type Member = {
+  key: string;
+  label: string;
+  hint: string;
+  icon: ImageSourcePropType;
+};
 
+// No dedicated babies asset yet — fall back to the young-children icon so the
+// littlest tier still reads as a child. Swap in a custom
+// `user-babies-icon.png` if/when art lands.
 const MEMBERS: Member[] = [
-  { key: 'baby', label: 'Babies', hint: '0 – 2', emoji: '👶' },
-  { key: 'young', label: 'Young Children', hint: '3 – 7', emoji: '🧒' },
-  { key: 'older', label: 'Older Children', hint: '8 – 12', emoji: '🎒' },
-  { key: 'teens', label: 'Teens', hint: '13 – 17', emoji: '🧑' },
-  { key: 'pets', label: 'Pets', hint: 'Cats, dogs & more', emoji: '🐾' },
-  { key: 'adults', label: 'Adults Only', hint: 'No little ones', emoji: '🫖' },
-  { key: 'elderly', label: 'Elderly Family', hint: 'Sensitive support', emoji: '🌷' },
+  {
+    key: 'baby',
+    label: 'Babies',
+    hint: '0 – 2',
+    icon: require('../../assets/images/user-youngChildren-icon.png'),
+  },
+  {
+    key: 'young',
+    label: 'Young Children',
+    hint: '3 – 7',
+    icon: require('../../assets/images/user-youngChildren-icon.png'),
+  },
+  {
+    key: 'older',
+    label: 'Older Children',
+    hint: '8 – 12',
+    icon: require('../../assets/images/user-olderChildren-icon.png'),
+  },
+  {
+    key: 'teens',
+    label: 'Teens',
+    hint: '13 – 17',
+    icon: require('../../assets/images/user-teens-icon.png'),
+  },
+  {
+    key: 'pets',
+    label: 'Pets',
+    hint: 'Cats, dogs & more',
+    icon: require('../../assets/images/user-pets-icon.png'),
+  },
+  {
+    key: 'adults',
+    label: 'Adults Only',
+    hint: 'No little ones',
+    icon: require('../../assets/images/user-adultOnly-icon.png'),
+  },
+  {
+    key: 'elderly',
+    label: 'Elderly Family',
+    hint: 'Sensitive support',
+    icon: require('../../assets/images/user-elderly-icon.png'),
+  },
 ];
 
 export default function Household() {
@@ -69,10 +122,12 @@ export default function Household() {
                   pressed && { transform: [{ scale: 0.98 }] },
                 ]}
               >
-                <View style={[styles.emojiWrap, isSelected && styles.emojiWrapSelected]}>
-                  <Text style={styles.emoji}>{m.emoji}</Text>
+                <View style={[styles.iconWrap, isSelected && styles.iconWrapSelected]}>
+                  <Image source={m.icon} style={styles.icon} resizeMode="contain" />
                 </View>
-                <Text style={styles.label}>{m.label}</Text>
+                <Text style={styles.label} numberOfLines={2}>
+                  {m.label}
+                </Text>
                 <Text style={styles.hint}>{m.hint}</Text>
                 {isSelected ? (
                   <View style={styles.check}>
@@ -89,9 +144,18 @@ export default function Household() {
         <PrimaryButton
           label="Continue"
           trailingIcon="arrow-forward"
-          onPress={() => router.push('/onboarding/priorities')}
+          onPress={() => {
+            void patchOnboardingAnswers({ household: selected });
+            router.push('/onboarding/priorities');
+          }}
         />
-        <Pressable hitSlop={8} onPress={() => router.push('/onboarding/priorities')}>
+        <Pressable
+          hitSlop={8}
+          onPress={() => {
+            void patchOnboardingAnswers({ household: selected });
+            router.push('/onboarding/priorities');
+          }}
+        >
           <Text style={styles.skip}>Skip for now</Text>
         </Pressable>
       </View>
@@ -101,7 +165,7 @@ export default function Household() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 24, backgroundColor: PALETTE.bg },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -143,18 +207,18 @@ const styles = StyleSheet.create({
     backgroundColor: PALETTE.sageSoft,
     borderColor: PALETTE.sage,
   },
-  emojiWrap: {
+  iconWrap: {
     width: 44,
     height: 44,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     borderWidth: 1,
     borderColor: PALETTE.border,
   },
-  emojiWrapSelected: { backgroundColor: '#FFFFFF', borderColor: PALETTE.sage },
-  emoji: { fontSize: 22 },
+  iconWrapSelected: { backgroundColor: 'rgba(255,255,255,0.5)', borderColor: PALETTE.sage },
+  icon: { width: 30, height: 30 },
   label: {
     fontSize: 13,
     fontWeight: '700',

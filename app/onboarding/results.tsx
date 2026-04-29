@@ -2,24 +2,33 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { getRecommendedRecipes, type Recipe } from '@/constants/recipes';
+import { useAllRecipes } from '@/constants/recipes-remote';
+import { events } from '@/lib/analytics';
+import { useAuth } from '@/lib/auth';
+import { useOnboardingAnswers } from '@/lib/onboarding-answers';
+import { setOnboardingComplete } from '@/lib/onboarding-storage';
+import { completeOnboarding, useProfile } from '@/lib/profile';
+import { recipeIcon } from '@/lib/recipe-icons';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  textSubtle: '#A8A398',
-  surface: '#FFFFFF',
-  surfaceWarm: '#F1ECE0',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  textSubtle: '#8A8A8A',
+  surface: 'rgba(255,255,255,0.5)',
+  surfaceWarm: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
   sageDeep: '#7E8F75',
   sageSoft: '#E4EDE5',
-  cream: '#F7F2E7',
-  creamDeep: '#EFE7D2',
+  cream: 'rgba(255,255,255,0.5)',
+  creamDeep: 'rgba(0,0,0,0.06)',
   gold: '#C7A96B',
   goldDeep: '#A98A4D',
 };
@@ -31,15 +40,54 @@ const PRIORITIES_FOR_YOU = [
   { icon: 'time-outline' as const, title: 'Quick budget recipes', body: '10 min average · pantry-priced.' },
 ];
 
-const NEXT_UP = [
-  { emoji: '🛁', title: 'Gentle Bathroom Spray', tag: 'Family-safe · 4 min' },
-  { emoji: '🌿', title: 'Lavender Linen Mist', tag: 'Calming · 5 min' },
-  { emoji: '🍯', title: 'Honey Sugar Scrub', tag: 'Beauty ritual · 6 min' },
-];
+// Fallback when the user hasn't filled out onboarding (e.g. they hit Skip on
+// every step) so the screen still has *something* to show. Real users see
+// their actual picks via useProfile + useOnboardingAnswers below.
+const FALLBACK_PREFS = {
+  intentCategoryKeys: ['cleaning', 'home-air-freshening', 'beauty-skincare'] as const,
+  household: ['adults'],
+  avoidances: [] as string[],
+};
 
 export default function Results() {
   const fade = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(20)).current;
+  const allRecipes = useAllRecipes();
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const localAnswers = useOnboardingAnswers();
+
+  // Source of truth: profile (when signed in) > local buffer (always present
+  // during onboarding) > fallback hardcoded prefs.
+  const intentCategoryKeys =
+    profile?.intent_categories?.length
+      ? profile.intent_categories
+      : localAnswers.intent_categories?.length
+        ? localAnswers.intent_categories
+        : [...FALLBACK_PREFS.intentCategoryKeys];
+  const household =
+    profile?.household?.length
+      ? profile.household
+      : localAnswers.household?.length
+        ? localAnswers.household
+        : FALLBACK_PREFS.household;
+  const avoidances =
+    profile?.avoidances?.length
+      ? profile.avoidances
+      : localAnswers.avoidances ?? FALLBACK_PREFS.avoidances;
+
+  const nextUp: Recipe[] = getRecommendedRecipes(
+    {
+      // The DB enum types `intent_categories` as string[] at the wire level
+      // (it's JSONB). The recommendation engine narrows to the literal union
+      // internally, so this cast is safe for any value originating from the
+      // onboarding screens.
+      intentCategoryKeys: intentCategoryKeys as never,
+      household,
+      avoidances,
+    },
+    allRecipes,
+  ).slice(0, 3);
 
   useEffect(() => {
     Animated.parallel([
@@ -53,7 +101,7 @@ export default function Results() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fade, transform: [{ translateY: lift }] }}>
           <LinearGradient
-            colors={['#F1ECE0', '#F7F2E7', '#E4EDE5']}
+            colors={[PALETTE.bg, PALETTE.bg, PALETTE.bg]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
@@ -65,7 +113,7 @@ export default function Results() {
             <Text style={styles.heroEyebrow}>Welcome to your</Text>
             <Text style={styles.heroTitle}>Custom PureCraft{`\n`}Experience</Text>
             <Text style={styles.heroSub}>
-              Every recipe, ingredient, and ritual will now be tuned to you.
+              Every recipe, ingredient, and routine will now be tuned to you.
             </Text>
           </LinearGradient>
 
@@ -96,18 +144,34 @@ export default function Results() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.cardRow}
           >
-            {NEXT_UP.map((n) => (
-              <View key={n.title} style={styles.nextCard}>
+            {nextUp.map((n) => (
+              <View key={n.id} style={styles.nextCard}>
                 <View style={styles.nextSwatch}>
-                  <Text style={styles.nextEmoji}>{n.emoji}</Text>
+                  <Image
+                    source={recipeIcon(n.id, n.categoryKey)}
+                    testID="pc-recipe-icon"
+                    style={styles.nextIcon}
+                    resizeMode="contain"
+                  />
                 </View>
                 <Text style={styles.nextTitle} numberOfLines={2}>{n.title}</Text>
-                <Text style={styles.nextTag}>{n.tag}</Text>
+                <Text style={styles.nextTag}>
+                  {n.safeForKids ? 'Family-safe · ' : ''}
+                  {n.time}
+                </Text>
               </View>
             ))}
           </ScrollView>
 
-          <View style={styles.upgrade}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open PureCraft+ membership"
+            onPress={() => router.push('/premium')}
+            style={({ pressed }) => [
+              styles.upgrade,
+              pressed && { transform: [{ scale: 0.99 }], opacity: 0.96 },
+            ]}
+          >
             <View style={styles.upgradeRow}>
               <View style={styles.upgradeBadge}>
                 <Ionicons name="sparkles" size={12} color={PALETTE.goldDeep} />
@@ -119,7 +183,11 @@ export default function Results() {
             <Text style={styles.upgradeSub}>
               Allergy-aware filters, family profiles, smart shopping planner.
             </Text>
-          </View>
+            <View style={styles.upgradeCta}>
+              <Text style={styles.upgradeCtaText}>See what&apos;s inside</Text>
+              <Ionicons name="arrow-forward" size={13} color={PALETTE.goldDeep} />
+            </View>
+          </Pressable>
         </Animated.View>
 
         <View style={{ height: 24 }} />
@@ -127,9 +195,16 @@ export default function Results() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label="Enter PureCraft"
+          label="Start Crafting"
           trailingIcon="arrow-forward"
-          onPress={() => router.replace('/')}
+          onPress={() => {
+            setOnboardingComplete(true);
+            events.onboardingFinished();
+            // If signed in, mark profile complete server-side. If not,
+            // answers stay in local buffer and flush on first sign-in.
+            if (user) void completeOnboarding();
+            router.replace('/home');
+          }}
         />
       </View>
     </SafeAreaView>
@@ -138,7 +213,7 @@ export default function Results() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 16 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 16, backgroundColor: PALETTE.bg },
 
   heroCard: {
     marginTop: 12,
@@ -158,7 +233,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: '#FFFFFFCC',
+    backgroundColor: 'rgba(255,255,255,0.5)',
   },
   heroBadgeText: {
     fontSize: 11,
@@ -244,8 +319,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: PALETTE.border,
+    overflow: 'hidden',
   },
   nextEmoji: { fontSize: 40 },
+  nextIcon: { width: '78%', height: '78%' },
   nextTitle: { fontSize: 13.5, fontWeight: '700', color: PALETTE.text, lineHeight: 17 },
   nextTag: { fontSize: 11.5, color: PALETTE.textMuted },
 
@@ -270,7 +347,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255,255,255,0.5)',
     borderWidth: 1,
     borderColor: PALETTE.creamDeep,
   },
@@ -284,6 +361,25 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   upgradeSub: { fontSize: 12.5, color: PALETTE.textMuted, lineHeight: 17, marginTop: 4 },
+  upgradeCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    borderWidth: 1,
+    borderColor: PALETTE.creamDeep,
+  },
+  upgradeCtaText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: PALETTE.goldDeep,
+    letterSpacing: 0.2,
+  },
 
   footer: {
     paddingHorizontal: 22,

@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+supabase/.temp/
 
 # Native
 .kotlin/
@@ -31,6 +32,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -44,6 +46,7 @@ app-example
 
 # Claude Code personal settings (shared launch.json stays committed)
 .claude/settings.local.json
+.claude/worktrees/
 
 # Static demo assets (kept out of app bundle; large)
 forge-hq/

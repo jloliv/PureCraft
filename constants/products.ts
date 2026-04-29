@@ -15,16 +15,17 @@ export type Product = {
 };
 
 export const PRODUCTS: Product[] = [
-  { id: 'bathroom-cleaner', title: 'Bathroom Cleaner', group: 'cleaning', emoji: '🛁', swatch: '#E4EDE5', accent: '#5C7F6B', time: '4 min', savingsUsd: 3.20, storeBoughtUsd: 5.99, tags: ['Baby-safe', 'Pet-safe'], blurb: 'A gentle daily-use spray that lifts soap scum without harsh fumes.' },
-  { id: 'glass-cleaner', title: 'Glass Cleaner', group: 'cleaning', emoji: '🪟', swatch: '#EAF1F4', accent: '#4F7186', time: '3 min', savingsUsd: 2.40, storeBoughtUsd: 4.49, tags: ['Streak-free'], blurb: 'Crystal-clear windows and mirrors with no streaks or chemical haze.' },
-  { id: 'kitchen-spray', title: 'Kitchen Spray', group: 'cleaning', emoji: '🍋', swatch: '#F7F2E7', accent: '#9C7A4F', time: '4 min', savingsUsd: 3.80, storeBoughtUsd: 6.49, tags: ['Citrus'], blurb: 'A bright citrus degreaser that cuts through everyday kitchen grime.' },
-  { id: 'floor-cleaner', title: 'Floor Cleaner', group: 'cleaning', emoji: '🧺', swatch: '#F2EFE7', accent: '#6B7872', time: '5 min', savingsUsd: 4.10, storeBoughtUsd: 7.20, tags: ['Pet-safe'], blurb: 'Pet-friendly all-floor cleaner that leaves a soft natural finish.' },
-  { id: 'laundry-booster', title: 'Laundry Booster', group: 'cleaning', emoji: '🧼', swatch: '#EFE7D2', accent: '#7C5C2E', time: '2 min', savingsUsd: 2.80, storeBoughtUsd: 5.10, tags: ['Fragrance-free'], blurb: 'Brightens whites and softens fabrics — no synthetic fragrance.' },
-  { id: 'room-spray', title: 'Room Spray', group: 'cleaning', emoji: '🌬️', swatch: '#E8E5F0', accent: '#6F5FA3', time: '3 min', savingsUsd: 5.20, storeBoughtUsd: 8.99, tags: ['Calming'], blurb: 'A botanical mist that resets a room in seconds — calm, never cloying.' },
-  { id: 'sugar-scrub', title: 'Sugar Scrub', group: 'beauty', emoji: '🍯', swatch: '#F7E7DC', accent: '#B86F44', time: '6 min', savingsUsd: 8.50, storeBoughtUsd: 14.00, tags: ['Glow'], blurb: 'A buttery sugar polish that softens skin and smells like dessert.' },
-  { id: 'body-butter', title: 'Body Butter', group: 'beauty', emoji: '🧴', swatch: '#F4E9DA', accent: '#A2773A', time: '8 min', savingsUsd: 11.00, storeBoughtUsd: 18.00, tags: ['Whipped'], blurb: 'Whipped shea & cocoa butter that melts into thirsty skin.' },
-  { id: 'candle', title: 'Soy Candle', group: 'home', emoji: '🕯️', swatch: '#F2EAD8', accent: '#8B6A2F', time: '12 min', savingsUsd: 14.00, storeBoughtUsd: 24.00, tags: ['Cozy'], blurb: 'Hand-poured soy with cotton wick — slow, even, all-evening burn.' },
-  { id: 'linen-spray', title: 'Linen Mist', group: 'home', emoji: '🌿', swatch: '#E4EDE5', accent: '#5C7F6B', time: '4 min', savingsUsd: 5.10, storeBoughtUsd: 9.50, tags: ['Lavender'], blurb: 'Lavender + chamomile mist — sleep-friendly and grandma-approved.' },
+  { id: 'bathroom-cleaner', title: 'Bathroom Cleaner', group: 'cleaning', emoji: '🛁', swatch: '#E8EFE9', accent: '#5C7F6B', time: '4 min', savingsUsd: 3.20, storeBoughtUsd: 5.99, tags: ['Baby-safe', 'Pet-safe'], blurb: 'A gentle daily-use spray that lifts soap scum without harsh fumes.' },
+  { id: 'glass-cleaner', title: 'Glass Cleaner', group: 'cleaning', emoji: '🪟', swatch: '#EAF2F8', accent: '#4F7186', time: '3 min', savingsUsd: 2.40, storeBoughtUsd: 4.49, tags: ['Streak-free'], blurb: 'Crystal-clear windows and mirrors with no streaks or chemical haze.' },
+  { id: 'kitchen-spray', title: 'Kitchen Spray', group: 'cleaning', emoji: '🍋', swatch: '#F7F0DC', accent: '#9C7A4F', time: '4 min', savingsUsd: 3.80, storeBoughtUsd: 6.49, tags: ['Citrus'], blurb: 'A bright citrus degreaser that cuts through everyday kitchen grime.' },
+  { id: 'floor-cleaner', title: 'Floor Cleaner', group: 'cleaning', emoji: '🧺', swatch: '#F2E9D7', accent: '#6B7872', time: '5 min', savingsUsd: 4.10, storeBoughtUsd: 7.20, tags: ['Pet-safe'], blurb: 'Pet-friendly all-floor cleaner that leaves a soft natural finish.' },
+  { id: 'laundry-booster', title: 'Laundry Booster', group: 'cleaning', emoji: '🧼', swatch: '#E8EFF2', accent: '#7C5C2E', time: '2 min', savingsUsd: 2.80, storeBoughtUsd: 5.10, tags: ['Fragrance-free'], blurb: 'Brightens whites and softens fabrics — no synthetic fragrance.' },
+  { id: 'room-spray', title: 'Room Spray', group: 'cleaning', emoji: '🌬️', swatch: '#ECE7F2', accent: '#6F5FA3', time: '3 min', savingsUsd: 5.20, storeBoughtUsd: 8.99, tags: ['Calming'], blurb: 'A botanical mist that resets a room in seconds — calm, never cloying.' },
+  { id: 'sugar-scrub', title: 'Sugar Scrub', group: 'beauty', emoji: '🍯', swatch: '#F4E2D5', accent: '#B86F44', time: '6 min', savingsUsd: 8.50, storeBoughtUsd: 14.00, tags: ['Glow'], blurb: 'A buttery sugar polish that softens skin and smells like dessert.' },
+  { id: 'citrus-glow-scrub', title: 'Citrus Glow Scrub', group: 'beauty', emoji: '🍊', swatch: '#FBEBD3', accent: '#C97A2D', time: '5 min', savingsUsd: 11.00, storeBoughtUsd: 17.00, tags: ['Brightening', 'Citrus'], blurb: 'Brightening and uplifting with lemon and orange.' },
+  { id: 'body-butter', title: 'Body Butter', group: 'beauty', emoji: '🧴', swatch: '#F2E5D2', accent: '#A2773A', time: '8 min', savingsUsd: 11.00, storeBoughtUsd: 18.00, tags: ['Whipped'], blurb: 'Whipped shea & cocoa butter that melts into thirsty skin.' },
+  { id: 'candle', title: 'Soy Candle', group: 'home', emoji: '🕯️', swatch: '#F4EAD5', accent: '#8B6A2F', time: '12 min', savingsUsd: 14.00, storeBoughtUsd: 24.00, tags: ['Cozy'], blurb: 'Hand-poured soy with cotton wick — slow, even, all-evening burn.' },
+  { id: 'linen-spray', title: 'Linen Mist', group: 'home', emoji: '🌿', swatch: '#ECE7F2', accent: '#5C7F6B', time: '4 min', savingsUsd: 5.10, storeBoughtUsd: 9.50, tags: ['Lavender'], blurb: 'Lavender + chamomile mist — sleep-friendly and grandma-approved.' },
 ];
 
 export const PRODUCT_GROUPS: { key: ProductGroup; label: string; caption: string }[] = [
@@ -258,6 +259,38 @@ export const RECIPES: Record<string, Recipe> = {
     ],
   },
 
+  'citrus-glow-scrub': {
+    productId: 'citrus-glow-scrub',
+    title: 'Citrus Glow Scrub',
+    blurb: 'Brightening and uplifting with lemon and orange.',
+    ingredients: [
+      { name: 'Granulated sugar', amount: '1 cup', haveIt: true, storePriceUsd: 0.40 },
+      { name: 'Coconut oil (melted)', amount: '½ cup', storePriceUsd: 1.80 },
+      { name: 'Lemon zest', amount: '1 tbsp', haveIt: true, storePriceUsd: 0.30 },
+      { name: 'Orange zest', amount: '1 tbsp', haveIt: true, storePriceUsd: 0.30 },
+      { name: 'Lemon essential oil', amount: '10–15 drops (optional)', storePriceUsd: 0.80 },
+      { name: 'Orange essential oil', amount: '5–10 drops (optional)', storePriceUsd: 0.70 },
+    ],
+    steps: [
+      'In a bowl, mix sugar and coconut oil until fully combined.',
+      'Add lemon and orange zest.',
+      'Stir in essential oils if using.',
+      'Mix until the texture is soft and scoopable.',
+      'Transfer into a clean glass jar.',
+    ],
+    warnings: [
+      'Citrus oils increase sun sensitivity — apply at night, or rinse and wait before sun exposure.',
+      'Floors and tubs get slippery — rinse and wipe after use.',
+      'Patch-test on the inner forearm before full-body use.',
+      'Avoid on broken or sunburned skin.',
+    ],
+    substitutions: [
+      { swap: 'Brown sugar', for: 'Granulated sugar' },
+      { swap: 'Sweet almond oil', for: 'Coconut oil' },
+      { swap: 'Lime zest', for: 'Lemon zest' },
+    ],
+  },
+
   'body-butter': {
     productId: 'body-butter',
     title: 'Whipped Shea Body Butter',
@@ -349,4 +382,73 @@ export const RECIPES: Record<string, Recipe> = {
 
 export function findRecipe(productId: string | undefined): Recipe {
   return RECIPES[productId ?? ''] ?? RECIPES['bathroom-cleaner'];
+}
+
+// =============================================================================
+// Bridge: every v3 launch recipe is also exposed as a Product + Recipe so the
+// existing detail screens (preferences, result, shopping-list, savings) work
+// the moment a v3 ID is routed in. Done at module load to avoid circular
+// imports — products.ts imports recipes.ts (one direction).
+// =============================================================================
+
+import { ALL_RECIPES, recipeSavingsUsd } from './recipes';
+
+const SWATCH_BY_CATEGORY: Record<string, { swatch: string; accent: string; group: ProductGroup; emoji: string }> = {
+  cleaning: { swatch: '#E8EFE9', accent: '#5C7F6B', group: 'cleaning', emoji: '🧴' },
+  laundry: { swatch: '#E8EFF2', accent: '#7C5C2E', group: 'cleaning', emoji: '🧺' },
+  'beauty-skincare': { swatch: '#F4E2D5', accent: '#B86F44', group: 'beauty', emoji: '✨' },
+  'hair-care': { swatch: '#F2E5D2', accent: '#A2773A', group: 'beauty', emoji: '💆' },
+  'baby-family-safe': { swatch: '#E8EFE9', accent: '#5C7F6B', group: 'cleaning', emoji: '👶' },
+  'home-air-freshening': { swatch: '#ECE7F2', accent: '#6F5FA3', group: 'home', emoji: '🌿' },
+  'pet-safe': { swatch: '#F4EAD5', accent: '#8B6A2F', group: 'home', emoji: '🐾' },
+  'garden-outdoor': { swatch: '#F2E9D7', accent: '#6B7872', group: 'home', emoji: '🌱' },
+  'seasonal-holiday': { swatch: '#F4EAD5', accent: '#8B6A2F', group: 'home', emoji: '🎁' },
+  'emergency-budget-hacks': { swatch: '#F7F0DC', accent: '#9C7A4F', group: 'cleaning', emoji: '💡' },
+};
+
+const V3_PRODUCT_IDS = new Set<string>();
+
+for (const r of ALL_RECIPES) {
+  // Skip if a hand-curated product already owns this id (none of the 10 use
+  // numeric ids so this is a safety net for the future).
+  if (PRODUCTS.some((p) => p.id === r.id)) continue;
+
+  const skin = SWATCH_BY_CATEGORY[r.categoryKey] ?? SWATCH_BY_CATEGORY.cleaning;
+  const tags = [...r.tags];
+  if (r.safeForKids && !tags.includes('Family-safe')) tags.unshift('Family-safe');
+
+  const product: Product = {
+    id: r.id,
+    title: r.title,
+    group: skin.group,
+    emoji: skin.emoji,
+    swatch: skin.swatch,
+    accent: skin.accent,
+    time: r.time,
+    savingsUsd: recipeSavingsUsd(r),
+    storeBoughtUsd: 0,
+    tags,
+    blurb: r.instructions[0] ?? '',
+  };
+  PRODUCTS.push(product);
+  V3_PRODUCT_IDS.add(r.id);
+
+  RECIPES[r.id] = {
+    productId: r.id,
+    title: r.title,
+    blurb: r.instructions[0] ?? '',
+    ingredients: r.ingredients.map((i) => ({ name: i, amount: '' })),
+    steps: r.instructions,
+    warnings: [
+      'DIY at your own discretion — read PureCraft Terms before using.',
+      r.safeForKids
+        ? 'Family-safe formula, but always patch-test on sensitive surfaces.'
+        : 'Keep out of reach of children and pets while in use.',
+    ],
+    substitutions: [],
+  };
+}
+
+export function isV3RecipeId(id: string | undefined): boolean {
+  return id != null && V3_PRODUCT_IDS.has(id);
 }

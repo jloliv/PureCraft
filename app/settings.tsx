@@ -5,7 +5,9 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCurrency } from '@/constants/currency';
+import { signOut, useAuth } from '@/lib/auth';
 import { tapLight, tapSoft, warning } from '@/lib/haptics';
+import { setOnboardingComplete } from '@/lib/onboarding-storage';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 type ToggleKey = 'notifications' | 'safetyAlerts' | 'haptics' | 'metric';
@@ -14,6 +16,7 @@ const APP_VERSION = '1.0.0 · build 1';
 
 export default function Settings() {
   const { currency } = useCurrency();
+  const { user } = useAuth();
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     notifications: true,
     safetyAlerts: true,
@@ -47,18 +50,35 @@ export default function Settings() {
       >
         <View style={styles.profile}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>JO</Text>
+            <Text style={styles.avatarText}>
+              {user
+                ? (user.email ?? 'PC').slice(0, 2).toUpperCase()
+                : 'PC'}
+            </Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>Juana Oliver</Text>
-            <Text style={styles.profileMeta}>juana.l.oliver@gmail.com</Text>
+            <Text style={styles.profileName}>
+              {user ? user.email?.split('@')[0] ?? 'Member' : 'Guest'}
+            </Text>
+            <Text style={styles.profileMeta}>
+              {user ? user.email : 'Sign in to sync across devices'}
+            </Text>
           </View>
-          <Pressable
-            style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
-            onPress={() => {}}
-          >
-            <Text style={styles.editBtnText}>Edit</Text>
-          </Pressable>
+          {user ? (
+            <Pressable
+              style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => {}}
+            >
+              <Text style={styles.editBtnText}>Edit</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
+              onPress={() => router.push('/auth/sign-in')}
+            >
+              <Text style={styles.editBtnText}>Sign in</Text>
+            </Pressable>
+          )}
         </View>
 
         <Pressable
@@ -181,13 +201,20 @@ export default function Settings() {
           />
         </Section>
 
-        <Pressable
-          style={({ pressed }) => [styles.logout, pressed && { opacity: 0.7 }]}
-          onPress={() => {}}
-        >
-          <Ionicons name="log-out-outline" size={18} color={Colors.light.danger} />
-          <Text style={styles.logoutText}>Sign out</Text>
-        </Pressable>
+        {user ? (
+          <Pressable
+            style={({ pressed }) => [styles.logout, pressed && { opacity: 0.7 }]}
+            onPress={async () => {
+              warning();
+              await signOut();
+              setOnboardingComplete(false);
+              router.replace('/');
+            }}
+          >
+            <Ionicons name="log-out-outline" size={18} color={Colors.light.danger} />
+            <Text style={styles.logoutText}>Sign out</Text>
+          </Pressable>
+        ) : null}
 
         <Text style={styles.version}>PureCraft · {APP_VERSION}</Text>
 

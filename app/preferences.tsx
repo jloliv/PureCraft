@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct } from '@/constants/products';
+import { recipeIcon } from '@/lib/recipe-icons';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 type Pref = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap };
@@ -64,7 +65,12 @@ export default function Preferences() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.productCard, { backgroundColor: product.swatch }]}>
-          <Text style={styles.productEmoji}>{product.emoji}</Text>
+          <Image
+            source={recipeIcon(product.id)}
+            testID="pc-recipe-icon"
+            style={styles.productIcon}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.productEyebrow}>You&apos;re making</Text>
             <Text style={styles.productTitle}>{product.title}</Text>
@@ -202,6 +208,7 @@ const styles = StyleSheet.create({
     ...Shadow.card,
   },
   productEmoji: { fontSize: 44 },
+  productIcon: { width: 72, height: 72 },
   productEyebrow: { ...Type.caption, color: Colors.light.sageDeep, textTransform: 'uppercase' },
   productTitle: { ...Type.title, color: Colors.light.text, marginTop: 2 },
   productMeta: { ...Type.caption, color: Colors.light.textMuted, marginTop: 4 },

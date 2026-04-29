@@ -1,8 +1,23 @@
+// Discover — premium / luxury redesign.
+//
+// Design direction: calm, expensive, effortless. Apple × Aesop × Calm × Airbnb.
+// Warm ivory base, sage green accents, soft shadows, generous whitespace,
+// and refined motion (hero fade-in, rotating tagline, staggered chips,
+// search-bar pulse on focus).
+//
+// Notes for future iteration:
+//  - We fake "frosted glass" via translucent white + 1px subtle border + soft
+//    shadow. When `expo-blur` is added to the project, swap the wrapper Views
+//    for <BlurView intensity={50} tint="light"> for the real effect on iOS.
+//  - 8pt spacing is enforced via the SPC constant.
+
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   Pressable,
@@ -17,42 +32,66 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MakeNav } from '@/components/make-nav';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct, RECIPES } from '@/constants/products';
+import { tapLight } from '@/lib/haptics';
 import { recipeIcon, RECIPE_ICON_BLEND } from '@/lib/recipe-icons';
+
+// ---------- Tokens ---------------------------------------------------------
+// 8pt spacing system. Never break the rhythm.
+const SPC = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48, xxxl: 64 } as const;
 
 const PALETTE = {
   bg: '#F8F6F1',
-  text: '#1F1F1F',
-  textMuted: '#6F6A60',
+  text: '#111111',
+  textWarm: '#6F6A60',
+  textMuted: '#8A8377',
   textSubtle: '#A8A398',
   surface: '#FFFFFF',
   surfaceWarm: '#F1ECE0',
-  border: '#E8E2D2',
+  border: '#E9E4DA',
+  borderSoft: '#F0EADA',
   sage: '#A8B8A0',
   sageDeep: '#7E8F75',
+  sageEyebrow: '#7A8E78',
   sageSoft: '#E4EDE5',
   cream: '#F7F2E7',
   creamDeep: '#EFE7D2',
   gold: '#C7A96B',
   goldDeep: '#A98A4D',
+  goldAccent: '#B89A52',
 };
+
+// ---------- Content data ---------------------------------------------------
+
+const TAGLINES = [
+  'Cleaner home, naturally',
+  'Save money beautifully',
+  'Luxury you make yourself',
+  'Wellness begins at home',
+] as const;
 
 const WEEKLY_PICK = {
   productId: 'citrus-countertop-cleaner',
   eyebrow: 'Pick of the Week',
-  title: 'Glow Ritual',
+  title: 'Glow Routine',
   blurb: 'Citrus countertop cleaner with spa-level freshness',
   image: require('../assets/images/PureCraftHero2.png'),
 };
 
-type Intent = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap; tint: string };
+type Intent = {
+  key: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  tint: string;
+  bg: string;
+};
 
 const INTENTS: Intent[] = [
-  { key: 'save', label: 'Save Money', icon: 'cash-outline', tint: PALETTE.gold },
-  { key: 'pet', label: 'Pet Safe', icon: 'paw-outline', tint: PALETTE.sageDeep },
-  { key: 'baby', label: 'Baby Safe', icon: 'happy-outline', tint: '#9C7A4F' },
-  { key: 'allergy', label: 'Allergy Aware', icon: 'medkit-outline', tint: '#6F5FA3' },
-  { key: 'fragrance-free', label: 'Fragrance Free', icon: 'leaf-outline', tint: PALETTE.sageDeep },
-  { key: 'natural', label: 'All Natural', icon: 'flower-outline', tint: '#B86F44' },
+  { key: 'save', label: 'Save Money', icon: 'cash-outline', tint: '#A98A4D', bg: '#F7F2E7' },
+  { key: 'pet', label: 'Pet Safe', icon: 'paw-outline', tint: '#7E8F75', bg: '#E4EDE5' },
+  { key: 'baby', label: 'Baby Safe', icon: 'happy-outline', tint: '#9C7A4F', bg: '#F1ECE0' },
+  { key: 'sensitive', label: 'Sensitive Skin', icon: 'flower-outline', tint: '#B86F44', bg: '#F7EFE7' },
+  { key: 'low-scent', label: 'Low Scent', icon: 'leaf-outline', tint: '#7E8F75', bg: '#E4EDE5' },
+  { key: 'fast', label: 'Fast to Make', icon: 'time-outline', tint: '#6F5FA3', bg: '#EDE9F2' },
 ];
 
 const TRENDING = [
@@ -63,15 +102,6 @@ const TRENDING = [
 ];
 
 const QUICK = ['glass-cleaner', 'laundry-booster', 'bathroom-cleaner', 'room-spray'];
-
-function recipeCostUsd(productId: string): number {
-  const r = RECIPES[productId];
-  if (!r) return 0;
-  return r.ingredients
-    .filter((i) => !i.haveIt)
-    .reduce((sum, i) => sum + (i.storePriceUsd ?? 0), 0);
-}
-
 const BUDGET_IDS = ['bathroom-cleaner', 'glass-cleaner', 'laundry-booster', 'kitchen-spray'];
 
 const SEASONAL = [
@@ -83,7 +113,7 @@ const SEASONAL = [
 
 const PERSONAL = [
   { id: 'kitchen-spray', reason: 'Because you cook often' },
-  { id: 'sugar-scrub', reason: 'Matches your beauty profile' },
+  { id: 'citrus-glow-scrub', reason: 'Matches your beauty profile' },
   { id: 'floor-cleaner', reason: 'Pet-safe pick' },
 ];
 
@@ -93,9 +123,40 @@ const PANTRY_STATS = {
   topItems: ['💧', '🧂', '🍋', '🫧', '🌱'],
 };
 
+function recipeCostUsd(productId: string): number {
+  const r = RECIPES[productId];
+  if (!r) return 0;
+  return r.ingredients
+    .filter((i) => !i.haveIt)
+    .reduce((sum, i) => sum + (i.storePriceUsd ?? 0), 0);
+}
+
+// ---------- Screen ---------------------------------------------------------
+
 export default function Discover() {
   const { currency } = useCurrency();
   const [query, setQuery] = useState('');
+
+  // Mount-in animation: hero fades + lifts. Other content drops in slightly
+  // staggered to feel premium, not theatrical.
+  const fade = useRef(new Animated.Value(0)).current;
+  const lift = useRef(new Animated.Value(18)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(lift, {
+        toValue: 0,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fade, lift]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -103,61 +164,20 @@ export default function Discover() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerEyebrow}>For you · today</Text>
-            <Text style={styles.headerTitle}>Discover</Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Filter"
-            onPress={() => {}}
-            style={({ pressed }) => [styles.filterBtn, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="options-outline" size={18} color={PALETTE.text} />
-          </Pressable>
-        </View>
+        <Header />
+        <SearchBar query={query} onChange={setQuery} />
 
-        <Pressable
-          style={({ pressed }) => [styles.searchWrap, pressed && { opacity: 0.9 }]}
-          onPress={() => router.push('/categories')}
-        >
-          <Ionicons name="search" size={18} color={PALETTE.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search recipes, ingredients, scents…"
-            placeholderTextColor={PALETTE.textSubtle}
-            style={styles.searchInput}
-            editable={false}
-            pointerEvents="none"
-          />
-          <View style={styles.searchKbd}>
-            <Ionicons name="mic-outline" size={16} color={PALETTE.sageDeep} />
-          </View>
-        </Pressable>
+        <Animated.View style={{ opacity: fade, transform: [{ translateY: lift }] }}>
+          <HeroCard />
+        </Animated.View>
 
-        <WeeklyBanner />
+        <View style={styles.sectionGap} />
 
-        <SectionHeader title="What matters this week" caption="One tap to filter" />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.intentRow}
-        >
-          {INTENTS.map((it) => (
-            <Pressable
-              key={it.key}
-              onPress={() => router.push('/categories')}
-              style={({ pressed }) => [styles.intentChip, pressed && { transform: [{ scale: 0.97 }] }]}
-            >
-              <View style={[styles.intentIcon, { backgroundColor: PALETTE.sageSoft }]}>
-                <Ionicons name={it.icon} size={16} color={it.tint} />
-              </View>
-              <Text style={styles.intentLabel}>{it.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <SectionHeader
+          title="What matters this week"
+          caption="One tap to personalize"
+        />
+        <ChipRow />
 
         <SectionHeader
           title="Trending now"
@@ -170,15 +190,21 @@ export default function Discover() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.cardRow}
           decelerationRate="fast"
-          snapToInterval={232}
+          snapToInterval={244}
         >
           {TRENDING.map((t) => {
             const p = findProduct(t.id);
             return (
               <Pressable
                 key={t.id}
-                onPress={() => router.push({ pathname: '/preferences', params: { id: t.id } })}
-                style={({ pressed }) => [styles.bigCard, pressed && styles.cardPressed]}
+                onPress={() => {
+                  tapLight();
+                  router.push({ pathname: '/preferences', params: { id: t.id } });
+                }}
+                style={({ pressed }) => [
+                  styles.bigCard,
+                  pressed && styles.cardPressed,
+                ]}
               >
                 <View style={[styles.bigSwatch, { backgroundColor: p.swatch }]}>
                   <View style={styles.iconLayer}>
@@ -195,7 +221,9 @@ export default function Discover() {
                   </View>
                 </View>
                 <View style={styles.bigBody}>
-                  <Text style={styles.bigTitle} numberOfLines={1}>{p.title}</Text>
+                  <Text style={styles.bigTitle} numberOfLines={1}>
+                    {p.title}
+                  </Text>
                   <Text style={styles.bigMeta}>{t.stat}</Text>
                 </View>
               </Pressable>
@@ -219,8 +247,14 @@ export default function Discover() {
             return (
               <Pressable
                 key={id}
-                onPress={() => router.push({ pathname: '/preferences', params: { id } })}
-                style={({ pressed }) => [styles.smallCard, pressed && styles.cardPressed]}
+                onPress={() => {
+                  tapLight();
+                  router.push({ pathname: '/preferences', params: { id } });
+                }}
+                style={({ pressed }) => [
+                  styles.smallCard,
+                  pressed && styles.cardPressed,
+                ]}
               >
                 <View style={[styles.smallSwatch, { backgroundColor: p.swatch }]}>
                   <View style={styles.iconLayer}>
@@ -236,7 +270,9 @@ export default function Discover() {
                     <Text style={styles.timePillText}>{p.time}</Text>
                   </View>
                 </View>
-                <Text style={styles.smallTitle} numberOfLines={2}>{p.title}</Text>
+                <Text style={styles.smallTitle} numberOfLines={2}>
+                  {p.title}
+                </Text>
               </Pressable>
             );
           })}
@@ -259,8 +295,14 @@ export default function Discover() {
             return (
               <Pressable
                 key={id}
-                onPress={() => router.push({ pathname: '/preferences', params: { id } })}
-                style={({ pressed }) => [styles.smallCard, pressed && styles.cardPressed]}
+                onPress={() => {
+                  tapLight();
+                  router.push({ pathname: '/preferences', params: { id } });
+                }}
+                style={({ pressed }) => [
+                  styles.smallCard,
+                  pressed && styles.cardPressed,
+                ]}
               >
                 <View style={[styles.smallSwatch, { backgroundColor: p.swatch }]}>
                   <View style={styles.iconLayer}>
@@ -277,7 +319,9 @@ export default function Discover() {
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.smallTitle} numberOfLines={2}>{p.title}</Text>
+                <Text style={styles.smallTitle} numberOfLines={2}>
+                  {p.title}
+                </Text>
                 <Text style={styles.smallMeta}>
                   Saves {formatMoney(p.savingsUsd, { currency })}
                 </Text>
@@ -298,7 +342,10 @@ export default function Discover() {
             return (
               <Pressable
                 key={s.id}
-                onPress={() => router.push({ pathname: '/preferences', params: { id: s.id } })}
+                onPress={() => {
+                  tapLight();
+                  router.push({ pathname: '/preferences', params: { id: s.id } });
+                }}
                 style={({ pressed }) => [
                   styles.seasonalCard,
                   i === 0 && styles.seasonalCardWide,
@@ -315,7 +362,9 @@ export default function Discover() {
                 </View>
                 <View style={styles.seasonalBody}>
                   <Text style={styles.seasonalTag}>{s.tag.toUpperCase()}</Text>
-                  <Text style={styles.seasonalTitle} numberOfLines={1}>{p.title}</Text>
+                  <Text style={styles.seasonalTitle} numberOfLines={1}>
+                    {p.title}
+                  </Text>
                 </View>
               </Pressable>
             );
@@ -334,7 +383,10 @@ export default function Discover() {
             return (
               <Pressable
                 key={item.id}
-                onPress={() => router.push({ pathname: '/preferences', params: { id: item.id } })}
+                onPress={() => {
+                  tapLight();
+                  router.push({ pathname: '/preferences', params: { id: item.id } });
+                }}
                 style={({ pressed }) => [
                   styles.personalRow,
                   i === 0 && { borderTopWidth: 0 },
@@ -363,8 +415,14 @@ export default function Discover() {
         </View>
 
         <Pressable
-          onPress={() => router.push('/categories')}
-          style={({ pressed }) => [styles.pantryCard, pressed && { opacity: 0.96 }]}
+          onPress={() => {
+            tapLight();
+            router.push('/categories');
+          }}
+          style={({ pressed }) => [
+            styles.pantryCard,
+            pressed && { opacity: 0.96, transform: [{ scale: 0.99 }] },
+          ]}
         >
           <LinearGradient
             colors={['#EFE7D2', '#F7F2E7', '#E4EDE5']}
@@ -379,7 +437,13 @@ export default function Discover() {
               </View>
               <View style={styles.emojiRow}>
                 {PANTRY_STATS.topItems.map((e, idx) => (
-                  <Text key={idx} style={[styles.pantryItemEmoji, { transform: [{ rotate: `${idx * 4 - 4}deg` }] }]}>
+                  <Text
+                    key={idx}
+                    style={[
+                      styles.pantryItemEmoji,
+                      { transform: [{ rotate: `${idx * 4 - 4}deg` }] },
+                    ]}
+                  >
                     {e}
                   </Text>
                 ))}
@@ -387,7 +451,8 @@ export default function Discover() {
             </View>
 
             <Text style={styles.pantryTitle}>
-              You have {PANTRY_STATS.ingredientCount} ingredients.{`\n`}Make {PANTRY_STATS.recipesAvailable} recipes right now.
+              You have {PANTRY_STATS.ingredientCount} ingredients.{`\n`}
+              Make {PANTRY_STATS.recipesAvailable} recipes right now.
             </Text>
             <Text style={styles.pantrySub}>
               No shopping list. Just open the cabinet and pour.
@@ -401,8 +466,14 @@ export default function Discover() {
         </Pressable>
 
         <Pressable
-          onPress={() => router.push('/premium')}
-          style={({ pressed }) => [styles.premiumWrap, pressed && { opacity: 0.95 }]}
+          onPress={() => {
+            tapLight();
+            router.push('/premium');
+          }}
+          style={({ pressed }) => [
+            styles.premiumWrap,
+            pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] },
+          ]}
         >
           <LinearGradient
             colors={['#7E8F75', '#5C7F6B', '#3D5A4A']}
@@ -414,9 +485,11 @@ export default function Discover() {
               <Ionicons name="sparkles" size={13} color="#FFFFFF" />
               <Text style={styles.premiumBadgeText}>PureCraft+</Text>
             </View>
-            <Text style={styles.premiumTitle}>Unlock 120+ premium{`\n`}recipes & family profiles</Text>
+            <Text style={styles.premiumTitle}>
+              Unlock 120+ premium{`\n`}recipes & family profiles
+            </Text>
             <Text style={styles.premiumSub}>
-              Allergy-aware filters, smart shopping planner, expert rituals.
+              Allergy-aware filters, smart shopping planner, expert routines.
             </Text>
             <View style={styles.premiumStats}>
               <View style={styles.premiumStat}>
@@ -425,7 +498,9 @@ export default function Discover() {
               </View>
               <View style={styles.premiumStatDiv} />
               <View style={styles.premiumStat}>
-                <Text style={styles.premiumStatValue}>{formatMoney(420, { currency, round: true })}+</Text>
+                <Text style={styles.premiumStatValue}>
+                  {formatMoney(420, { currency, round: true })}+
+                </Text>
                 <Text style={styles.premiumStatLabel}>saved / yr avg.</Text>
               </View>
             </View>
@@ -436,7 +511,7 @@ export default function Discover() {
           </LinearGradient>
         </Pressable>
 
-        <View style={{ height: 112 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       <MakeNav active="discover" />
@@ -444,41 +519,263 @@ export default function Discover() {
   );
 }
 
-function WeeklyBanner() {
+// ---------- Header ---------------------------------------------------------
+
+function Header() {
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/preferences', params: { id: WEEKLY_PICK.productId } })}
-      style={({ pressed }) => [styles.weeklyWrap, pressed && { opacity: 0.96 }]}
-    >
-      <ImageBackground
-        source={WEEKLY_PICK.image}
-        style={styles.weekly}
-        imageStyle={styles.weeklyImg}
-        resizeMode="cover"
+    <View style={styles.header}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.headerEyebrow}>FOR YOU · TODAY</Text>
+        <Text style={styles.headerTitle}>Discover</Text>
+        <RotatingTagline />
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Filter"
+        onPress={() => {
+          tapLight();
+        }}
+        style={({ pressed }) => [
+          styles.filterBtn,
+          pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
+        ]}
       >
-        <LinearGradient
-          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.18)', 'rgba(0,0,0,0.7)']}
-          locations={[0.25, 0.55, 1]}
-          style={StyleSheet.absoluteFillObject}
+        <Ionicons name="options-outline" size={18} color={PALETTE.text} />
+      </Pressable>
+    </View>
+  );
+}
+
+function RotatingTagline() {
+  const [idx, setIdx] = useState(0);
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Cross-fade: dim out → swap text → fade back in
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 320,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start(() => {
+        setIdx((i) => (i + 1) % TAGLINES.length);
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 420,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [opacity]);
+
+  return (
+    <Animated.Text style={[styles.headerTagline, { opacity }]}>
+      {TAGLINES[idx]}
+    </Animated.Text>
+  );
+}
+
+// ---------- Search ---------------------------------------------------------
+
+function SearchBar({
+  query,
+  onChange,
+}: {
+  query: string;
+  onChange: (s: string) => void;
+}) {
+  // Subtle pulse on focus — scale + shadow grow. We trigger it from the
+  // Pressable wrapper since the input itself isn't focusable here (this
+  // search bar punts to /categories on tap).
+  const pulse = useRef(new Animated.Value(1)).current;
+  const startPulse = () => {
+    Animated.sequence([
+      Animated.timing(pulse, {
+        toValue: 1.015,
+        duration: 180,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(pulse, {
+        toValue: 1,
+        duration: 220,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  return (
+    <Animated.View style={{ transform: [{ scale: pulse }] }}>
+      <Pressable
+        style={({ pressed }) => [styles.searchWrap, pressed && { opacity: 0.95 }]}
+        onPress={() => {
+          tapLight();
+          startPulse();
+          router.push('/categories');
+        }}
+      >
+        <Ionicons name="search" size={18} color={PALETTE.textWarm} />
+        <TextInput
+          value={query}
+          onChangeText={onChange}
+          placeholder="Search cleaners, skincare, scents..."
+          placeholderTextColor={PALETTE.textSubtle}
+          style={styles.searchInput}
+          editable={false}
           pointerEvents="none"
         />
-
-        <View style={styles.weeklyTop}>
-          <View style={styles.weeklyBadge}>
-            <Text style={styles.weeklyBadgeText}>{WEEKLY_PICK.eyebrow}</Text>
-          </View>
-          <Text style={styles.weeklyTitle}>{WEEKLY_PICK.title}</Text>
-          <Text style={styles.weeklySub}>{WEEKLY_PICK.blurb}</Text>
+        <View style={styles.searchMic}>
+          <Ionicons name="mic" size={14} color="#FFFFFF" />
         </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
-        <View style={styles.weeklyCta}>
-          <Text style={styles.weeklyCtaText}>Make Now</Text>
-          <Ionicons name="arrow-forward" size={13} color={PALETTE.text} />
+// ---------- Hero card ------------------------------------------------------
+
+function HeroCard() {
+  // Gentle "breathing" zoom on the background image — never more than 5%.
+  // Loops forever; pause-friendly because it's transform-only.
+  const breathe = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, {
+          toValue: 1,
+          duration: 6000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(breathe, {
+          toValue: 0,
+          duration: 6000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [breathe]);
+  const imgScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1.02, 1.06] });
+
+  return (
+    <Pressable
+      onPress={() => {
+        tapLight();
+        router.push({
+          pathname: '/preferences',
+          params: { id: WEEKLY_PICK.productId },
+        });
+      }}
+      style={({ pressed }) => [
+        styles.heroWrap,
+        pressed && { transform: [{ scale: 0.99 }] },
+      ]}
+    >
+      <Animated.View style={[StyleSheet.absoluteFillObject, { transform: [{ scale: imgScale }] }]}>
+        <ImageBackground
+          source={WEEKLY_PICK.image}
+          style={styles.heroImg}
+          imageStyle={styles.heroImgInner}
+          resizeMode="cover"
+        />
+      </Animated.View>
+
+      {/* Top-down softening so headline + badge always read */}
+      <LinearGradient
+        colors={[
+          'rgba(255,251,242,0.94)',
+          'rgba(255,251,242,0.55)',
+          'rgba(255,251,242,0)',
+        ]}
+        locations={[0, 0.45, 0.9]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.4, y: 0.55 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
+
+      <View style={styles.heroBody}>
+        <View style={styles.heroBadge}>
+          <Text style={styles.heroBadgeText}>PICK OF THE WEEK</Text>
         </View>
-      </ImageBackground>
+        <Text style={styles.heroTitle}>{WEEKLY_PICK.title}</Text>
+        <Text style={styles.heroSub} numberOfLines={3}>
+          {WEEKLY_PICK.blurb}
+        </Text>
+      </View>
+
+      <View style={styles.heroCtaRow}>
+        <View style={styles.heroCta}>
+          <Text style={styles.heroCtaText}>Make Now</Text>
+          <Ionicons name="arrow-forward" size={14} color={PALETTE.text} />
+        </View>
+      </View>
     </Pressable>
   );
 }
+
+// ---------- Chip row -------------------------------------------------------
+
+function ChipRow() {
+  // Staggered slide-in for the chips so they feel like they "settled" into
+  // place rather than blinked.
+  const items = useRef(INTENTS.map(() => new Animated.Value(0))).current;
+  useEffect(() => {
+    Animated.stagger(
+      60,
+      items.map((v) =>
+        Animated.spring(v, {
+          toValue: 1,
+          damping: 16,
+          stiffness: 220,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [items]);
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.chipRow}
+    >
+      {INTENTS.map((it, i) => {
+        const v = items[i];
+        const tY = v.interpolate({ inputRange: [0, 1], outputRange: [12, 0] });
+        return (
+          <Animated.View
+            key={it.key}
+            style={{ opacity: v, transform: [{ translateY: tY }] }}
+          >
+            <Pressable
+              onPress={() => {
+                tapLight();
+                router.push('/categories');
+              }}
+              style={({ pressed }) => [
+                styles.chip,
+                pressed && { transform: [{ scale: 0.96 }] },
+              ]}
+            >
+              <View style={[styles.chipIcon, { backgroundColor: it.bg }]}>
+                <Ionicons name={it.icon} size={15} color={it.tint} />
+              </View>
+              <Text style={styles.chipLabel}>{it.label}</Text>
+            </Pressable>
+          </Animated.View>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ---------- Section header -------------------------------------------------
 
 function SectionHeader({
   title,
@@ -498,7 +795,13 @@ function SectionHeader({
         {caption ? <Text style={styles.sectionCaption}>{caption}</Text> : null}
       </View>
       {actionLabel ? (
-        <Pressable hitSlop={8} onPress={onAction}>
+        <Pressable
+          hitSlop={10}
+          onPress={() => {
+            tapLight();
+            onAction?.();
+          }}
+        >
           <Text style={styles.sectionAction}>{actionLabel}</Text>
         </Pressable>
       ) : null}
@@ -506,209 +809,275 @@ function SectionHeader({
   );
 }
 
+// ---------- Styles ---------------------------------------------------------
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 20, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: SPC.lg },
 
+  // -- Header -------------------------------------------------------------
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingTop: 4,
-    paddingBottom: 14,
+    paddingTop: SPC.sm,
+    paddingBottom: SPC.lg,
+    gap: SPC.md,
   },
   headerEyebrow: {
-    fontSize: 10.5,
-    letterSpacing: 1.6,
-    fontWeight: '600',
-    color: PALETTE.sageDeep,
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '500',
+    color: PALETTE.sageEyebrow,
+    marginBottom: SPC.sm,
   },
   headerTitle: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 44,
+    lineHeight: 46,
+    fontWeight: '800',
     color: PALETTE.text,
-    letterSpacing: -0.7,
+    letterSpacing: -1.4,
+  },
+  headerTagline: {
+    marginTop: SPC.sm + 2,
+    fontSize: 15,
+    lineHeight: 20,
+    color: PALETTE.textWarm,
+    fontWeight: '400',
+    letterSpacing: -0.1,
   },
   filterBtn: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 999,
-    backgroundColor: PALETTE.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    // Faux-glass: high-opacity white + cream-tinged border + soft shadow.
+    // Swap to <BlurView/> when expo-blur is added.
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderWidth: 1,
     borderColor: PALETTE.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: SPC.sm,
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
   },
 
+  // -- Search -------------------------------------------------------------
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    height: 50,
-    paddingHorizontal: 16,
+    gap: 12,
+    height: 58,
+    paddingLeft: 20,
+    paddingRight: 8,
     borderRadius: 999,
-    backgroundColor: PALETTE.surface,
+    backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: PALETTE.borderSoft,
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+    marginTop: SPC.xs,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 14.5,
     color: PALETTE.text,
     paddingVertical: 0,
+    fontWeight: '500',
   },
-  searchKbd: {
-    width: 30,
-    height: 30,
+  searchMic: {
+    width: 42,
+    height: 42,
     borderRadius: 999,
-    backgroundColor: PALETTE.sageSoft,
+    backgroundColor: PALETTE.sageDeep,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: PALETTE.sageDeep,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
 
-  weeklyWrap: {
-    marginTop: 24,
-    borderRadius: 32,
+  // -- Hero card ----------------------------------------------------------
+  sectionGap: { height: SPC.xs },
+  heroWrap: {
+    marginTop: SPC.lg + SPC.xs,
+    height: 420,
+    borderRadius: 34,
     overflow: 'hidden',
     backgroundColor: PALETTE.surfaceWarm,
     shadowColor: '#1F1F1F',
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 4,
+    shadowOpacity: 0.14,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 5,
   },
-  weekly: {
-    width: '100%',
-    height: 360,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 22,
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  weeklyImg: { borderRadius: 32 },
-  weeklyTop: {
-    alignItems: 'flex-start',
+  heroImg: { width: '100%', height: '100%' },
+  heroImgInner: { borderRadius: 34 },
+  heroBody: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 28,
+    paddingHorizontal: 28,
     gap: 14,
     maxWidth: '78%',
   },
-  weeklyBadge: {
+  heroBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
-  },
-  weeklyBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: PALETTE.text,
-    letterSpacing: 2.4,
-    textTransform: 'uppercase',
-  },
-  weeklyTitle: {
-    fontSize: 26,
-    lineHeight: 30,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  weeklySub: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: 'rgba(255,255,255,0.92)',
-    fontWeight: '400',
-  },
-  weeklyCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.7)',
     shadowColor: '#1F1F1F',
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  weeklyCtaText: {
-    fontSize: 12.5,
+  heroBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: PALETTE.text,
+    letterSpacing: 2.2,
+  },
+  heroTitle: {
+    fontSize: 44,
+    lineHeight: 46,
+    fontWeight: '800',
+    color: PALETTE.text,
+    letterSpacing: -1.4,
+    marginTop: 2,
+  },
+  heroSub: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: PALETTE.text,
+    fontWeight: '500',
+    opacity: 0.85,
+    maxWidth: '92%',
+  },
+  heroCtaRow: {
+    position: 'absolute',
+    bottom: 24,
+    left: 28,
+    right: 28,
+    flexDirection: 'row',
+  },
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.7)',
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  heroCtaText: {
+    fontSize: 13,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: 0.4,
   },
 
+  // -- Section headers ---------------------------------------------------
   sectionHeader: {
-    marginTop: 30,
-    marginBottom: 12,
+    marginTop: SPC.xl + SPC.xs,
+    marginBottom: SPC.md - 2,
     flexDirection: 'row',
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 19,
+    fontSize: 21,
     fontWeight: '700',
     color: PALETTE.text,
-    letterSpacing: -0.3,
+    letterSpacing: -0.5,
   },
   sectionCaption: {
-    fontSize: 12,
-    color: PALETTE.textMuted,
-    marginTop: 2,
+    fontSize: 13,
+    color: PALETTE.textWarm,
+    marginTop: 3,
+    fontWeight: '400',
   },
-  sectionAction: { fontSize: 12.5, fontWeight: '600', color: PALETTE.goldDeep },
+  sectionAction: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.goldAccent,
+    letterSpacing: 0.2,
+  },
 
-  intentRow: { gap: 8, paddingRight: 16 },
-  intentChip: {
+  // -- Chips -------------------------------------------------------------
+  chipRow: { gap: 10, paddingRight: SPC.md, paddingVertical: 2 },
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     paddingLeft: 6,
-    paddingRight: 14,
-    paddingVertical: 6,
+    paddingRight: 16,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: PALETTE.surface,
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: PALETTE.borderSoft,
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
-  intentIcon: {
-    width: 28,
-    height: 28,
+  chipIcon: {
+    width: 30,
+    height: 30,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  intentLabel: { fontSize: 12.5, fontWeight: '600', color: PALETTE.text },
+  chipLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.text,
+    letterSpacing: -0.1,
+  },
 
+  // -- Trending big cards ------------------------------------------------
   cardRow: { gap: 14, paddingRight: 14 },
   bigCard: {
-    width: 218,
-    borderRadius: 20,
+    width: 230,
+    borderRadius: 22,
     backgroundColor: PALETTE.surface,
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: PALETTE.borderSoft,
     overflow: 'hidden',
     shadowColor: '#1F1F1F',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
   bigSwatch: {
-    height: 150,
+    height: 158,
     padding: 14,
     justifyContent: 'space-between',
     position: 'relative',
     overflow: 'hidden',
   },
-  bigEmoji: { fontSize: 38 },
   iconLayer: {
     position: 'absolute',
     top: 0,
@@ -718,10 +1087,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardIcon: {
-    width: '82%',
-    height: '82%',
-  },
+  cardIcon: { width: '82%', height: '82%' },
   trendingBadge: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -730,7 +1096,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: '#FFFFFFE6',
+    backgroundColor: 'rgba(255,255,255,0.92)',
   },
   trendingPulse: {
     width: 7,
@@ -745,26 +1111,38 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  bigBody: { padding: 14, gap: 4 },
-  bigTitle: { fontSize: 14, fontWeight: '700', color: PALETTE.text },
-  bigMeta: { fontSize: 11.5, color: PALETTE.textMuted },
-
-  smallRow: { gap: 12, paddingRight: 12 },
-  smallCard: {
-    width: 160,
-    gap: 8,
+  bigBody: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, gap: 4 },
+  bigTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: PALETTE.text,
+    letterSpacing: -0.2,
   },
+  bigMeta: { fontSize: 11.5, color: PALETTE.textWarm },
+
+  // -- Small cards (5-min, budget) ---------------------------------------
+  smallRow: { gap: 12, paddingRight: 12 },
+  smallCard: { width: 168, gap: SPC.sm },
   smallSwatch: {
-    height: 130,
-    borderRadius: 18,
+    height: 138,
+    borderRadius: 20,
     padding: 12,
     justifyContent: 'space-between',
     overflow: 'hidden',
     position: 'relative',
   },
-  smallEmoji: { fontSize: 30 },
-  smallTitle: { fontSize: 13, fontWeight: '700', color: PALETTE.text, lineHeight: 16 },
-  smallMeta: { fontSize: 11, color: PALETTE.sageDeep, fontWeight: '600', marginTop: -2 },
+  smallTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PALETTE.text,
+    lineHeight: 16,
+  },
+  smallMeta: {
+    fontSize: 11,
+    color: PALETTE.sageDeep,
+    fontWeight: '600',
+    marginTop: -2,
+  },
   timePill: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -773,7 +1151,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: '#FFFFFFE6',
+    backgroundColor: 'rgba(255,255,255,0.92)',
   },
   timePillText: { fontSize: 10.5, fontWeight: '700', color: PALETTE.text },
   costPill: {
@@ -782,10 +1160,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    backgroundColor: '#FFFFFFCC',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   costPillText: { fontSize: 10.5, fontWeight: '700' },
 
+  // -- Seasonal grid -----------------------------------------------------
   seasonalGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -793,89 +1172,99 @@ const styles = StyleSheet.create({
   },
   seasonalCard: {
     width: '48.5%',
-    borderRadius: 18,
+    borderRadius: 20,
     backgroundColor: PALETTE.surface,
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: PALETTE.borderSoft,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 10,
-    height: 78,
+    height: 84,
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   seasonalCardWide: { width: '100%' },
   seasonalSwatch: {
-    width: 78,
-    height: 78,
+    width: 84,
+    height: 84,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  seasonalEmoji: { fontSize: 30 },
-  seasonalIcon: {
-    width: '82%',
-    height: '82%',
-  },
-  seasonalBody: { flex: 1, paddingLeft: 12, gap: 2 },
+  seasonalIcon: { width: '82%', height: '82%' },
+  seasonalBody: { flex: 1, paddingLeft: 14, gap: 3 },
   seasonalTag: {
     fontSize: 9.5,
     letterSpacing: 1.1,
     fontWeight: '700',
     color: PALETTE.goldDeep,
   },
-  seasonalTitle: { fontSize: 13, fontWeight: '700', color: PALETTE.text },
+  seasonalTitle: { fontSize: 13.5, fontWeight: '700', color: PALETTE.text },
 
+  // -- Personal list -----------------------------------------------------
   personalList: {
     backgroundColor: PALETTE.surface,
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: PALETTE.borderSoft,
     overflow: 'hidden',
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 1,
   },
   personalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: PALETTE.border,
+    borderTopColor: PALETTE.borderSoft,
   },
   personalSwatch: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  personalEmoji: { fontSize: 26 },
-  personalIcon: {
-    width: '82%',
-    height: '82%',
-  },
+  personalIcon: { width: '82%', height: '82%' },
   personalReason: {
     fontSize: 10.5,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     fontWeight: '700',
     color: PALETTE.sageDeep,
     textTransform: 'uppercase',
   },
-  personalTitle: { fontSize: 14, fontWeight: '700', color: PALETTE.text, marginTop: 2 },
-  personalMeta: { fontSize: 11.5, color: PALETTE.textMuted, marginTop: 2 },
+  personalTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    color: PALETTE.text,
+    marginTop: 3,
+    letterSpacing: -0.2,
+  },
+  personalMeta: { fontSize: 11.5, color: PALETTE.textWarm, marginTop: 2 },
 
+  // -- Pantry card --------------------------------------------------------
   pantryCard: {
-    marginTop: 30,
-    borderRadius: 24,
+    marginTop: SPC.xl,
+    borderRadius: 26,
     overflow: 'hidden',
     shadowColor: '#1F1F1F',
     shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
     elevation: 3,
   },
   pantryGradient: {
-    padding: 22,
+    padding: 24,
     gap: 8,
   },
   pantryHeader: {
@@ -890,11 +1279,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: '#FFFFFFCC',
+    backgroundColor: 'rgba(255,255,255,0.85)',
   },
   pantryBadgeText: {
     fontSize: 10,
-    letterSpacing: 1.2,
+    letterSpacing: 1.4,
     fontWeight: '700',
     color: PALETTE.sageDeep,
     textTransform: 'uppercase',
@@ -906,34 +1295,40 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     fontWeight: '700',
     color: PALETTE.text,
-    letterSpacing: -0.4,
-    marginTop: 6,
+    letterSpacing: -0.5,
+    marginTop: 8,
   },
-  pantrySub: { fontSize: 12.5, color: PALETTE.textMuted, lineHeight: 17 },
+  pantrySub: { fontSize: 13, color: PALETTE.textWarm, lineHeight: 18 },
   pantryCta: {
-    marginTop: 14,
+    marginTop: 16,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
     borderRadius: 999,
     backgroundColor: PALETTE.text,
   },
-  pantryCtaText: { fontSize: 12.5, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
+  pantryCtaText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
 
+  // -- Premium card -------------------------------------------------------
   premiumWrap: {
-    marginTop: 18,
+    marginTop: SPC.lg,
     borderRadius: 26,
     overflow: 'hidden',
     shadowColor: '#1F1F1F',
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 5,
   },
-  premiumCard: { padding: 22, gap: 8 },
+  premiumCard: { padding: 24, gap: 8 },
   premiumBadge: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -942,49 +1337,72 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF24',
+    backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
-    borderColor: '#FFFFFF55',
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  premiumBadgeText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF', letterSpacing: 1.2 },
+  premiumBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 1.4,
+  },
   premiumTitle: {
     fontSize: 24,
     lineHeight: 28,
     fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
-    marginTop: 8,
+    letterSpacing: -0.6,
+    marginTop: 10,
   },
   premiumSub: {
-    fontSize: 12.5,
-    lineHeight: 17,
-    color: '#FFFFFFCC',
+    fontSize: 13,
+    lineHeight: 18,
+    color: 'rgba(255,255,255,0.82)',
   },
   premiumStats: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF18',
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 12,
     borderWidth: 1,
-    borderColor: '#FFFFFF35',
+    borderColor: 'rgba(255,255,255,0.22)',
   },
   premiumStat: { flex: 1 },
-  premiumStatValue: { fontSize: 19, fontWeight: '700', color: '#FFFFFF' },
-  premiumStatLabel: { fontSize: 11, color: '#FFFFFFC0', marginTop: 2 },
-  premiumStatDiv: { width: 1, backgroundColor: '#FFFFFF35', marginHorizontal: 12 },
+  premiumStatValue: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
+  premiumStatLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.78)',
+    marginTop: 2,
+  },
+  premiumStatDiv: {
+    width: 1,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    marginHorizontal: 12,
+  },
   premiumCta: {
-    marginTop: 14,
+    marginTop: 16,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
     borderRadius: 999,
     backgroundColor: '#FFFFFF',
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
-  premiumCtaText: { fontSize: 12.5, fontWeight: '700', color: PALETTE.sageDeep, letterSpacing: 0.3 },
+  premiumCtaText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: PALETTE.sageDeep,
+    letterSpacing: 0.3,
+  },
 
   cardPressed: { transform: [{ scale: 0.98 }] },
 });

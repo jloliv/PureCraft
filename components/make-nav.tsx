@@ -13,6 +13,8 @@ import {
   View,
 } from 'react-native';
 
+import { FreemiumModal } from './freemium-modal';
+import { checkPantryScanGate } from '@/lib/freemium';
 import { tapLight, tapMedium, tapSoft } from '@/lib/haptics';
 
 const PALETTE = {
@@ -42,6 +44,9 @@ type MakeAction = {
   tint: string;
   badge?: string;
   route: string;
+  /** When true, tapping shows the `pantry-preview` freemium gate instead
+   *  of navigating directly. The preview modal then routes to /premium. */
+  premiumGate?: boolean;
 };
 
 const ACTIONS: MakeAction[] = [
@@ -88,6 +93,16 @@ const ACTIONS: MakeAction[] = [
     route: '/pantry?add=1',
   },
   {
+    key: 'scan-to-pantry',
+    title: 'Scan to Pantry',
+    blurb: 'Add ingredients instantly instead of typing.',
+    icon: 'scan-circle',
+    tint: '#7E8F75',
+    badge: 'PureCraft+',
+    route: '/pantry',
+    premiumGate: true,
+  },
+  {
     key: 'save-recipe',
     title: 'Save My Own Recipe',
     blurb: 'Capture a recipe you already love.',
@@ -125,7 +140,7 @@ export function MakeNav({ active }: { active: MakeNavTab }) {
           active={active === 'home'}
           onPress={() => {
             tapLight();
-            router.push('/');
+            router.push('/home');
           }}
         />
         <NavItem
@@ -207,6 +222,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
   const fade = useRef(new Animated.Value(0)).current;
   const items = useRef(ACTIONS.map(() => new Animated.Value(0))).current;
   const [mounted, setMounted] = useState(false);
+  const [pantryGate, setPantryGate] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -258,15 +274,31 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
     }
   }, [visible, fade, translate, items, screenH, mounted]);
 
-  const go = (route: string) => {
+  const go = (action: MakeAction) => {
     tapSoft();
+    // Premium-gated actions show the soft preview modal first; only after
+    // the user taps Continue do we route to /premium.
+    if (action.premiumGate) {
+      const gate = checkPantryScanGate();
+      if (!gate.allow) {
+        onClose();
+        setTimeout(() => setPantryGate(true), 220);
+        return;
+      }
+    }
     onClose();
-    setTimeout(() => router.push(route as never), 200);
+    setTimeout(() => router.push(action.route as never), 200);
   };
 
-  if (!mounted && !visible) return null;
+  if (!mounted && !visible && !pantryGate) return null;
 
   return (
+    <>
+      <FreemiumModal
+        visible={pantryGate}
+        kind="pantry-preview"
+        onClose={() => setPantryGate(false)}
+      />
     <Modal
       transparent
       visible={mounted}
@@ -320,7 +352,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
                   style={{ opacity: v, transform: [{ translateY: tY }] }}
                 >
                   <Pressable
-                    onPress={() => go(a.route)}
+                    onPress={() => go(a)}
                     style={({ pressed }) => [
                       styles.actionCard,
                       pressed && styles.actionPressed,
@@ -376,6 +408,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
         </LinearGradient>
       </Animated.View>
     </Modal>
+    </>
   );
 }
 
@@ -405,23 +438,25 @@ function NavItem({
 const styles = StyleSheet.create({
   bottomNav: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 16,
-    height: 72,
-    borderRadius: 30,
-    backgroundColor: '#FFFFFFEE',
+    left: 14,
+    right: 14,
+    bottom: 22,
+    height: 76,
+    borderRadius: 34,
+    // Faux frosted glass — translucent white + subtle cream border. Replace
+    // with <BlurView intensity={40} tint="light"/> when expo-blur is added.
+    backgroundColor: 'rgba(255,255,255,0.86)',
     borderWidth: 1,
-    borderColor: PALETTE.border,
+    borderColor: '#F0EADA',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     shadowColor: '#1F1F1F',
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 6,
   },
   navItem: { width: 56, alignItems: 'center', gap: 3 },
   navLabel: {

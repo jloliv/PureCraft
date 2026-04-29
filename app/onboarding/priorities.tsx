@@ -6,16 +6,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { PrimaryButton } from '@/components/primary-button';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
+import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
-  bg: '#F8F6F1',
+  bg: BACKGROUND_PRIMARY,
   text: '#1F1F1F',
-  textMuted: '#6F6A60',
-  textSubtle: '#A8A398',
-  surface: '#FFFFFF',
-  border: '#E8E2D2',
+  textMuted: '#6B6B6B',
+  textSubtle: '#8A8A8A',
+  surface: 'rgba(255,255,255,0.5)',
+  border: 'rgba(0,0,0,0.06)',
   sage: '#A8B8A0',
-  sageDeep: '#7E8F75',
+  sageDeep: '#5F876A',
   sageSoft: '#E4EDE5',
   gold: '#C7A96B',
   goldDeep: '#A98A4D',
@@ -101,7 +103,9 @@ export default function Priorities() {
                     color={isSelected ? '#FFFFFF' : PALETTE.sageDeep}
                   />
                 </View>
-                <Text style={styles.label}>{p.label}</Text>
+                <Text style={styles.label} numberOfLines={2}>
+                  {p.label}
+                </Text>
                 {rank ? (
                   <View style={styles.rankBadge}>
                     <Text style={styles.rankText}>{rank}</Text>
@@ -127,7 +131,7 @@ export default function Priorities() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
-  scroll: { paddingHorizontal: 22, paddingBottom: 24 },
+  scroll: { paddingHorizontal: 22, paddingBottom: 24, backgroundColor: PALETTE.bg },
   eyebrow: {
     fontSize: 11,
     letterSpacing: 2.4,
@@ -176,17 +180,19 @@ const styles = StyleSheet.create({
   },
   counterLabel: { fontSize: 13, fontWeight: '600', color: PALETTE.text },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
-    width: '48%',
-    minHeight: 110,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    borderRadius: 18,
+    width: '31%',
+    minHeight: 112,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 22,
     backgroundColor: PALETTE.surface,
     borderWidth: 1,
     borderColor: PALETTE.border,
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
     position: 'relative',
   },
   cardSelected: {
@@ -202,19 +208,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapSelected: { backgroundColor: PALETTE.sageDeep },
-  label: { fontSize: 14, fontWeight: '700', color: PALETTE.text, letterSpacing: -0.2 },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: PALETTE.text,
+    letterSpacing: -0.2,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
   rankBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 22,
-    height: 22,
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
     borderRadius: 999,
     backgroundColor: PALETTE.gold,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rankText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+  rankText: { fontSize: 10.5, fontWeight: '700', color: '#FFFFFF' },
 
   footer: {
     paddingHorizontal: 22,

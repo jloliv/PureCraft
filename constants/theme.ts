@@ -1,11 +1,13 @@
 import { Platform } from 'react-native';
 
+export const BACKGROUND_PRIMARY = '#F2EDE3';
+
 export const Colors = {
   light: {
     text: '#1F2421',
     textMuted: '#6B7872',
     textSubtle: '#9AA39E',
-    background: '#FFFFFF',
+    background: BACKGROUND_PRIMARY,
     surface: '#FAF7F1',
     surfaceAlt: '#F2EFE7',
     sage: '#7B9E89',
@@ -23,7 +25,7 @@ export const Colors = {
     text: '#1F2421',
     textMuted: '#6B7872',
     textSubtle: '#9AA39E',
-    background: '#FFFFFF',
+    background: BACKGROUND_PRIMARY,
     surface: '#FAF7F1',
     surfaceAlt: '#F2EFE7',
     sage: '#7B9E89',

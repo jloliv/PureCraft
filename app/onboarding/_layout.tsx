@@ -1,13 +1,13 @@
 import { Stack } from 'expo-router';
 
-import { Colors } from '@/constants/theme';
+import { BACKGROUND_PRIMARY } from '@/constants/theme';
 
 export default function OnboardingLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: Colors.light.background },
+        contentStyle: { backgroundColor: BACKGROUND_PRIMARY },
         animation: 'slide_from_right',
         gestureEnabled: true,
       }}

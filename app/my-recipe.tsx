@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/lib/auth';
 import { tapLight, tapMedium, tapSoft, success, warning } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -52,6 +54,8 @@ export default function MyRecipe() {
   ]);
   const [steps, setSteps] = useState<Step[]>([{ id: uid(), text: '' }]);
   const [saved, setSaved] = useState(false);
+  const [savingError, setSavingError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const filledIngredients = useMemo(
     () => ingredients.filter((i) => i.name.trim()).length,
@@ -91,13 +95,58 @@ export default function MyRecipe() {
     setSteps((prev) => (prev.length <= 1 ? prev : prev.filter((s) => s.id !== id)));
   };
 
-  const save = () => {
+  const save = async () => {
     if (!canSave) return;
     tapMedium();
+    setSavingError(null);
+
+    // Persist to Supabase if the user is signed in. RLS policy lets only
+    // authenticated users insert rows where source='user' and
+    // author_user_id = auth.uid(). If unauth'd we just keep the success
+    // animation as a local-only confirmation (graceful prototype fallback).
+    if (user && supabase) {
+      const filledIngs = ingredients.filter((i) => i.name.trim());
+      const filledStepsList = steps
+        .filter((s) => s.text.trim())
+        .map((s) => s.text.trim());
+      const ingredientStrings = filledIngs.map((i) =>
+        i.amount.trim() ? `${i.amount.trim()} ${i.name.trim()}` : i.name.trim(),
+      );
+
+      const { error } = await supabase.from('recipes').insert({
+        // user-recipe IDs are namespaced so they never collide with the
+        // catalog's numeric IDs.
+        id: `user_${user.id.slice(0, 8)}_${Date.now().toString(36)}`,
+        title: title.trim(),
+        category_label: 'My Recipes',
+        category_key: tags.includes('Cleaning')
+          ? 'cleaning'
+          : tags.includes('Beauty')
+            ? 'beauty-skincare'
+            : tags.includes('Home')
+              ? 'home-air-freshening'
+              : 'cleaning',
+        difficulty: 'Easy',
+        time_label: '—',
+        ingredients: ingredientStrings,
+        instructions: filledStepsList,
+        safe_for_kids: tags.includes('Baby-safe'),
+        cost_savings: null,
+        tags,
+        source: 'user',
+        author_user_id: user.id,
+        is_published: true,
+      });
+
+      if (error) {
+        setSavingError(error.message);
+        warning();
+        return;
+      }
+    }
+
     setSaved(true);
-    setTimeout(() => {
-      success();
-    }, 200);
+    setTimeout(() => success(), 200);
   };
 
   if (saved) {
@@ -278,6 +327,21 @@ export default function MyRecipe() {
         </ScrollView>
 
         <View style={styles.footer}>
+          {savingError ? (
+            <View style={styles.errorPill}>
+              <Ionicons
+                name="alert-circle-outline"
+                size={13}
+                color="#7A3B2C"
+              />
+              <Text style={styles.errorText}>{savingError}</Text>
+            </View>
+          ) : null}
+          {!user ? (
+            <Text style={styles.guestHint}>
+              Sign in to sync this recipe across your devices.
+            </Text>
+          ) : null}
           <Pressable
             onPress={save}
             disabled={!canSave}
@@ -326,7 +390,7 @@ function SavedView({ title, emoji, blurb }: { title: string; emoji: string; blur
           <Pressable
             onPress={() => {
               tapLight();
-              router.replace('/');
+              router.replace('/home');
             }}
             style={({ pressed }) => [styles.savedSecondary, pressed && { opacity: 0.7 }]}
           >
@@ -556,6 +620,31 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   saveBtnText: { fontSize: 13.5, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
+  errorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#FBEFEC',
+    borderWidth: 1,
+    borderColor: '#F1D9D2',
+    marginBottom: 10,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#7A3B2C',
+    fontWeight: '500',
+  },
+  guestHint: {
+    fontSize: 11.5,
+    color: PALETTE.textMuted,
+    textAlign: 'center',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
 
   savedWrap: {
     flex: 1,

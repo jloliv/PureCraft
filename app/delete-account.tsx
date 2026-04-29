@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { deleteAccount } from '@/lib/account';
+import { setOnboardingComplete } from '@/lib/onboarding-storage';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
 const REMOVAL_LIST = [
@@ -15,7 +17,23 @@ const REMOVAL_LIST = [
 
 export default function DeleteAccount() {
   const [confirmText, setConfirmText] = useState('');
-  const canDelete = confirmText.trim().toLowerCase() === 'delete';
+  const [busy, setBusy] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const canDelete = confirmText.trim().toLowerCase() === 'delete' && !busy;
+
+  const onDelete = async () => {
+    if (!canDelete) return;
+    setBusy(true);
+    setErrorMsg(null);
+    const { error } = await deleteAccount();
+    if (error) {
+      setErrorMsg(error);
+      setBusy(false);
+      return;
+    }
+    setOnboardingComplete(false);
+    router.replace('/');
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -88,10 +106,7 @@ export default function DeleteAccount() {
           <Text style={styles.cancelBtnText}>Cancel</Text>
         </Pressable>
         <Pressable
-          onPress={() => {
-            if (!canDelete) return;
-            router.replace('/');
-          }}
+          onPress={onDelete}
           disabled={!canDelete}
           style={({ pressed }) => [
             styles.deleteBtn,
@@ -99,17 +114,26 @@ export default function DeleteAccount() {
             pressed && canDelete && { opacity: 0.92 },
           ]}
         >
-          <Ionicons
-            name="trash-outline"
-            size={16}
-            color={canDelete ? '#FFFFFF' : '#FFFFFFB3'}
-          />
+          {busy ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons
+              name="trash-outline"
+              size={16}
+              color={canDelete ? '#FFFFFF' : '#FFFFFFB3'}
+            />
+          )}
           <Text
             style={[styles.deleteBtnText, !canDelete && { color: '#FFFFFFB3' }]}
           >
-            Delete Account
+            {busy ? 'Deleting…' : 'Delete Account'}
           </Text>
         </Pressable>
+        {errorMsg ? (
+          <Text style={{ color: '#C26B5A', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
+            {errorMsg}
+          </Text>
+        ) : null}
       </View>
     </SafeAreaView>
   );

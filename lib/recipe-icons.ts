@@ -38,22 +38,57 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 // For native platforms, re-export the assets as PNG with transparent
 // backgrounds; the blend mode is a no-op there.
 const ICONS: Record<string, ImageSourcePropType> = {
-  'bathroom-cleaner': require('../assets/soap-recipe-icon.jpg'),
-  'glass-cleaner': require('../assets/window-recipe-icon.jpg'),
-  'kitchen-spray': require('../assets/lemonSpray-recipe-icon.jpg'),
-  'floor-cleaner': require('../assets/floors-recipe.jpg'),
-  'laundry-booster': require('../assets/laundry-recipe-icon.jpg'),
-  'room-spray': require('../assets/scent-recipe-icon.jpg'),
-  'sugar-scrub': require('../assets/scrub-recipe-icon.jpg'),
-  'body-butter': require('../assets/lotion-soap-recipe-icon.jpg'),
-  candle: require('../assets/candles-recipe-icon.jpg'),
-  'linen-spray': require('../assets/mist-recipe-icon.png'),
+  'safer-cleaning': require('../assets/icons/safer-cleaning.png'),
+  'better-skin-care': require('../assets/icons/better-skin-care.png'),
+  'luxury-home-scents': require('../assets/icons/luxury-home-scents.png'),
+  'save-money': require('../assets/icons/save-money.png'),
+  'allergy-friendly': require('../assets/icons/allergy-friendly.png'),
+  'eco-living': require('../assets/icons/eco-living.png'),
+  'diy-beauty': require('../assets/icons/diy-beauty.png'),
+  'wellness-routines': require('../assets/icons/wellness-routines.png'),
+  'bathroom-cleaner': require('../assets/icons/soap-icon.png'),
+  'glass-cleaner': require('../assets/icons/window-recipe-icon.png'),
+  'kitchen-spray': require('../assets/icons/lemonSpray-recipe-icon.png'),
+  'floor-cleaner': require('../assets/icons/floors-recipe.png'),
+  'laundry-booster': require('../assets/icons/laundry-detergent-icon.png'),
+  'room-spray': require('../assets/icons/scents-icon.png'),
+  'sugar-scrub': require('../assets/icons/scrubs-icon.png'),
+  'citrus-glow-scrub': require('../assets/Recipes/Citrus-glow-scrub.png'),
+  'body-butter': require('../assets/icons/lotion-icon.png'),
+  candle: require('../assets/icons/candle-icon.png'),
+  'linen-spray': require('../assets/icons/mist-icon.png'),
 };
 
-const FALLBACK: ImageSourcePropType = require('../assets/spray-recipe-icon.jpg');
+const FALLBACK: ImageSourcePropType = require('../assets/icons/spray-recipe-icon.png');
 
-export function recipeIcon(productId: string): ImageSourcePropType {
-  return ICONS[productId] ?? FALLBACK;
+// For v3 launch recipes (numeric-string IDs), fall back to a category-shaped
+// illustration so the entire 100-recipe catalog has consistent artwork.
+const ICONS_BY_CATEGORY: Record<string, ImageSourcePropType> = {
+  cleaning: require('../assets/icons/spray-recipe-icon.png'),
+  laundry: require('../assets/icons/laundry-detergent-icon.png'),
+  'beauty-skincare': require('../assets/icons/lotion-icon.png'),
+  'hair-care': require('../assets/icons/lotion-icon.png'),
+  'baby-family-safe': require('../assets/icons/soap-icon.png'),
+  'home-air-freshening': require('../assets/icons/mist-icon.png'),
+  'pet-safe': require('../assets/icons/spray-recipe-icon.png'),
+  'garden-outdoor': require('../assets/icons/floors-recipe.png'),
+  'seasonal-holiday': require('../assets/icons/candle-icon.png'),
+  'emergency-budget-hacks': require('../assets/icons/spray-recipe-icon.png'),
+};
+
+export function recipeIcon(
+  productId: string,
+  categoryKey?: string,
+): ImageSourcePropType {
+  if (ICONS[productId]) return ICONS[productId];
+  if (categoryKey && ICONS_BY_CATEGORY[categoryKey]) {
+    return ICONS_BY_CATEGORY[categoryKey];
+  }
+  return FALLBACK;
+}
+
+export function categoryIcon(categoryKey: string): ImageSourcePropType {
+  return ICONS_BY_CATEGORY[categoryKey] ?? FALLBACK;
 }
 
 // Empty style — kept for backwards compat; the actual blend is applied via

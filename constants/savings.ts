@@ -92,6 +92,28 @@ export const RETAIL_OVERRIDES: Record<string, RetailRange> = {
   'body-butter': { lowUsd: 16.00, highUsd: 24.00, label: 'salon-tier butter' },
   candle: { lowUsd: 22.00, highUsd: 34.00, label: 'boutique soy candle' },
   'linen-spray': { lowUsd: 8.50, highUsd: 14.00, label: 'natural linen mist' },
+
+  // V3 launch-catalog hero retail anchors \u2014 the next 20.
+  '3': { lowUsd: 4.99, highUsd: 7.99, label: 'Clorox-tier toilet tabs' },
+  '9': { lowUsd: 4.99, highUsd: 8.99, label: 'mold-and-mildew remover' },
+  '10': { lowUsd: 5.99, highUsd: 9.99, label: 'Drano-tier drain cleaner' },
+  '12': { lowUsd: 6.99, highUsd: 11.99, label: 'Easy-Off-tier oven spray' },
+  '17': { lowUsd: 4.99, highUsd: 8.99, label: 'Resolve-tier carpet powder' },
+  '21': { lowUsd: 11.99, highUsd: 19.99, label: 'Tide-tier 60-load box' },
+  '25': { lowUsd: 4.99, highUsd: 8.99, label: 'Tide-pen / OxiClean stick' },
+  '27': { lowUsd: 14.99, highUsd: 24.99, label: 'salon-tier coffee scrub' },
+  '28': { lowUsd: 6.99, highUsd: 12.99, label: 'Burt\u2019s-tier lip balm' },
+  '32': { lowUsd: 11.99, highUsd: 24.99, label: 'pharmacy rosewater toner' },
+  '41': { lowUsd: 14.99, highUsd: 24.99, label: 'salon-tier hair oil' },
+  '45': { lowUsd: 9.99, highUsd: 14.99, label: 'aerosol dry shampoo' },
+  '51': { lowUsd: 11.99, highUsd: 24.99, label: 'name-brand sensitive wipes' },
+  '60': { lowUsd: 9.99, highUsd: 15.99, label: 'name-brand diaper-rash cream' },
+  '67': { lowUsd: 7.99, highUsd: 14.99, label: 'kid bubble-bath bottle' },
+  '73': { lowUsd: 7.99, highUsd: 14.99, label: 'holiday simmer mix' },
+  '76': { lowUsd: 24.99, highUsd: 45.99, label: 'boutique reed diffuser' },
+  '80': { lowUsd: 11.99, highUsd: 22.99, label: 'pet-store paw balm' },
+  '86': { lowUsd: 9.99, highUsd: 15.99, label: 'plant-based bug spray' },
+  '100': { lowUsd: 7.99, highUsd: 12.99, label: 'Bar Keepers Friend tier' },
 };
 
 // ============================================================================
@@ -158,12 +180,21 @@ export type SavingsEstimate = {
 export function computeSavings(productId: string, region?: Region): SavingsEstimate {
   const product = findProduct(productId);
   const r = region ?? getRegion();
-  const recipeCostUsd = getRecipeCostUsd(productId, r);
   const override = RETAIL_OVERRIDES[productId];
   const range = override ?? RETAIL_PRICING_BY_CATEGORY[product.group];
   const retailLowUsd = range.lowUsd * r.retailMultiplier;
   const retailHighUsd = range.highUsd * r.retailMultiplier;
   const retailMidUsd = (retailLowUsd + retailHighUsd) / 2;
+
+  // V3 launch recipes don't carry per-ingredient `storePriceUsd` yet, so
+  // `getRecipeCostUsd` returns 0 and savings would inflate to full retail.
+  // When that happens, back-derive a believable cost from the recipe's
+  // declared `savingsUsd` (parsed from "$X saved" in the JSON) so the
+  // displayed savings stays aligned with the catalog's authored intent.
+  let recipeCostUsd = getRecipeCostUsd(productId, r);
+  if (recipeCostUsd === 0 && product.savingsUsd > 0) {
+    recipeCostUsd = Math.max(0, retailMidUsd - product.savingsUsd);
+  }
   return {
     productId,
     recipeCostUsd,
