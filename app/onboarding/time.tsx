@@ -50,7 +50,7 @@ export default function TimePref() {
         <Text style={styles.eyebrow}>Step 8</Text>
         <Text style={styles.headline}>How long should{`\n`}recipes take?</Text>
         <Text style={styles.sub}>
-          Drag or tap. We&apos;ll sort your feed by recipes that fit this window.
+          Drag or tap. We&apos;ll sort your recommendations by recipes that fit this window.
         </Text>
 
         <View style={styles.bigCard}>
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 30,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.6,

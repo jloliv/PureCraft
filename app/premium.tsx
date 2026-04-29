@@ -4,36 +4,26 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { events } from '@/lib/analytics';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
-const FEATURES: { icon: keyof typeof Ionicons.glyphMap; title: string; sub: string }[] = [
-  { icon: 'lock-open-outline', title: '120+ premium recipes', sub: 'Whipped butters, candles, scrubs & artisan blends' },
-  { icon: 'leaf-outline', title: 'Seasonal recipe packs', sub: 'Spring reset, summer skin, holiday gifting' },
-  { icon: 'medkit-outline', title: 'Advanced allergy filtering', sub: 'Multi-allergen profiles auto-substitute every recipe' },
-  { icon: 'people-outline', title: 'Family household profiles', sub: 'Save preferences for every person & pet' },
-  { icon: 'restaurant-outline', title: 'Unlimited pantry matching', sub: 'Recipes from what you already have' },
-  { icon: 'cart-outline', title: 'Auto shopping lists', sub: 'Batches ingredients across selected recipes' },
-  { icon: 'flower-outline', title: 'Premium beauty recipes', sub: 'Spa-grade body butters, masks & scrubs' },
-  { icon: 'sparkles-outline', title: 'Deep cleaning bundles', sub: 'Bathroom, kitchen, mold rescue, pet odors' },
-  { icon: 'folder-open-outline', title: 'Saved favorites folders', sub: 'Organize recipes into routines + collections' },
-  { icon: 'flask-outline', title: 'AI custom recipe builder', sub: 'Generate one-of-one formulas from your prompts' },
+const UNLOCK_ITEMS: string[] = [
+  'Unlimited recipes',
+  'Personalized formulas for your home',
+  'Baby & sensitive-safe filtering',
+  'Pantry-based recipe suggestions',
+  'Save & organize your routines',
 ];
 
-// Locked premium recipes preview — visual proof of what they're unlocking.
-// Render with a blur/lock overlay so users want to tap "Start Free Trial".
-const LOCKED_RECIPES: { title: string; tag: string; accent: string }[] = [
-  { title: 'Luxury Glass Cleaner', tag: 'Cleaning', accent: '#E4EDE5' },
-  { title: 'Baby Nursery Sanitizer', tag: 'Baby-safe', accent: '#F1ECE0' },
-  { title: 'Sensitive Skin Body Butter', tag: 'Beauty', accent: '#F7F2E7' },
-  { title: 'Pet Couch Deodorizer', tag: 'Pet-safe', accent: '#EFE7D2' },
-  { title: 'Mold Rescue Spray', tag: 'Heavy duty', accent: '#E4EDE5' },
-  { title: 'Spa Linen Mist', tag: 'Bedroom', accent: '#F7F2E7' },
-];
+const PREMIUM_PREVIEW = {
+  title: 'Luxury Glass Cleaner',
+  subtitle: 'Streak-free · Non-toxic · High shine',
+  image: require('../assets/window-recipe-icon.jpg'),
+};
 
 const PLANS = [
   {
@@ -115,38 +105,28 @@ export default function Premium() {
           </View>
         </LinearGradient>
 
-        <Text style={styles.sectionTitle}>Premium recipes preview</Text>
-        <Text style={styles.sectionSub}>
-          Tap into 120+ formulas you can&apos;t make yet. Here&apos;s a peek.
-        </Text>
-        <View style={styles.lockedGrid}>
-          {LOCKED_RECIPES.map((r) => (
-            <View key={r.title} style={[styles.lockedCard, { backgroundColor: r.accent }]}>
-              <View style={styles.lockedSwatch}>
-                <Ionicons name="lock-closed" size={16} color={Colors.light.sageDeep} />
-              </View>
-              <Text style={styles.lockedTitle} numberOfLines={2}>
-                {r.title}
+        <View style={styles.unlockSection}>
+          <Text style={styles.unlockTitle}>What you unlock</Text>
+          <View style={styles.unlockList}>
+            {UNLOCK_ITEMS.map((item) => (
+              <Text key={item} style={styles.unlockItem}>
+                ✓ {item}
               </Text>
-              <Text style={styles.lockedTag}>{r.tag}</Text>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>What you unlock</Text>
-        <View style={styles.featureList}>
-          {FEATURES.map((f) => (
-            <View key={f.title} style={styles.featureRow}>
-              <View style={styles.featureIcon}>
-                <Ionicons name={f.icon} size={18} color={Colors.light.sageDeep} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.featureTitle}>{f.title}</Text>
-                <Text style={styles.featureSub}>{f.sub}</Text>
-              </View>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.light.sage} />
+        <View style={styles.previewSection}>
+          <Text style={styles.unlockTitle}>Premium preview</Text>
+          <View style={styles.previewCard}>
+            <Image source={PREMIUM_PREVIEW.image} style={styles.previewImage} />
+            <View style={styles.previewOverlay} />
+            <View style={styles.previewContent}>
+              <Text style={styles.previewBadge}>Premium</Text>
+              <Text style={styles.previewHeroTitle}>{PREMIUM_PREVIEW.title}</Text>
+              <Text style={styles.previewSubtitle}>{PREMIUM_PREVIEW.subtitle}</Text>
             </View>
-          ))}
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Choose your PureCraft plan</Text>
@@ -285,53 +265,46 @@ const styles = StyleSheet.create({
   heroStatLabel: { ...Type.caption, color: '#FFFFFFC0', marginTop: 2 },
   heroStatDivider: { width: 1, backgroundColor: '#FFFFFF35', marginHorizontal: Spacing.md },
   sectionTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: Spacing.xxl, marginBottom: Spacing.sm },
-  sectionSub: { ...Type.caption, color: Colors.light.textMuted, marginBottom: Spacing.lg },
 
-  lockedGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: Spacing.sm,
+  unlockSection: { marginTop: 24 },
+  previewSection: { marginTop: 28 },
+  unlockTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: Colors.light.sageDeep,
+    marginBottom: 14,
+    textTransform: 'uppercase',
   },
-  lockedCard: {
-    width: '31.5%',
-    flexGrow: 1,
-    minHeight: 110,
-    borderRadius: Radius.lg,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    gap: 6,
+  unlockList: { gap: 10 },
+  unlockItem: { fontSize: 16, color: Colors.light.text, lineHeight: 22 },
+  previewCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: 180,
+    marginTop: 4,
   },
-  lockedSwatch: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.pill,
-    backgroundColor: '#FFFFFFCC',
-    alignItems: 'center',
-    justifyContent: 'center',
+  previewImage: { width: '100%', height: '100%' },
+  previewOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)',
   },
-  lockedTitle: { ...Type.bodyStrong, color: Colors.light.text, fontSize: 12.5, lineHeight: 16, marginTop: 6 },
-  lockedTag: { ...Type.caption, color: Colors.light.textMuted, fontSize: 10.5 },
-  featureList: {
-    backgroundColor: Colors.light.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+  previewContent: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
   },
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.light.sageSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  previewBadge: {
+    fontSize: 11,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  featureTitle: { ...Type.bodyStrong, color: Colors.light.text },
-  featureSub: { ...Type.caption, color: Colors.light.textMuted, marginTop: 2 },
+  previewHeroTitle: { fontSize: 20, fontWeight: '600', color: '#FFFFFF' },
+  previewSubtitle: { fontSize: 14, color: '#E5E7EB', marginTop: 2 },
   plans: { gap: Spacing.md },
   plan: {
     flexDirection: 'row',

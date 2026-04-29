@@ -29,7 +29,7 @@ const STAGES = [
   { icon: 'reader-outline' as const, label: 'Reading your preferences' },
   { icon: 'flask-outline' as const, label: 'Pairing safe ingredients' },
   { icon: 'shield-checkmark-outline' as const, label: 'Tuning for your household' },
-  { icon: 'sparkles-outline' as const, label: 'Personalizing your feed' },
+  { icon: 'sparkles-outline' as const, label: 'Personalizing your recommendations' },
 ];
 
 export default function OnboardingLoading() {

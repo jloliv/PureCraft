@@ -17,9 +17,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
   Image,
   Modal,
@@ -30,6 +31,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+
+// Reveal-the-next-card sizing: each horizontal recipe card is ~80% of screen
+// width so the second card always peeks in from the right edge, signalling
+// scrollability without arrows or copy. Fallback to 320 because on web SSR
+// `Dimensions.get('window').width` can return 0 during initial hydration.
+const _winWidth = Dimensions.get('window').width;
+const CARD_WIDTH = _winWidth > 0 ? Math.round(_winWidth * 0.8) : 320;
+const CARD_GAP = 12;
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { formatMoney, useCurrency } from '@/constants/currency';
@@ -192,6 +201,10 @@ function applyFilter(matches: RecipeMatch[], filter: FilterKey): RecipeMatch[] {
 
 // ---------- Screen ----------------------------------------------------------
 
+// One-time-per-session flag so the Manage Pantry pulse animation never
+// repeats on subsequent visits during the same app session.
+let hasAnimatedManageBtn = false;
+
 export default function PantryMagic() {
   const { currency } = useCurrency();
   // Pantry is now a shared, persistent store so opening a recipe from any
@@ -200,6 +213,32 @@ export default function PantryMagic() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
   const [manageOpen, setManageOpen] = useState(false);
+
+  // Subtle one-time pulse on the Manage Pantry button so first-time users
+  // notice it. 800ms delay → scale 1 → 1.05 → 1 over 700ms with ease-in-out.
+  // Never repeats once played per session.
+  const manageScale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (hasAnimatedManageBtn) return;
+    hasAnimatedManageBtn = true;
+    const t = setTimeout(() => {
+      Animated.sequence([
+        Animated.timing(manageScale, {
+          toValue: 1.05,
+          duration: 350,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(manageScale, {
+          toValue: 1,
+          duration: 350,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [manageScale]);
 
   const matches = useMemo(() => matchAllRecipes(pantry), [pantry]);
   const filtered = useMemo(() => applyFilter(matches, filter), [matches, filter]);
@@ -270,19 +309,21 @@ export default function PantryMagic() {
           <Ionicons name="chevron-back" size={20} color={PALETTE.text} />
         </Pressable>
         <View style={{ flex: 1 }} />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Manage pantry"
-          onPress={() => {
-            tapLight();
-            setManageOpen(true);
-          }}
-          hitSlop={8}
-          style={({ pressed }) => [styles.manageBtn, pressed && { opacity: 0.85 }]}
-        >
-          <Ionicons name="options-outline" size={14} color={PALETTE.text} />
-          <Text style={styles.manageBtnText}>Manage Pantry</Text>
-        </Pressable>
+        <Animated.View style={{ transform: [{ scale: manageScale }] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Manage pantry"
+            onPress={() => {
+              tapLight();
+              setManageOpen(true);
+            }}
+            hitSlop={8}
+            style={({ pressed }) => [styles.manageBtn, pressed && { opacity: 0.85 }]}
+          >
+            <Ionicons name="options-outline" size={14} color={PALETTE.text} />
+            <Text style={styles.manageBtnText}>Manage Pantry</Text>
+          </Pressable>
+        </Animated.View>
       </View>
 
       <ScrollView
@@ -557,6 +598,9 @@ function SmartSection({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.cardRow}
+          snapToInterval={CARD_WIDTH + CARD_GAP}
+          decelerationRate="fast"
+          snapToAlignment="start"
         >
           {children}
         </ScrollView>
@@ -587,14 +631,12 @@ function RecipeCardReady({
       ]}
     >
       <View style={[styles.cardSwatch, { backgroundColor: p.swatch }]}>
-        <View style={styles.cardIconLayer}>
-          <Image
-            source={recipeIcon(p.id)}
-            testID="pc-recipe-icon"
-            style={styles.cardIcon}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={recipeIcon(p.id)}
+          testID="pc-recipe-icon"
+          style={styles.cardIcon}
+          resizeMode="cover"
+        />
         <View style={styles.readyBadge}>
           <View style={styles.readyDot} />
           <Text style={styles.readyText}>Ready</Text>
@@ -633,14 +675,12 @@ function RecipeCardMissing({
       ]}
     >
       <View style={[styles.cardSwatch, { backgroundColor: p.swatch }]}>
-        <View style={styles.cardIconLayer}>
-          <Image
-            source={recipeIcon(p.id)}
-            testID="pc-recipe-icon"
-            style={styles.cardIcon}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={recipeIcon(p.id)}
+          testID="pc-recipe-icon"
+          style={styles.cardIcon}
+          resizeMode="cover"
+        />
         <View style={styles.missingBadge}>
           <Ionicons name="add" size={10} color={PALETTE.goldDeep} />
           <Text style={styles.missingBadgeText}>Need {missing}</Text>
@@ -692,14 +732,12 @@ function RecipeCardSavings({
       ]}
     >
       <View style={[styles.cardSwatch, { backgroundColor: p.swatch }]}>
-        <View style={styles.cardIconLayer}>
-          <Image
-            source={recipeIcon(p.id)}
-            testID="pc-recipe-icon"
-            style={styles.cardIcon}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={recipeIcon(p.id)}
+          testID="pc-recipe-icon"
+          style={styles.cardIcon}
+          resizeMode="cover"
+        />
         <View style={styles.savingsBadge}>
           <Ionicons name="cash-outline" size={11} color="#FFFFFF" />
           <Text style={styles.savingsBadgeText}>
@@ -833,34 +871,28 @@ function ManageSheet({
                       {inCount} / {items.length}
                     </Text>
                   </View>
-                  <View style={styles.sheetList}>
-                    {items.map((it, i) => {
+                  <View style={styles.sheetGrid}>
+                    {items.map((it) => {
                       const isIn = pantry.has(it.key);
                       return (
                         <Pressable
                           key={it.key}
                           onPress={() => toggle(it.key)}
                           style={({ pressed }) => [
-                            styles.sheetRow,
-                            i === 0 && { borderTopWidth: 0 },
-                            isIn && styles.sheetRowIn,
-                            pressed && { transform: [{ scale: 0.99 }] },
+                            styles.sheetCard,
+                            isIn && styles.sheetCardIn,
+                            pressed && { transform: [{ scale: 0.97 }] },
                           ]}
                         >
-                          <View
-                            style={[
-                              styles.sheetRowEmojiWrap,
-                              isIn && styles.sheetRowEmojiWrapIn,
-                            ]}
-                          >
-                            <Text style={styles.sheetRowEmoji}>{it.emoji}</Text>
-                          </View>
-                          <Text style={styles.sheetRowName}>{it.name}</Text>
-                          <View style={[styles.sheetCheck, isIn && styles.sheetCheckIn]}>
-                            {isIn ? (
-                              <Ionicons name="checkmark" size={13} color="#FFFFFF" />
-                            ) : null}
-                          </View>
+                          <Text style={styles.sheetCardEmoji}>{it.emoji}</Text>
+                          <Text style={styles.sheetCardName} numberOfLines={1}>
+                            {it.name}
+                          </Text>
+                          {isIn ? (
+                            <View style={styles.sheetCardCheck}>
+                              <Ionicons name="checkmark" size={11} color="#FFFFFF" />
+                            </View>
+                          ) : null}
                         </Pressable>
                       );
                     })}
@@ -1182,13 +1214,11 @@ const styles = StyleSheet.create({
   },
 
   // -- Card row ----------------------------------------------------------
-  cardRow: { gap: 12, paddingRight: 12 },
-  card: { width: 168, gap: 8 },
+  cardRow: { gap: CARD_GAP, paddingLeft: 16, paddingRight: 0 },
+  card: { width: CARD_WIDTH, gap: 8 },
   cardSwatch: {
     height: 138,
     borderRadius: 20,
-    padding: 12,
-    justifyContent: 'space-between',
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
@@ -1203,7 +1233,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardIcon: { width: '78%', height: '78%' },
+  cardIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   cardTitle: {
     fontSize: 13.5,
     fontWeight: '700',
@@ -1233,7 +1271,9 @@ const styles = StyleSheet.create({
 
   // -- Card badges -------------------------------------------------------
   readyBadge: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -1256,7 +1296,10 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   missingBadge: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    right: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -1264,7 +1307,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: '#FFFFFFE6',
-    maxWidth: '95%',
+    alignSelf: 'flex-start',
   },
   missingBadgeText: {
     fontSize: 10,
@@ -1273,7 +1316,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   savingsBadge: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: 12,
+    left: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -1398,6 +1443,47 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: PALETTE.borderSoft,
     overflow: 'hidden',
+  },
+  sheetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  sheetCard: {
+    width: '31.5%',
+    aspectRatio: 1,
+    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: PALETTE.borderSoft,
+    backgroundColor: PALETTE.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    position: 'relative',
+  },
+  sheetCardIn: {
+    backgroundColor: PALETTE.sageSoft,
+    borderColor: PALETTE.sageDeep,
+  },
+  sheetCardEmoji: { fontSize: 28, marginBottom: 6 },
+  sheetCardName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: PALETTE.text,
+    textAlign: 'center',
+    paddingHorizontal: 2,
+  },
+  sheetCardCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: PALETTE.sageDeep,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetRow: {
     flexDirection: 'row',

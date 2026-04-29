@@ -1,8 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
-  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -26,7 +24,6 @@ const PALETTE = {
   surfaceWarm: 'rgba(255,255,255,0.5)',
   border: '#E8E3D9',
   sageDeep: '#5F876A',
-  sageSoft: 'rgba(95, 135, 106, 0.04)',
 };
 
 type AvoidanceItem = {
@@ -34,123 +31,25 @@ type AvoidanceItem = {
   label: string;
 };
 
-type AvoidanceGroup = {
-  title: string;
-  items: AvoidanceItem[];
-};
-
-const AVOIDANCE_GROUPS: AvoidanceGroup[] = [
-  {
-    title: 'Sensitivities',
-    items: [
-      { key: 'fragrance', label: 'Fragrance' },
-      { key: 'eo', label: 'Essential Oils' },
-      { key: 'chemical', label: 'Sensitive to chemicals' },
-    ],
-  },
-  {
-    title: 'Ingredients',
-    items: [
-      { key: 'coconut', label: 'Coconut' },
-      { key: 'vinegar', label: 'Vinegar' },
-      { key: 'baking-soda', label: 'Baking Soda' },
-      { key: 'castile-soap', label: 'Castile Soap' },
-      { key: 'hydrogen-peroxide', label: 'Hydrogen Peroxide' },
-      { key: 'rubbing-alcohol', label: 'Rubbing Alcohol' },
-      { key: 'witch-hazel', label: 'Witch Hazel' },
-    ],
-  },
-  {
-    title: 'Allergies',
-    items: [
-      { key: 'nuts', label: 'Nuts' },
-      { key: 'gluten', label: 'Gluten' },
-    ],
-  },
+const AVOIDANCE_OPTIONS: AvoidanceItem[] = [
+  { key: 'fragrance', label: 'Fragrance' },
+  { key: 'eo', label: 'Essential Oils' },
+  { key: 'chemical', label: 'Sensitive to chemicals' },
+  { key: 'coconut', label: 'Coconut' },
+  { key: 'vinegar', label: 'Vinegar' },
+  { key: 'baking-soda', label: 'Baking Soda' },
+  { key: 'castile-soap', label: 'Castile Soap' },
+  { key: 'hydrogen-peroxide', label: 'Hydrogen Peroxide' },
+  { key: 'rubbing-alcohol', label: 'Rubbing Alcohol' },
+  { key: 'witch-hazel', label: 'Witch Hazel' },
+  { key: 'nuts', label: 'Nuts' },
+  { key: 'gluten', label: 'Gluten' },
 ];
+
+const NONE_KEY = '__none__';
 
 function toCustomKey(value: string) {
   return `custom:${value.trim().toLowerCase().replace(/\s+/g, '-')}`;
-}
-
-function AvoidanceRow({
-  item,
-  selected,
-  isLast,
-  onPress,
-}: {
-  item: AvoidanceItem;
-  selected: boolean;
-  isLast?: boolean;
-  onPress: () => void;
-}) {
-  const fade = useRef(new Animated.Value(selected ? 1 : 0)).current;
-  const textOpacity = useRef(new Animated.Value(selected ? 1 : 0.85)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fade, {
-        toValue: selected ? 1 : 0,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(textOpacity, {
-        toValue: selected ? 1 : 0.85,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [fade, selected, textOpacity]);
-
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 0.99,
-        duration: 60,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    onPress();
-  };
-
-  return (
-    <Animated.View
-      style={[
-        styles.rowFrame,
-        !isLast && styles.rowDivider,
-        { transform: [{ scale }] },
-      ]}
-    >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected }}
-        accessibilityLabel={item.label}
-        onPress={handlePress}
-        style={({ pressed }) => [
-          styles.row,
-          selected && styles.rowSelected,
-          pressed && styles.rowPressed,
-        ]}
-      >
-        <Animated.View style={[styles.rowTextWrap, { opacity: textOpacity }]}>
-          <Text style={[styles.rowText, selected && styles.rowTextSelected]} numberOfLines={2}>
-            {item.label}
-          </Text>
-        </Animated.View>
-        <View style={[styles.indicator, selected && styles.indicatorSelected]}>
-          <Animated.View style={{ opacity: fade }}>
-            <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-          </Animated.View>
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
 }
 
 export default function Avoidances() {
@@ -171,7 +70,7 @@ export default function Avoidances() {
   const selectNone = () => {
     tapLight();
     setSelected([]);
-    setNoneSelected(true);
+    setNoneSelected((prev) => !prev);
   };
 
   const saveAndContinue = () => {
@@ -186,9 +85,7 @@ export default function Avoidances() {
     const key = toCustomKey(label);
     tapLight();
     setCustomItems((prev) =>
-      prev.some((item) => item.key === key)
-        ? prev
-        : [...prev, { key, label }],
+      prev.some((item) => item.key === key) ? prev : [...prev, { key, label }],
     );
     setSelected((prev) => (prev.includes(key) ? prev : [...prev, key]));
     setNoneSelected(false);
@@ -196,7 +93,8 @@ export default function Avoidances() {
     setCustomOpen(false);
   };
 
-  const hasSelections = selected.length > 0;
+  const hasSelections = selected.length > 0 || noneSelected;
+  const allChips: AvoidanceItem[] = [...AVOIDANCE_OPTIONS, ...customItems];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -214,40 +112,45 @@ export default function Avoidances() {
         </Text>
         <Text style={styles.instruction}>Select anything you want to avoid.</Text>
 
-        <View style={styles.sections}>
-          {AVOIDANCE_GROUPS.map((group) => (
-            <View key={group.title} style={styles.section}>
-              <Text style={styles.sectionLabel}>{group.title}</Text>
-              <View>
-                {group.items.map((item, index) => (
-                  <AvoidanceRow
-                    key={item.key}
-                    item={item}
-                    selected={selected.includes(item.key)}
-                    isLast={index === group.items.length - 1}
-                    onPress={() => toggle(item.key)}
-                  />
-                ))}
-              </View>
-            </View>
-          ))}
+        <View style={styles.chipWrap}>
+          {allChips.map((item) => {
+            const isSelected = selected.includes(item.key);
+            return (
+              <Pressable
+                key={item.key}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={item.label}
+                onPress={() => toggle(item.key)}
+                style={({ pressed }) => [
+                  styles.chip,
+                  isSelected && styles.chipSelected,
+                  pressed && { transform: [{ scale: 0.97 }] },
+                ]}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
 
-          {customItems.length > 0 ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Custom</Text>
-              <View>
-                {customItems.map((item, index) => (
-                  <AvoidanceRow
-                    key={item.key}
-                    item={item}
-                    selected={selected.includes(item.key)}
-                    isLast={index === customItems.length - 1}
-                    onPress={() => toggle(item.key)}
-                  />
-                ))}
-              </View>
-            </View>
-          ) : null}
+          <Pressable
+            key={NONE_KEY}
+            accessibilityRole="button"
+            accessibilityState={{ selected: noneSelected }}
+            accessibilityLabel="I don't avoid anything"
+            onPress={selectNone}
+            style={({ pressed }) => [
+              styles.chip,
+              noneSelected && styles.chipSelected,
+              pressed && { transform: [{ scale: 0.97 }] },
+            ]}
+          >
+            <Text style={[styles.chipText, noneSelected && styles.chipTextSelected]}>
+              I don&apos;t avoid anything
+            </Text>
+          </Pressable>
         </View>
 
         <Pressable
@@ -258,19 +161,11 @@ export default function Avoidances() {
           }}
           style={({ pressed }) => [styles.addCustom, pressed && { opacity: 0.72 }]}
         >
-          <Text style={styles.addCustomText}>Add custom ingredient</Text>
+          <Text style={styles.addCustomText}>+ Add custom ingredient</Text>
         </Pressable>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable hitSlop={8} onPress={selectNone} style={styles.noneAction}>
-          <View style={[styles.noneIndicator, noneSelected && styles.indicatorSelected]}>
-            {noneSelected ? <Ionicons name="checkmark" size={13} color="#FFFFFF" /> : null}
-          </View>
-          <Text style={[styles.noneText, noneSelected && styles.noneTextSelected]}>
-            I don&apos;t avoid anything
-          </Text>
-        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={saveAndContinue}
@@ -328,6 +223,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1, backgroundColor: PALETTE.bg },
   scroll: {
     paddingHorizontal: 20,
+    paddingTop: 5,
     paddingBottom: 20,
     backgroundColor: PALETTE.bg,
   },
@@ -348,9 +244,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   headline: {
-    maxWidth: 320,
-    fontSize: 28,
-    lineHeight: 33,
+    fontSize: 26,
+    lineHeight: 31,
     fontWeight: '600',
     color: PALETTE.text,
     letterSpacing: -0.5,
@@ -368,72 +263,34 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: PALETTE.textSubtle,
   },
-  sections: {
-    marginTop: 34,
-  },
-  section: {
-    marginBottom: 34,
-  },
-  sectionLabel: {
-    marginBottom: 12,
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 1.8,
-    textTransform: 'uppercase',
-    color: PALETTE.textSubtle,
-  },
-  rowFrame: {
-    borderBottomColor: 'rgba(0,0,0,0.06)',
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-  },
-  row: {
-    minHeight: 54,
-    paddingVertical: 18,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
+  chipWrap: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 24,
   },
-  rowPressed: {
-    backgroundColor: PALETTE.sageSoft,
-  },
-  rowSelected: {
-    backgroundColor: PALETTE.sageSoft,
-  },
-  rowTextWrap: {
-    flex: 1,
-  },
-  rowText: {
-    textAlign: 'left',
-    color: PALETTE.text,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '500',
-  },
-  rowTextSelected: {
-    color: '#101510',
-  },
-  indicator: {
-    width: 22,
-    height: 22,
-    marginLeft: 16,
-    borderRadius: 999,
+  chip: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#F2EDE3',
     borderWidth: 1,
-    borderColor: '#CFC9BE',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: '#E6DFD2',
   },
-  indicatorSelected: {
-    borderColor: PALETTE.sageDeep,
+  chipSelected: {
     backgroundColor: PALETTE.sageDeep,
+    borderColor: PALETTE.sageDeep,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2F4F3E',
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
   },
   addCustom: {
-    marginTop: -6,
-    marginBottom: 32,
+    marginTop: 22,
     alignSelf: 'flex-start',
     paddingVertical: 10,
   },
@@ -448,32 +305,6 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     backgroundColor: PALETTE.bg,
     alignItems: 'center',
-    gap: 14,
-  },
-  noneAction: {
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  noneIndicator: {
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#CFC9BE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  noneText: {
-    color: PALETTE.textMuted,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  noneTextSelected: {
-    color: PALETTE.sageDeep,
   },
   modalBackdrop: {
     flex: 1,

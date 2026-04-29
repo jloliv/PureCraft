@@ -2,10 +2,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MakeNav } from '@/components/make-nav';
+import { tapLight } from '@/lib/haptics';
 import { SavingsDashboard } from '@/components/savings-dashboard';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { PRODUCTS, type Product } from '@/constants/products';
@@ -75,7 +85,17 @@ const DEMO_FALLBACK: SavedItem[] = [
 const FILTERS = ['All', 'Favorites', 'Cleaning', 'Beauty', 'Home', 'Custom', 'Premium'] as const;
 type Filter = (typeof FILTERS)[number];
 
-const COLLECTIONS = [
+type Collection = {
+  key: string;
+  name: string;
+  count: number;
+  sub: string;
+  accent: string;
+  accentDeep: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+const DEFAULT_COLLECTIONS: Collection[] = [
   {
     key: 'spring-reset',
     name: 'Spring Reset',
@@ -83,7 +103,7 @@ const COLLECTIONS = [
     sub: 'Pollen, dust, fresh air',
     accent: '#E4EDE5',
     accentDeep: '#7E8F75',
-    icon: 'flower-outline' as const,
+    icon: 'flower-outline',
   },
   {
     key: 'weekly-staples',
@@ -92,7 +112,7 @@ const COLLECTIONS = [
     sub: 'The non-negotiables',
     accent: '#F7F2E7',
     accentDeep: '#A98A4D',
-    icon: 'leaf-outline' as const,
+    icon: 'leaf-outline',
   },
   {
     key: 'self-care',
@@ -101,7 +121,7 @@ const COLLECTIONS = [
     sub: 'Slow routines',
     accent: '#F1ECE0',
     accentDeep: '#9C7A4F',
-    icon: 'sparkles-outline' as const,
+    icon: 'sparkles-outline',
   },
   {
     key: 'baby-safe',
@@ -110,13 +130,33 @@ const COLLECTIONS = [
     sub: 'Tiny-hands approved',
     accent: '#EAF1F4',
     accentDeep: '#4F7186',
-    icon: 'happy-outline' as const,
+    icon: 'happy-outline',
   },
 ];
+
+// Cycle these accents for new collections so they look intentional, not random.
+const NEW_COLLECTION_ACCENTS: Array<Pick<Collection, 'accent' | 'accentDeep' | 'icon'>> = [
+  { accent: '#EFE7D2', accentDeep: '#A98A4D', icon: 'star-outline' },
+  { accent: '#E8F0EA', accentDeep: '#5F876A', icon: 'leaf-outline' },
+  { accent: '#F4EAD5', accentDeep: '#8B6A2F', icon: 'flame-outline' },
+  { accent: '#ECE7F2', accentDeep: '#6F5FA3', icon: 'sparkles-outline' },
+];
+
+function slugify(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    || `collection-${Date.now()}`;
+}
 
 export default function Saved() {
   const { currency } = useCurrency();
   const [filter, setFilter] = useState<Filter>('All');
+  const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
   const { user } = useAuth();
   const { saved: savedMap } = useSavedRecipes();
   const allRecipes = useAllRecipes();
@@ -270,11 +310,15 @@ export default function Saved() {
         <SectionHeader
           title="Your collections"
           caption="Group recipes by routine"
-          actionLabel="New folder"
-          onAction={() => {}}
+          actionLabel="New collection"
+          onAction={() => {
+            tapLight();
+            setNewCollectionName('');
+            setCreateOpen(true);
+          }}
         />
         <View style={styles.collectionsGrid}>
-          {COLLECTIONS.map((c) => (
+          {collections.map((c) => (
             <Pressable
               key={c.key}
               onPress={() => {}}
@@ -322,14 +366,12 @@ export default function Saved() {
               style={({ pressed }) => [styles.recentCard, pressed && styles.cardPressed]}
             >
               <View style={[styles.recentSwatch, { backgroundColor: s.product.swatch }]}>
-                <View style={styles.iconLayer}>
-                  <Image
-                    source={iconFor(s.product.id)}
-                    testID="pc-recipe-icon"
-                    style={[styles.recentIcon, RECIPE_ICON_BLEND]}
-                    resizeMode="contain"
-                  />
-                </View>
+                <Image
+                  source={iconFor(s.product.id)}
+                  testID="pc-recipe-icon"
+                  style={[styles.recentIcon, RECIPE_ICON_BLEND]}
+                  resizeMode="cover"
+                />
                 <View style={styles.heartChip}>
                   <Ionicons name="heart" size={10} color={PALETTE.rose} />
                 </View>
@@ -365,6 +407,91 @@ export default function Saved() {
       </ScrollView>
 
       <MakeNav active="saved" />
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={createOpen}
+        onRequestClose={() => setCreateOpen(false)}
+      >
+        <View style={styles.createBackdrop}>
+          <View style={styles.createCard}>
+            <Text style={styles.createTitle}>New collection</Text>
+            <Text style={styles.createSub}>
+              Group recipes by routine, season, or person.
+            </Text>
+            <TextInput
+              autoFocus
+              value={newCollectionName}
+              onChangeText={setNewCollectionName}
+              placeholder="Collection name"
+              placeholderTextColor={PALETTE.textSubtle}
+              style={styles.createInput}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                const name = newCollectionName.trim();
+                if (!name) return;
+                const accent =
+                  NEW_COLLECTION_ACCENTS[collections.length % NEW_COLLECTION_ACCENTS.length];
+                setCollections((prev) => [
+                  ...prev,
+                  {
+                    key: `${slugify(name)}-${Date.now()}`,
+                    name,
+                    count: 0,
+                    sub: 'New collection',
+                    ...accent,
+                  },
+                ]);
+                tapLight();
+                setNewCollectionName('');
+                setCreateOpen(false);
+              }}
+            />
+            <View style={styles.createActions}>
+              <Pressable
+                onPress={() => {
+                  setCreateOpen(false);
+                  setNewCollectionName('');
+                }}
+                style={styles.createGhost}
+              >
+                <Text style={styles.createGhostText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={newCollectionName.trim().length === 0}
+                onPress={() => {
+                  const name = newCollectionName.trim();
+                  if (!name) return;
+                  const accent =
+                    NEW_COLLECTION_ACCENTS[collections.length % NEW_COLLECTION_ACCENTS.length];
+                  setCollections((prev) => [
+                    ...prev,
+                    {
+                      key: `${slugify(name)}-${Date.now()}`,
+                      name,
+                      count: 0,
+                      sub: 'New collection',
+                      ...accent,
+                    },
+                  ]);
+                  tapLight();
+                  setNewCollectionName('');
+                  setCreateOpen(false);
+                }}
+                style={({ pressed }) => [
+                  styles.createSave,
+                  newCollectionName.trim().length === 0 && { opacity: 0.45 },
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <Text style={styles.createSaveText}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -382,18 +509,26 @@ function ContinueMakingCard({
       onPress={() => router.push({ pathname: '/result', params: { id: item.product.id } })}
       style={({ pressed }) => [styles.continueWrap, pressed && { opacity: 0.96 }]}
     >
-      <LinearGradient
-        colors={['#EFE7D2', '#F7F2E7', '#E4EDE5']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.continueCard}
-      >
-        <View style={styles.continueLeft}>
+      <View style={styles.continueCard}>
+        <Image
+          source={iconFor(item.product.id)}
+          style={styles.continueImage}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['transparent', '#F1ECE0']}
+          start={{ x: 0.4, y: 0 }}
+          end={{ x: 0.95, y: 0 }}
+          style={styles.continueGradient}
+        />
+        <View style={styles.continueText}>
           <View style={styles.continueBadge}>
             <View style={styles.continuePulse} />
-            <Text style={styles.continueBadgeText}>Continue making</Text>
+            <Text style={styles.continueBadgeText}>You&apos;re making</Text>
           </View>
-          <Text style={styles.continueTitle}>{item.product.title}</Text>
+          <Text style={styles.continueTitle} numberOfLines={1}>
+            {item.product.title}
+          </Text>
           <Text style={styles.continueMeta}>
             Step 3 of 5 · {item.product.time}
           </Text>
@@ -405,17 +540,7 @@ function ContinueMakingCard({
             <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
           </View>
         </View>
-        <View style={[styles.continueSwatch, { backgroundColor: item.product.swatch }]}>
-          <View style={styles.iconLayer}>
-            <Image
-              source={iconFor(item.product.id)}
-                    testID="pc-recipe-icon"
-              style={[styles.continueIcon, RECIPE_ICON_BLEND]}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-      </LinearGradient>
+      </View>
     </Pressable>
   );
 }
@@ -433,14 +558,12 @@ function SavedCard({
       style={({ pressed }) => [styles.gridCard, pressed && styles.cardPressed]}
     >
       <View style={[styles.gridSwatch, { backgroundColor: item.product.swatch }]}>
-        <View style={styles.iconLayer}>
-          <Image
-            source={iconFor(item.product.id)}
-                    testID="pc-recipe-icon"
-            style={[styles.gridIcon, RECIPE_ICON_BLEND]}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={iconFor(item.product.id)}
+          testID="pc-recipe-icon"
+          style={[styles.gridIcon, RECIPE_ICON_BLEND]}
+          resizeMode="cover"
+        />
         <View style={styles.gridTopRow}>
           {item.premium ? (
             <View style={styles.premiumBadge}>
@@ -518,6 +641,66 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
   scroll: { paddingHorizontal: 20, paddingBottom: 24 },
 
+  createBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 20, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  createCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 22,
+  },
+  createTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: PALETTE.text,
+    letterSpacing: -0.3,
+  },
+  createSub: {
+    fontSize: 13.5,
+    color: PALETTE.textMuted,
+    lineHeight: 19,
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  createInput: {
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: PALETTE.text,
+    backgroundColor: '#FAF7F0',
+  },
+  createActions: {
+    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  createGhost: { paddingHorizontal: 16, paddingVertical: 12 },
+  createGhostText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: PALETTE.textMuted,
+  },
+  createSave: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: PALETTE.sageDeep,
+  },
+  createSaveText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -576,12 +759,34 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   continueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 18,
-    padding: 18,
+    height: 152,
+    backgroundColor: '#F1ECE0',
+    position: 'relative',
+    overflow: 'hidden',
   },
-  continueLeft: { flex: 1, gap: 4 },
+  continueImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: '60%',
+    height: '100%',
+  },
+  continueGradient: {
+    position: 'absolute',
+    left: '40%',
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  continueText: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    bottom: 16,
+    width: '46%',
+    justifyContent: 'center',
+  },
   continueBadge: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
@@ -606,14 +811,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   continueTitle: {
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 21,
     fontWeight: '700',
     color: PALETTE.text,
-    letterSpacing: -0.4,
-    marginTop: 6,
+    letterSpacing: -0.3,
+    marginTop: 8,
   },
-  continueMeta: { fontSize: 12, color: PALETTE.textMuted, marginTop: 2 },
+  continueMeta: { fontSize: 11.5, color: PALETTE.textMuted, marginTop: 2 },
   continueProgressTrack: {
     height: 4,
     borderRadius: 999,
@@ -647,8 +852,13 @@ const styles = StyleSheet.create({
   },
   continueEmoji: { fontSize: 42 },
   continueIcon: {
-    width: '82%',
-    height: '82%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   iconLayer: {
     position: 'absolute',
@@ -743,8 +953,13 @@ const styles = StyleSheet.create({
   },
   recentEmoji: { fontSize: 36 },
   recentIcon: {
-    width: '82%',
-    height: '82%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   heartChip: {
     position: 'absolute',
@@ -793,8 +1008,13 @@ const styles = StyleSheet.create({
   },
   gridEmoji: { fontSize: 38, alignSelf: 'flex-start' },
   gridIcon: {
-    width: '82%',
-    height: '82%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   premiumBadge: {
     flexDirection: 'row',

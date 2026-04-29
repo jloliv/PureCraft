@@ -145,7 +145,7 @@ export default function Categories() {
 
   const headline =
     filter === 'all'
-      ? 'Make something'
+      ? 'Make something with what you have'
       : categoryByKey(filter)?.label ?? 'Recipes';
   const hasSubFilter = safeForKidsParam || !!tagParam || !!query.trim();
   const headlineCaption =
@@ -305,14 +305,12 @@ export default function Categories() {
                     style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
                   >
                     <View style={[styles.swatch, { backgroundColor: swatch }]}>
-                      <View style={styles.iconLayer}>
-                        <Image
-                          source={recipeIcon(recipe.id, recipe.categoryKey)}
-                          testID="pc-recipe-icon"
-                          style={styles.cardIcon}
-                          resizeMode="contain"
-                        />
-                      </View>
+                      <Image
+                        source={recipeIcon(recipe.id, recipe.categoryKey)}
+                        testID="pc-recipe-icon"
+                        style={styles.cardIcon}
+                        resizeMode="cover"
+                      />
                       <View style={[styles.savingsPill, { borderColor: accent }]}>
                         <Text style={[styles.savingsText, { color: accent }]}>
                           Save{' '}
@@ -591,8 +589,6 @@ const styles = StyleSheet.create({
   cardPressed: { transform: [{ scale: 0.98 }] },
   swatch: {
     height: 130,
-    padding: Spacing.md,
-    justifyContent: 'space-between',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -607,11 +603,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardIcon: {
-    width: '78%',
-    height: '78%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   savingsPill: {
-    alignSelf: 'flex-start',
+    position: 'absolute',
+    top: Spacing.md,
+    left: Spacing.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: 4,
     borderRadius: Radius.pill,

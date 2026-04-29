@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { OnboardingHeader } from '@/components/onboarding-header';
 import { tapLight } from '@/lib/haptics';
 import { INTENT_IMAGE_FALLBACK, INTENT_IMAGES } from '@/lib/intent-images';
-import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
+import { patchOnboardingAnswers, useOnboardingAnswers } from '@/lib/onboarding-answers';
 
 const PALETTE = {
   bg: '#FFFFFF',
@@ -44,7 +44,12 @@ const INTENTS: IntentOption[] = [
 ];
 
 export default function Intent() {
-  const [selected, setSelected] = useState<string[]>([]);
+  // Seed from previously-saved answers so re-entering the screen from
+  // Settings shows the user's existing picks instead of an empty state.
+  const savedAnswers = useOnboardingAnswers();
+  const [selected, setSelected] = useState<string[]>(
+    () => savedAnswers.intent_categories ?? [],
+  );
   const { width: screenWidth } = useWindowDimensions();
   const columns = screenWidth < 380 ? 2 : 3;
   const cardBasis = columns === 2 ? '47%' : '30%';
@@ -69,9 +74,9 @@ export default function Intent() {
       <OnboardingHeader step={1} />
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 1</Text>
-        <Text style={styles.title}>What would you like to create?</Text>
+        <Text style={styles.title}>What would you like help with?</Text>
         <Text style={styles.subtitle}>
-          Pick what interests you most. We&apos;ll personalize everything around it.
+          Pick what matters most — we&apos;ll tailor everything to you.
         </Text>
 
         <View style={styles.grid}>
@@ -143,7 +148,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '600',
     letterSpacing: -0.5,
     color: PALETTE.text,
@@ -159,7 +164,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginTop: 50,
+    marginTop: 30,
   },
   card: {
     marginBottom: 20,
@@ -186,7 +191,7 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 12,
     color: '#2F4F3E',
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
   },

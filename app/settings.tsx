@@ -1,14 +1,55 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCurrency } from '@/constants/currency';
 import { signOut, useAuth } from '@/lib/auth';
 import { tapLight, tapSoft, warning } from '@/lib/haptics';
+import { useOnboardingAnswers } from '@/lib/onboarding-answers';
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
+import { useProfile } from '@/lib/profile';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+
+// Display-label mappings for keys captured during onboarding. Keep in sync
+// with the labels used in the onboarding screens themselves.
+const INTENT_LABELS: Record<string, string> = {
+  'safer-cleaning': 'Safer Cleaning',
+  'better-skin-care': 'Better Skin Care',
+  'luxury-home-scents': 'Luxury Home Scents',
+  'save-money': 'Save Money',
+  'allergy-friendly': 'Allergy Friendly',
+  'eco-living': 'Eco Living',
+  'diy-beauty': 'DIY Beauty',
+  'wellness-routines': 'Wellness Routines',
+  'create-recipes': 'Create & Save Recipes',
+};
+
+const HOUSEHOLD_LABELS: Record<string, string> = {
+  baby: 'Babies',
+  young: 'Young Children',
+  older: 'Older Children',
+  teens: 'Teens',
+  pets: 'Pets',
+  adults: 'Just Adults',
+  elderly: 'Elderly Family',
+};
+
+// Render selected keys as a comma-separated label list, capped at MAX with a
+// "+N" overflow tail. Returns "Not configured" when nothing is selected.
+function formatSelected(
+  keys: string[] | undefined,
+  labels: Record<string, string>,
+  max = 2,
+): string {
+  const resolved = (keys ?? [])
+    .map((k) => labels[k] ?? k)
+    .filter(Boolean);
+  if (resolved.length === 0) return 'Not configured';
+  if (resolved.length <= max) return resolved.join(', ');
+  return `${resolved.slice(0, max).join(', ')} +${resolved.length - max}`;
+}
 
 type ToggleKey = 'notifications' | 'safetyAlerts' | 'haptics' | 'metric';
 
@@ -17,6 +58,17 @@ const APP_VERSION = '1.0.0 · build 1';
 export default function Settings() {
   const { currency } = useCurrency();
   const { user } = useAuth();
+  const { profile } = useProfile();
+  const localAnswers = useOnboardingAnswers();
+  // Profile (when signed-in) is canonical; local buffer covers guest mode.
+  const intentKeys =
+    profile?.intent_categories?.length
+      ? profile.intent_categories
+      : localAnswers.intent_categories;
+  const householdKeys =
+    profile?.household?.length ? profile.household : localAnswers.household;
+  const intentSubtitle = formatSelected(intentKeys, INTENT_LABELS);
+  const householdSubtitle = formatSelected(householdKeys, HOUSEHOLD_LABELS);
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     notifications: true,
     safetyAlerts: true,
@@ -103,13 +155,13 @@ export default function Settings() {
           <Row
             icon="people-outline"
             title="Household profile"
-            sub="Babies, pets, allergies"
+            sub={householdSubtitle}
             onPress={() => router.push('/onboarding/household')}
           />
           <Row
             icon="leaf-outline"
             title="Default preferences"
-            sub="2 selected · Baby-safe, Natural"
+            sub={intentSubtitle}
             onPress={() => router.push('/onboarding/intent')}
           />
           <Row
@@ -164,8 +216,19 @@ export default function Settings() {
         </Section>
 
         <Section title="Support">
-          <Row icon="help-circle-outline" title="Help center" onPress={() => {}} />
-          <Row icon="mail-outline" title="Contact us" sub="hello@purecraft.app" onPress={() => {}} />
+          <Row
+            icon="help-circle-outline"
+            title="Help center"
+            onPress={() => router.push('/help-center')}
+          />
+          <Row
+            icon="mail-outline"
+            title="Contact us"
+            sub="hello@purecraftliving.com"
+            onPress={() => {
+              void Linking.openURL('mailto:hello@purecraftliving.com?subject=PureCraft Support');
+            }}
+          />
           <Row icon="star-outline" title="Rate PureCraft" onPress={() => {}} isLast />
         </Section>
 

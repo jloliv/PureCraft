@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
-import { signIn, signUp } from '@/lib/auth';
+import { signIn, signInWithApple, signInWithGoogle, signUp } from '@/lib/auth';
 
 const LOGO = require('../assets/images/PureCraftLogo.png');
 
@@ -62,6 +62,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
     router.replace('/home');
   };
 
+  const handleOAuth = async (provider: 'apple' | 'google') => {
+    setError(null);
+    const fn = provider === 'apple' ? signInWithApple : signInWithGoogle;
+    const { error: e } = await fn();
+    if (e) {
+      setError(
+        provider === 'apple'
+          ? 'Apple sign-in is launching soon — use email for now.'
+          : 'Google sign-in is launching soon — use email for now.',
+      );
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -86,6 +99,30 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
           <Text style={styles.headline}>{headline}</Text>
           <Text style={styles.sub}>{sub}</Text>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => handleOAuth('apple')}
+            style={({ pressed }) => [styles.oauthBtn, styles.oauthApple, pressed && { opacity: 0.92 }]}
+          >
+            <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+            <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => handleOAuth('google')}
+            style={({ pressed }) => [styles.oauthBtn, styles.oauthGoogle, pressed && { opacity: 0.92 }]}
+          >
+            <Ionicons name="logo-google" size={18} color={COLORS.deep} />
+            <Text style={styles.oauthTextLight}>Sign in with Google</Text>
+          </Pressable>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
           <View style={styles.field}>
             <Text style={styles.label}>EMAIL</Text>
@@ -215,6 +252,40 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 28,
     paddingHorizontal: 8,
+  },
+
+  oauthBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  oauthApple: { backgroundColor: '#0B0B0B' },
+  oauthGoogle: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  oauthTextDark: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
+  oauthTextLight: { color: COLORS.deep, fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
+  divider: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginVertical: 14,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: {
+    fontSize: 11,
+    color: COLORS.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.6,
+    fontWeight: '600',
   },
 
   field: { width: '100%', marginBottom: 14 },

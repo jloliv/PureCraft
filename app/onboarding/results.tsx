@@ -2,7 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
@@ -52,6 +62,10 @@ const FALLBACK_PREFS = {
 export default function Results() {
   const fade = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(20)).current;
+  const { height: screenHeight } = useWindowDimensions();
+  // Fall back to 380 on first paint — RNW hydrates useWindowDimensions
+  // with height 0, which would otherwise collapse the hero to nothing.
+  const heroHeight = screenHeight > 0 ? Math.round(screenHeight * 0.38) : 380;
   const allRecipes = useAllRecipes();
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -100,22 +114,33 @@ export default function Results() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fade, transform: [{ translateY: lift }] }}>
-          <LinearGradient
-            colors={[PALETTE.bg, PALETTE.bg, PALETTE.bg]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
-          >
-            <View style={styles.heroBadge}>
-              <Ionicons name="checkmark-circle" size={14} color={PALETTE.sageDeep} />
-              <Text style={styles.heroBadgeText}>Profile ready</Text>
+          <View style={[styles.heroImageWrap, { height: heroHeight }]}>
+            <Image
+              source={require('../../assets/images/Profile-hero.png')}
+              style={styles.heroImage}
+              resizeMode="cover"
+            />
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.7)']}
+              locations={[0, 0.55, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={StyleSheet.absoluteFillObject}
+              pointerEvents="none"
+            />
+            <View style={styles.heroOverlayTop}>
+              <View style={styles.heroBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={PALETTE.sageDeep} />
+                <Text style={styles.heroBadgeText}>Profile ready</Text>
+              </View>
             </View>
-            <Text style={styles.heroEyebrow}>Welcome to your</Text>
-            <Text style={styles.heroTitle}>Custom PureCraft{`\n`}Experience</Text>
-            <Text style={styles.heroSub}>
-              Every recipe, ingredient, and routine will now be tuned to you.
-            </Text>
-          </LinearGradient>
+            <View style={styles.heroOverlayBottom}>
+              <Text style={styles.heroTitleNew}>Custom PureCraft Experience</Text>
+              <Text style={styles.heroSubNew}>
+                Every recipe, ingredient, and routine is now tuned to you.
+              </Text>
+            </View>
+          </View>
 
           <Text style={styles.section}>We&apos;ll prioritize</Text>
           <View style={styles.list}>
@@ -138,7 +163,6 @@ export default function Results() {
             ))}
           </View>
 
-          <Text style={styles.section}>First in your feed</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -179,12 +203,12 @@ export default function Results() {
               </View>
               <Text style={styles.upgradeMeta}>7-day trial</Text>
             </View>
-            <Text style={styles.upgradeTitle}>Want all 120+ premium recipes too?</Text>
+            <Text style={styles.upgradeTitle}>Unlock your full experience</Text>
             <Text style={styles.upgradeSub}>
-              Allergy-aware filters, family profiles, smart shopping planner.
+              Unlimited safe formulas, smarter recommendations, and full personalization.
             </Text>
             <View style={styles.upgradeCta}>
-              <Text style={styles.upgradeCtaText}>See what&apos;s inside</Text>
+              <Text style={styles.upgradeCtaText}>Explore PureCraft+</Text>
               <Ionicons name="arrow-forward" size={13} color={PALETTE.goldDeep} />
             </View>
           </Pressable>
@@ -215,15 +239,25 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: PALETTE.bg },
   scroll: { paddingHorizontal: 22, paddingBottom: 16, backgroundColor: PALETTE.bg },
 
-  heroCard: {
-    marginTop: 12,
-    padding: 24,
-    borderRadius: 26,
-    shadowColor: '#1F1F1F',
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3,
+  heroImageWrap: {
+    marginHorizontal: -22,
+    marginTop: 0,
+    marginBottom: 18,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: '#000',
+  },
+  heroImage: { width: '100%', height: '100%' },
+  heroOverlayTop: {
+    position: 'absolute',
+    top: 16,
+    left: 22,
+  },
+  heroOverlayBottom: {
+    position: 'absolute',
+    left: 22,
+    right: 22,
+    bottom: 22,
   },
   heroBadge: {
     alignSelf: 'flex-start',
@@ -233,7 +267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.92)',
   },
   heroBadgeText: {
     fontSize: 11,
@@ -241,34 +275,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: PALETTE.sageDeep,
   },
-  heroEyebrow: {
-    fontSize: 13,
-    color: PALETTE.textMuted,
-    marginTop: 18,
-    fontStyle: 'italic',
-  },
-  heroTitle: {
-    fontSize: 28,
-    lineHeight: 32,
+  heroTitleNew: {
+    fontSize: 24,
+    lineHeight: 28,
     fontWeight: '700',
-    color: PALETTE.text,
-    letterSpacing: -0.6,
-    marginTop: 4,
+    color: '#FFFFFF',
+    letterSpacing: -0.4,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowRadius: 6,
+    textShadowOffset: { width: 0, height: 1 },
   },
-  heroSub: {
+  heroSubNew: {
     fontSize: 14,
     lineHeight: 20,
-    color: PALETTE.textMuted,
-    marginTop: 10,
+    color: 'rgba(255,255,255,0.95)',
+    marginTop: 6,
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 1 },
   },
 
   section: {
-    marginTop: 28,
-    marginBottom: 12,
+    marginTop: 32,
+    marginBottom: 6,
     fontSize: 18,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.3,
+  },
+  sectionSub: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: PALETTE.textMuted,
+    marginBottom: 18,
   },
   list: {
     backgroundColor: PALETTE.surface,
@@ -327,13 +366,18 @@ const styles = StyleSheet.create({
   nextTag: { fontSize: 11.5, color: PALETTE.textMuted },
 
   upgrade: {
-    marginTop: 28,
+    marginTop: 8,
     padding: 18,
     borderRadius: 20,
-    backgroundColor: PALETTE.cream,
+    backgroundColor: 'rgba(199,169,107,0.07)',
     borderWidth: 1,
-    borderColor: PALETTE.creamDeep,
+    borderColor: 'rgba(199,169,107,0.22)',
     gap: 4,
+    shadowColor: '#1F1F1F',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
   },
   upgradeRow: {
     flexDirection: 'row',
