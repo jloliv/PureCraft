@@ -10,7 +10,7 @@
 
 import { useSyncExternalStore } from 'react';
 
-import { ALL_RECIPES as BUNDLED, type Recipe } from './recipes';
+import { ALL_RECIPES as BUNDLED, slugifyRecipeId, type Recipe } from './recipes';
 import { supabase, supabaseConfigured } from '@/lib/supabase';
 import type { RecipeRow } from '@/lib/db-types';
 
@@ -24,8 +24,11 @@ function emit() {
 }
 
 function rowToRecipe(r: RecipeRow): Recipe {
+  const bundledMatch = BUNDLED.find(
+    (b) => b.numericId === r.numeric_id || b.id === r.id || b.title === r.title,
+  );
   return {
-    id: r.id,
+    id: bundledMatch?.id ?? slugifyRecipeId(r.title),
     // Slug-IDed recipes have null numeric_id — fall back to NaN so callers
     // doing numeric sorting can detect & deprioritize.
     numericId:
@@ -94,7 +97,7 @@ export function getAllRecipes(): Recipe[] {
 export function findRecipeById(id: string | number | undefined): Recipe | undefined {
   if (id == null) return undefined;
   const s = String(id);
-  return recipes.find((r) => r.id === s);
+  return recipes.find((r) => r.id === s || String(r.numericId) === s);
 }
 
 export function getRecipesByCategory(key: string): Recipe[] {

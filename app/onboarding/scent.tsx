@@ -1,6 +1,14 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type ImageSourcePropType,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
@@ -23,7 +31,7 @@ type Option = {
   key: string;
   label: string;
   hint: string;
-  icon: ReturnType<typeof require>;
+  icon: ImageSourcePropType;
 };
 
 const OPTIONS: Option[] = [

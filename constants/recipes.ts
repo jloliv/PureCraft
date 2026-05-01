@@ -52,6 +52,14 @@ export type Recipe = {
 
 const RAW = recipesJson as RawRecipe[];
 
+export function slugifyRecipeId(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 function inferTags(r: RawRecipe, key: RecipeCategoryKey): string[] {
   const t = new Set<string>();
   t.add(r.difficulty);
@@ -67,11 +75,16 @@ function inferTags(r: RawRecipe, key: RecipeCategoryKey): string[] {
   return Array.from(t);
 }
 
+const seenRecipeSlugs: Record<string, number> = {};
+
 const RECIPES: Recipe[] = RAW.map((r) => {
   const categoryKey = CATEGORY_LABEL_TO_KEY[r.category] ?? 'cleaning';
   const canonicalCategory = RECIPE_CATEGORIES.find((c) => c.key === categoryKey)!;
+  const baseId = slugifyRecipeId(r.title);
+  const seenCount = (seenRecipeSlugs[baseId] = (seenRecipeSlugs[baseId] ?? 0) + 1);
+  const id = seenCount === 1 ? baseId : `${baseId}-${r.id}`;
   return {
-    id: String(r.id),
+    id,
     numericId: typeof r.id === 'number' ? r.id : NaN,
     title: r.title,
     categoryKey,
@@ -91,7 +104,7 @@ export const ALL_RECIPES: Recipe[] = RECIPES;
 export function findRecipeById(id: string | number | undefined): Recipe | undefined {
   if (id == null) return undefined;
   const s = String(id);
-  return RECIPES.find((r) => r.id === s);
+  return RECIPES.find((r) => r.id === s || String(r.numericId) === s);
 }
 
 export function getRecipesByCategory(key: string): Recipe[] {
