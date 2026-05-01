@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { IngredientHelpSheet } from '@/components/ingredient-help-sheet';
 import { PrimaryButton } from '@/components/primary-button';
+import RecipeHero from '@/components/recipe-hero';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { hasIngredientHelp } from '@/constants/ingredient-help';
 import { findProduct, findRecipe } from '@/constants/products';
@@ -29,7 +30,7 @@ import { recordRecipeView } from '@/lib/recent-recipes';
 import { recipeIcon } from '@/lib/recipe-icons';
 import { scaleAmount } from '@/lib/scale-amount';
 import { toggleSaved, useSavedRecipes } from '@/lib/saved-recipes';
-import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
 const BATCH_OPTIONS = [1, 2, 3, 5] as const;
 type BatchSize = (typeof BATCH_OPTIONS)[number];
@@ -194,13 +195,15 @@ export default function Result() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.heroCard, { backgroundColor: product.swatch }]}>
-          <Image
-            source={recipeIcon(product.id)}
-            testID="pc-recipe-icon"
-            style={styles.heroIcon}
-            resizeMode="contain"
-          />
+        {/* Full-width hero photo. Negative horizontal margin breaks the
+            image out of the ScrollView's contentContainer padding so it
+            extends edge-to-edge while the rest of the page stays inset. */}
+        <RecipeHero
+          image={recipeIcon(product.id)}
+          style={styles.heroBleed}
+          testID="pc-recipe-icon"
+        />
+        <View style={styles.heroBody}>
           <Text style={styles.heroTitle}>{recipe.title}</Text>
           <Text style={styles.heroBlurb}>{recipe.blurb}</Text>
           <View style={styles.heroTags}>
@@ -728,22 +731,26 @@ const styles = StyleSheet.create({
   },
   iconBtnActive: { backgroundColor: Colors.light.sageDeep, borderColor: Colors.light.sageDeep },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
-  heroCard: {
-    borderRadius: Radius.xl,
-    padding: Spacing.xl,
-    alignItems: 'center',
-    ...Shadow.card,
+  // Negative margin pulls the hero out of the ScrollView's horizontal
+  // padding so the image runs edge-to-edge.
+  heroBleed: {
+    marginHorizontal: -Spacing.xl,
+    marginBottom: Spacing.xl,
   },
-  heroEmoji: { fontSize: 56 },
-  heroIcon: { width: 120, height: 120 },
-  heroTitle: { ...Type.hero, color: Colors.light.text, marginTop: Spacing.md, textAlign: 'center' },
+  heroBody: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  heroTitle: { ...Type.hero, color: Colors.light.text, textAlign: 'center' },
   heroBlurb: { ...Type.body, color: Colors.light.textMuted, marginTop: Spacing.sm, textAlign: 'center' },
   heroTags: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg, flexWrap: 'wrap', justifyContent: 'center' },
   heroTag: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
     borderRadius: Radius.pill,
-    backgroundColor: '#FFFFFFCC',
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   heroTagText: { ...Type.caption, color: Colors.light.text },
   statsRow: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg },
