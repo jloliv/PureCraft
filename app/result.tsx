@@ -195,24 +195,25 @@ export default function Result() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Full-width hero photo. Negative horizontal margin breaks the
-            image out of the ScrollView's contentContainer padding so it
-            extends edge-to-edge while the rest of the page stays inset. */}
+        {/* Full-bleed hero. Title + subtitle render INSIDE the hero so
+            they sit on the gradient and visually merge with the photo;
+            the gradient terminates in the page background color, so the
+            hero's bottom edge has no visible seam. Negative horizontal
+            margin breaks the image out of the ScrollView's content
+            padding so it runs edge-to-edge. */}
         <RecipeHero
           image={recipeHeroImage(product.id, v3Recipe?.categoryKey)}
+          title={recipe.title}
+          subtitle={recipe.blurb}
           style={styles.heroBleed}
           testID="pc-recipe-icon"
         />
-        <View style={styles.heroBody}>
-          <Text style={styles.heroTitle}>{recipe.title}</Text>
-          <Text style={styles.heroBlurb}>{recipe.blurb}</Text>
-          <View style={styles.heroTags}>
-            {product.tags.map((t, i) => (
-              <View key={`${t}-${i}`} style={styles.heroTag}>
-                <Text style={styles.heroTagText}>{t}</Text>
-              </View>
-            ))}
-          </View>
+        <View style={styles.heroTags}>
+          {product.tags.map((t, i) => (
+            <View key={`${t}-${i}`} style={styles.heroTag}>
+              <Text style={styles.heroTagText}>{t}</Text>
+            </View>
+          ))}
         </View>
 
         <View style={styles.statsRow}>
@@ -748,18 +749,20 @@ const styles = StyleSheet.create({
   // Negative margins pull the hero out of the ScrollView's horizontal
   // padding so the image runs edge-to-edge horizontally; the floating
   // topBar (position: absolute) lets the image sit flush with the top
-  // of the safe area without a header gap.
+  // of the safe area without a header gap. No marginBottom — the hero
+  // gradient already terminates in the page background, and the tags
+  // row provides its own top spacing.
   heroBleed: {
     marginHorizontal: -Spacing.xl,
-    marginBottom: Spacing.xl,
   },
-  heroBody: {
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
+  heroTags: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  heroTitle: { ...Type.hero, color: Colors.light.text, textAlign: 'center' },
-  heroBlurb: { ...Type.body, color: Colors.light.textMuted, marginTop: Spacing.sm, textAlign: 'center' },
-  heroTags: { flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.lg, flexWrap: 'wrap', justifyContent: 'center' },
   heroTag: {
     paddingHorizontal: Spacing.md,
     paddingVertical: 6,
