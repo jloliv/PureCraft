@@ -1013,6 +1013,7 @@
   },
   {
     "id": 93,
+    "slug": "window-track-cleaner-quick",
     "title": "Window Track Cleaner",
     "category": "Cleaning",
     "difficulty": "Easy",
@@ -1024,6 +1025,7 @@
   },
   {
     "id": 94,
+    "slug": "wall-spot-cleaner-soap",
     "title": "Wall Spot Cleaner",
     "category": "Cleaning",
     "difficulty": "Easy",
@@ -1035,6 +1037,7 @@
   },
   {
     "id": 95,
+    "slug": "whites-brightener-vinegar",
     "title": "Whites Brightener",
     "category": "Laundry",
     "difficulty": "Easy",
@@ -1046,6 +1049,7 @@
   },
   {
     "id": 96,
+    "slug": "iron-spray-softener",
     "title": "Iron Spray",
     "category": "Laundry",
     "difficulty": "Easy",

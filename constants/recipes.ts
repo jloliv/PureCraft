@@ -22,6 +22,13 @@ export type RecipeDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export type RawRecipe = {
   id: number | string;
+  /**
+   * Optional explicit slug override. Use this when a title would otherwise
+   * collide with another recipe (e.g. two "Iron Spray" variants), so the
+   * runtime ID gets a descriptive suffix instead of an auto-numeric one.
+   * Example: { id: 96, slug: "iron-spray-softener", title: "Iron Spray" }.
+   */
+  slug?: string;
   title: string;
   category: string;
   difficulty: RecipeDifficulty;
@@ -75,14 +82,22 @@ function inferTags(r: RawRecipe, key: RecipeCategoryKey): string[] {
   return Array.from(t);
 }
 
-const seenRecipeSlugs: Record<string, number> = {};
+// Track every assigned recipe ID so we can detect collisions. When the
+// catalog is sane (explicit `slug` overrides on every duplicate title),
+// no ID should ever appear twice.
+const seenRecipeIds = new Map<string, number>();
 
-const RECIPES: Recipe[] = RAW.map((r) => {
+const RECIPES: Recipe[] = RAW.map((r, index) => {
   const categoryKey = CATEGORY_LABEL_TO_KEY[r.category] ?? 'cleaning';
   const canonicalCategory = RECIPE_CATEGORIES.find((c) => c.key === categoryKey)!;
-  const baseId = slugifyRecipeId(r.title);
-  const seenCount = (seenRecipeSlugs[baseId] = (seenRecipeSlugs[baseId] ?? 0) + 1);
-  const id = seenCount === 1 ? baseId : `${baseId}-${r.id}`;
+  // Prefer an explicit slug override; fall back to a slug derived from the
+  // title. If a collision still occurs (a new duplicate slips in without an
+  // override), append the rawId so downstream lookups don't break — and the
+  // runtime check below will surface a warning in dev.
+  const preferredId = r.slug ?? slugifyRecipeId(r.title);
+  const collisionCount = (seenRecipeIds.get(preferredId) ?? 0) + 1;
+  seenRecipeIds.set(preferredId, collisionCount);
+  const id = collisionCount === 1 ? preferredId : `${preferredId}-${r.id}`;
   return {
     id,
     numericId: typeof r.id === 'number' ? r.id : NaN,
@@ -98,6 +113,64 @@ const RECIPES: Recipe[] = RAW.map((r) => {
     tags: inferTags(r, categoryKey),
   };
 });
+
+// =============================================================================
+// Dev-only duplicate-ID guard
+// =============================================================================
+//
+// Recipe IDs must be unique — they're used as router params, dictionary keys,
+// and to address per-recipe assets (icons, images, analytics events). A
+// duplicate would silently overwrite UI state and route to the wrong recipe.
+//
+// In development we surface duplicates as a console.warn so they're caught
+// before reaching production. In production this check is dead-stripped by
+// the bundler (the __DEV__/process.env.NODE_ENV branch is statically false).
+
+declare const __DEV__: boolean | undefined;
+
+function isDevEnvironment(): boolean {
+  if (typeof __DEV__ !== 'undefined') return !!__DEV__;
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV) {
+    return process.env.NODE_ENV !== 'production';
+  }
+  return false;
+}
+
+export function findDuplicateRecipeIds(list: Recipe[] = RECIPES): string[] {
+  const counts = new Map<string, number>();
+  for (const r of list) counts.set(r.id, (counts.get(r.id) ?? 0) + 1);
+  const dups: string[] = [];
+  counts.forEach((n, id) => {
+    if (n > 1) dups.push(id);
+  });
+  return dups;
+}
+
+if (isDevEnvironment()) {
+  // Two checks: (1) any id assigned more than once at construction time
+  // (i.e. an unhandled title collision that fell back to the numeric
+  // suffix), and (2) any id that ended up duplicated in the final list
+  // (defense in depth).
+  const collidedBaseIds: string[] = [];
+  seenRecipeIds.forEach((n, id) => {
+    if (n > 1) collidedBaseIds.push(id);
+  });
+  if (collidedBaseIds.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[recipes] Duplicate base IDs detected — add an explicit `slug` ' +
+        'override on the colliding entries in launch-recipes-v3.json: ' +
+        collidedBaseIds.join(', '),
+    );
+  }
+  const finalDups = findDuplicateRecipeIds(RECIPES);
+  if (finalDups.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[recipes] Duplicate recipe IDs in final catalog: ' + finalDups.join(', '),
+    );
+  }
+}
 
 export const ALL_RECIPES: Recipe[] = RECIPES;
 
