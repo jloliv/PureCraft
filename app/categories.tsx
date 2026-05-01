@@ -16,6 +16,11 @@ import {
   type RecipeCategoryKey,
   categoryByKey,
 } from '@/constants/recipe-categories';
+import {
+  asProblemId,
+  findProblem,
+  recipeMatchesProblem,
+} from '@/constants/recipe-problems';
 import { type Recipe, recipeSavingsUsd, searchRecipes } from '@/constants/recipes';
 import { useAllRecipes } from '@/constants/recipes-remote';
 import { recipeIcon } from '@/lib/recipe-icons';
@@ -72,12 +77,19 @@ export default function Categories() {
     category?: string;
     safeForKids?: string;
     tag?: string;
+    problem?: string;
   }>();
 
   const initialCategory =
     typeof params.category === 'string' && params.category ? params.category : 'all';
   const safeForKidsParam = params.safeForKids === 'true';
   const tagParam = typeof params.tag === 'string' ? params.tag : '';
+  // Problem-driven entry path: when a chip on home is tapped, this
+  // narrows the catalog to recipes that solve that problem (grease,
+  // odor, stains, mold, dust). See constants/recipe-problems.ts for
+  // the inference rules.
+  const problemParam = asProblemId(params.problem);
+  const problem = problemParam ? findProblem(problemParam) : null;
 
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<FilterKey>(initialCategory as FilterKey);
@@ -101,6 +113,9 @@ export default function Categories() {
       const t = tagParam.toLowerCase();
       list = list.filter((r) => r.tags.some((tag) => tag.toLowerCase().includes(t)));
     }
+    if (problemParam) {
+      list = list.filter((r) => recipeMatchesProblem(r, problemParam));
+    }
     if (query.trim()) {
       list = searchRecipes(query, list);
     }
@@ -121,7 +136,7 @@ export default function Categories() {
     }
 
     return list;
-  }, [allRecipes, filter, safeForKidsParam, tagParam, query, sheetApplied]);
+  }, [allRecipes, filter, safeForKidsParam, tagParam, problemParam, query, sheetApplied]);
 
   const grouped = useMemo(() => {
     if (filter !== 'all') {
@@ -145,23 +160,28 @@ export default function Categories() {
 
   // The "all" view gets a brand-emphasized headline ("Make something
   // pure" with the last word in sage). For specific categories we use
-  // the category's own label as the title.
-  const isAllFilter = filter === 'all';
-  const categoryHeadline = isAllFilter
-    ? null
-    : categoryByKey(filter)?.label ?? 'Recipes';
-  const hasSubFilter = safeForKidsParam || !!tagParam || !!query.trim();
+  // the category's own label as the title. Problem-driven views get
+  // their own per-problem label so the user instantly sees the lens
+  // they came from ("For grease & buildup").
+  const isAllFilter = filter === 'all' && !problem;
+  const categoryHeadline = problem
+    ? problem.label
+    : isAllFilter
+      ? null
+      : categoryByKey(filter)?.label ?? 'Recipes';
+  const hasSubFilter = safeForKidsParam || !!tagParam || !!query.trim() || !!problemParam;
   const headlineCaption =
     filter === 'all' && !hasSubFilter
       ? `${allRecipes.length} pure recipes ready to mix`
       : `${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`;
 
-  const activeFilterPill =
-    safeForKidsParam || tagParam
-      ? safeForKidsParam
-        ? 'Family-safe only'
-        : `Tag: ${tagParam}`
-      : null;
+  const activeFilterPill = problem
+    ? `Problem: ${problem.shortLabel}`
+    : safeForKidsParam
+      ? 'Family-safe only'
+      : tagParam
+        ? `Tag: ${tagParam}`
+        : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

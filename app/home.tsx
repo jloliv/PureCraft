@@ -19,6 +19,8 @@ const CARD_WIDTH = _winWidth > 0 ? Math.round(_winWidth * 0.8) : 320;
 const CARD_GAP = 12;
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PROBLEMS } from '@/constants/recipe-problems';
+
 import { MakeNav } from '@/components/make-nav';
 import { useAllRecipes } from '@/constants/recipes-remote';
 import { findProduct } from '@/constants/products';
@@ -125,6 +127,8 @@ export default function HomeScreen() {
 
         <MakeNowSection />
 
+        <ProblemSection />
+
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Explore Categories</Text>
           <Pressable hitSlop={8} onPress={() => router.push('/categories')}>
@@ -220,6 +224,51 @@ function Header() {
 // ingredient list is 100% covered by the pantry. Capped at 5 because the
 // section is meant to feel curated, not overwhelming. Renders nothing
 // when nothing matches — Home stays clean for empty pantries.
+// Problem-driven entry path (third lens after Pantry Magic and
+// Categories). Chips here route to /categories?problem=<id> which
+// filters the catalog through recipeMatchesProblem in
+// constants/recipe-problems.ts.
+function ProblemSection() {
+  return (
+    <View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>What can we tackle?</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.problemRow}
+      >
+        {PROBLEMS.map((p) => (
+          <Pressable
+            key={p.id}
+            accessibilityRole="button"
+            accessibilityLabel={`${p.label} recipes`}
+            onPress={() =>
+              router.push({
+                pathname: '/categories',
+                params: { problem: p.id },
+              })
+            }
+            style={({ pressed }) => [
+              styles.problemChip,
+              { backgroundColor: p.bg },
+              pressed && { transform: [{ scale: 0.96 }] },
+            ]}
+          >
+            <View style={[styles.problemChipIcon, { backgroundColor: '#FFFFFFB0' }]}>
+              <Ionicons name={p.icon} size={16} color={p.tint} />
+            </View>
+            <Text style={[styles.problemChipText, { color: p.tint }]}>
+              {p.shortLabel}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 function MakeNowSection() {
   const allRecipes = useAllRecipes();
   const pantry = usePantry();
@@ -502,6 +551,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: PALETTE.goldDeep,
+  },
+
+  // -- "What can we tackle?" problem chips -------------------------------
+  // Horizontal-scroll row sitting below MakeNowSection. Each chip is a
+  // pill with a tinted background + icon + label. Tap routes to
+  // /categories?problem=<id>, which categories.tsx filters via
+  // recipeMatchesProblem in constants/recipe-problems.ts.
+  problemRow: {
+    paddingRight: 8,
+    gap: 10,
+  },
+  problemChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+  },
+  problemChipIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  problemChipText: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
 
   // -- "What You Can Make Right Now" -------------------------------------
