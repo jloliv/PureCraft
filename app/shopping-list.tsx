@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -16,10 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct, findRecipe } from '@/constants/products';
+import { recipeHeroImage } from '@/constants/recipeHeroImages';
 import { extractIngredientName } from '@/constants/smart-swaps';
 import { tapLight } from '@/lib/haptics';
-import { recipeIcon } from '@/lib/recipe-icons';
-import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
 // Amazon affiliate tag — flip this on by setting EXPO_PUBLIC_AMAZON_TAG in
 // .env once the Amazon Associates account is approved. Until then we ship
@@ -123,20 +124,42 @@ export default function ShoppingList() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        {/* Mini hero — image fills the entire card edge-to-edge, a
+            left-to-right gradient (white-95 -> 70 -> transparent)
+            keeps the FOR/title legible on the left while the photo
+            stays visible on the right behind the price column. Same
+            visual language as the recipe-detail hero and the saved-
+            screen hero, scaled down for an inline header role. */}
         <View style={[styles.heroCard, { backgroundColor: product.swatch }]}>
           <Image
-            source={recipeIcon(product.id)}
+            source={recipeHeroImage(product.id)}
             testID="pc-recipe-icon"
-            style={styles.heroIcon}
-            resizeMode="contain"
+            style={styles.heroImage}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
           />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.heroEyebrow}>For</Text>
-            <Text style={styles.heroTitle}>{recipe.title}</Text>
+          <LinearGradient
+            colors={[
+              'rgba(255,255,255,0.95)',
+              'rgba(255,255,255,0.7)',
+              'transparent',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.heroGradient}
+            pointerEvents="none"
+          />
+          <View style={styles.heroContent}>
+            <Text style={styles.heroEyebrow}>FOR</Text>
+            <Text style={styles.heroTitle} numberOfLines={1}>
+              {recipe.title}
+            </Text>
           </View>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{formatMoney(totalUsd, { currency })}</Text>
-            <Text style={styles.heroStatLabel}>est. total</Text>
+          <View style={styles.heroPrice}>
+            <Text style={styles.heroPriceValue}>
+              {formatMoney(totalUsd, { currency })}
+            </Text>
+            <Text style={styles.heroPriceLabel}>est. total</Text>
           </View>
         </View>
 
@@ -321,21 +344,63 @@ const styles = StyleSheet.create({
   },
   topTitle: { ...Type.bodyStrong, color: Colors.light.text },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
+  // Mini hero card. Image bleeds the full container; gradient fades
+  // the left third toward white so the FOR/title text reads clearly
+  // while the right side keeps the lifestyle photo visible behind the
+  // absolute-positioned price column.
   heroCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    padding: Spacing.lg,
+    height: 110,
     borderRadius: Radius.lg,
-    ...Shadow.card,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    position: 'relative',
   },
-  heroEmoji: { fontSize: 38 },
-  heroIcon: { width: 64, height: 64 },
-  heroEyebrow: { ...Type.caption, color: Colors.light.sageDeep, textTransform: 'uppercase' },
-  heroTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: 2 },
-  heroStat: { alignItems: 'flex-end' },
-  heroStatValue: { ...Type.title, color: Colors.light.text },
-  heroStatLabel: { ...Type.caption, color: Colors.light.textMuted },
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroContent: {
+    paddingLeft: 20,
+    // Reserve room on the right for the absolute-positioned price
+    // column (~84pt wide for a 5-char total like '$12.40' + label).
+    paddingRight: 100,
+  },
+  heroEyebrow: {
+    fontSize: 12,
+    letterSpacing: 1.5,
+    fontWeight: '700',
+    color: '#6F8A73',
+    marginBottom: 4,
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1E1E1E',
+    letterSpacing: -0.3,
+  },
+  heroPrice: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  heroPriceValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.3,
+  },
+  heroPriceLabel: {
+    fontSize: 12,
+    color: Colors.light.textMuted,
+    marginTop: 2,
+  },
   progressBlock: { marginTop: Spacing.lg, gap: Spacing.sm },
   progressLabel: { ...Type.caption, color: Colors.light.textMuted },
   progressTrack: {
