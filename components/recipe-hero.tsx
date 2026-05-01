@@ -87,7 +87,12 @@ export default function RecipeHero({
 const styles = StyleSheet.create({
   container: {
     height: HERO_HEIGHT,
-    width: '100%',
+    // alignSelf: 'stretch' (not width: '100%') is what lets the parent
+    // pull this hero edge-to-edge with negative horizontal margins. With
+    // an explicit width: '100%' the box is constrained to the parent's
+    // post-padding content area and the negative margins only shift it,
+    // leaving a visible gap on one side.
+    alignSelf: 'stretch',
     backgroundColor: BACKGROUND_PRIMARY,
     overflow: 'hidden',
   },
