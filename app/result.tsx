@@ -134,12 +134,12 @@ export default function Result() {
     [flatIngredients.join('|')],
   );
 
+  // No `edges` on the SafeAreaView below: we want the hero photo to
+  // extend UNDER the status bar / Dynamic Island for a true full-bleed
+  // look. The floating topBar (which DOES need to clear the status bar)
+  // handles its own clearance via `paddingTop: insets.top + 8`, so
+  // removing the SafeAreaView's top inset is safe.
   return (
-    {/* No `edges` here on purpose: we want the hero photo to extend
-        UNDER the status bar / Dynamic Island for a true full-bleed
-        look. The floating topBar (which DOES need to clear the status
-        bar) handles its own clearance via `paddingTop: insets.top + 8`,
-        so removing the SafeAreaView's top inset is safe. */}
     <SafeAreaView style={styles.safe} edges={[]}>
       <FreemiumModal
         visible={gateModal !== null}
