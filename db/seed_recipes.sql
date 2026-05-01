@@ -679,29 +679,7 @@ insert into public.recipes (id, numeric_id, title, category_label, category_key,
   safe_for_kids = excluded.safe_for_kids,
   cost_savings = excluded.cost_savings,
   tags = excluded.tags;
-insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('62', 62, 'Faucet Shine Spray', 'Cleaning', 'cleaning', 'Easy', '3 min', '["1/2 cup vinegar","1/2 cup water","1 tsp lemon juice"]'::jsonb, '["Spray faucet","Wipe with microfiber","Buff dry"]'::jsonb, false, '$3 saved', '["Easy","spray","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
-  title = excluded.title,
-  category_label = excluded.category_label,
-  category_key = excluded.category_key,
-  difficulty = excluded.difficulty,
-  time_label = excluded.time_label,
-  ingredients = excluded.ingredients,
-  instructions = excluded.instructions,
-  safe_for_kids = excluded.safe_for_kids,
-  cost_savings = excluded.cost_savings,
-  tags = excluded.tags;
 insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('63', 63, 'Grease Cutter', 'Cleaning', 'cleaning', 'Easy', '5 min', '["1 cup hot water","1 tbsp dish soap","1 tbsp vinegar"]'::jsonb, '["Combine in bottle","Spray greasy surface","Wipe with hot cloth"]'::jsonb, false, '$5 saved', '["Easy","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
-  title = excluded.title,
-  category_label = excluded.category_label,
-  category_key = excluded.category_key,
-  difficulty = excluded.difficulty,
-  time_label = excluded.time_label,
-  ingredients = excluded.ingredients,
-  instructions = excluded.instructions,
-  safe_for_kids = excluded.safe_for_kids,
-  cost_savings = excluded.cost_savings,
-  tags = excluded.tags;
-insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('64', 64, 'Window Track Cleaner', 'Cleaning', 'cleaning', 'Easy', '10 min', '["1/4 cup baking soda","1/4 cup vinegar","old toothbrush"]'::jsonb, '["Sprinkle baking soda in track","Add vinegar","Scrub and wipe"]'::jsonb, false, '$6 saved', '["Easy","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
   title = excluded.title,
   category_label = excluded.category_label,
   category_key = excluded.category_key,
@@ -998,29 +976,7 @@ insert into public.recipes (id, numeric_id, title, category_label, category_key,
   safe_for_kids = excluded.safe_for_kids,
   cost_savings = excluded.cost_savings,
   tags = excluded.tags;
-insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('91', 91, 'Quick Sink Shine', 'Cleaning', 'cleaning', 'Easy', '3 min', '["2 tbsp baking soda","1 tsp dish soap"]'::jsonb, '["Sprinkle baking soda in sink","Add soap","Scrub and rinse clean"]'::jsonb, true, '$5 saved', '["Easy","family-safe","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
-  title = excluded.title,
-  category_label = excluded.category_label,
-  category_key = excluded.category_key,
-  difficulty = excluded.difficulty,
-  time_label = excluded.time_label,
-  ingredients = excluded.ingredients,
-  instructions = excluded.instructions,
-  safe_for_kids = excluded.safe_for_kids,
-  cost_savings = excluded.cost_savings,
-  tags = excluded.tags;
 insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('92', 92, 'Grease Cutter Spray', 'Cleaning', 'cleaning', 'Easy', '3 min', '["1 cup warm water","1 tbsp dish soap","2 tbsp vinegar"]'::jsonb, '["Combine in spray bottle","Spray greasy surface","Wipe clean"]'::jsonb, false, '$7 saved', '["Easy","spray","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
-  title = excluded.title,
-  category_label = excluded.category_label,
-  category_key = excluded.category_key,
-  difficulty = excluded.difficulty,
-  time_label = excluded.time_label,
-  ingredients = excluded.ingredients,
-  instructions = excluded.instructions,
-  safe_for_kids = excluded.safe_for_kids,
-  cost_savings = excluded.cost_savings,
-  tags = excluded.tags;
-insert into public.recipes (id, numeric_id, title, category_label, category_key, difficulty, time_label, ingredients, instructions, safe_for_kids, cost_savings, tags, source, is_published) values ('93', 93, 'Window Track Cleaner', 'Cleaning', 'cleaning', 'Easy', '5 min', '["1/4 cup baking soda","1 tbsp vinegar"]'::jsonb, '["Sprinkle baking soda in tracks","Add vinegar","Scrub with brush and wipe"]'::jsonb, true, '$6 saved', '["Easy","family-safe","pantry"]'::jsonb, 'catalog', true) on conflict (id) do update set
   title = excluded.title,
   category_label = excluded.category_label,
   category_key = excluded.category_key,
