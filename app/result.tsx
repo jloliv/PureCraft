@@ -207,8 +207,8 @@ export default function Result() {
           <Text style={styles.heroTitle}>{recipe.title}</Text>
           <Text style={styles.heroBlurb}>{recipe.blurb}</Text>
           <View style={styles.heroTags}>
-            {product.tags.map((t) => (
-              <View key={t} style={styles.heroTag}>
+            {product.tags.map((t, i) => (
+              <View key={`${t}-${i}`} style={styles.heroTag}>
                 <Text style={styles.heroTagText}>{t}</Text>
               </View>
             ))}
@@ -240,8 +240,8 @@ export default function Result() {
             <Text style={styles.benefitsEyebrow}>Benefits</Text>
           </View>
           <View style={styles.benefitsList}>
-            {allBullets.map((b) => (
-              <View key={b} style={styles.benefitRow}>
+            {allBullets.map((b, i) => (
+              <View key={`${b}-${i}`} style={styles.benefitRow}>
                 <View style={styles.benefitDot} />
                 <Text style={styles.benefitText}>{b}</Text>
               </View>
@@ -256,8 +256,8 @@ export default function Result() {
             <View style={styles.benefitsMetaBlock}>
               <Text style={styles.benefitsMetaLabel}>BEST FOR</Text>
               <View style={styles.bestForRow}>
-                {benefits.bestFor.map((tag) => (
-                  <View key={tag} style={styles.bestForChip}>
+                {benefits.bestFor.map((tag, i) => (
+                  <View key={`${tag}-${i}`} style={styles.bestForChip}>
                     <Text style={styles.bestForText}>{tag}</Text>
                   </View>
                 ))}
@@ -292,8 +292,8 @@ export default function Result() {
 
           {shelf.badges.length ? (
             <View style={styles.shelfBadgeRow}>
-              {shelf.badges.map((badge) => (
-                <View key={badge} style={styles.shelfBadge}>
+              {shelf.badges.map((badge, i) => (
+                <View key={`${badge}-${i}`} style={styles.shelfBadge}>
                   <Text style={styles.shelfBadgeText}>{badge}</Text>
                 </View>
               ))}
@@ -315,8 +315,8 @@ export default function Result() {
 
           {shelf.notes?.length ? (
             <View style={styles.shelfNotes}>
-              {shelf.notes.map((n) => (
-                <Text key={n} style={styles.shelfNoteText}>
+              {shelf.notes.map((n, i) => (
+                <Text key={`${n}-${i}`} style={styles.shelfNoteText}>
                   • {n}
                 </Text>
               ))}
@@ -448,8 +448,8 @@ export default function Result() {
         {intelBestFor.length > 0 ? (
           <Section title="Best for" caption="What this recipe shines at">
             <View style={styles.intelChipsWrap}>
-              {intelBestFor.slice(0, 8).map((tag) => (
-                <View key={tag} style={styles.intelChip}>
+              {intelBestFor.slice(0, 8).map((tag, i) => (
+                <View key={`${tag}-${i}`} style={styles.intelChip}>
                   <Text style={styles.intelChipText}>{tag}</Text>
                 </View>
               ))}
@@ -462,8 +462,8 @@ export default function Result() {
         {intelAvoidIf.length > 0 ? (
           <Section title="Avoid if" caption="Skip this recipe in these cases">
             <View style={styles.intelAvoidWrap}>
-              {intelAvoidIf.slice(0, 8).map((tag) => (
-                <View key={tag} style={styles.intelAvoidRow}>
+              {intelAvoidIf.slice(0, 8).map((tag, i) => (
+                <View key={`${tag}-${i}`} style={styles.intelAvoidRow}>
                   <Ionicons name="close-circle-outline" size={14} color={Colors.light.danger} />
                   <Text style={styles.intelAvoidText}>{tag}</Text>
                 </View>
@@ -680,8 +680,8 @@ function SmartSwapsBlock({
             <Text style={styles.swapOriginal}>{g.original}</Text>
           </View>
           <View style={styles.swapAlts}>
-            {g.swaps.map((s) => (
-              <View key={s.name} style={styles.swapAlt}>
+            {g.swaps.map((s, i) => (
+              <View key={`${s.name}-${i}`} style={styles.swapAlt}>
                 <View style={styles.swapAltHeader}>
                   <Ionicons
                     name="arrow-forward"
@@ -710,29 +710,45 @@ function capitalize(s: string): string {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.light.background },
+  // Top bar floats over the hero photo so the image runs edge-to-edge
+  // top-to-bottom of the safe area. zIndex keeps the buttons above the
+  // ScrollView's contents.
   topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.sm,
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.sm,
   },
   topActions: { flexDirection: 'row', gap: Spacing.sm },
   iconBtn: {
     width: 38,
     height: 38,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    // Solid white background so the buttons stay legible whether they
+    // sit on a light or dark area of the underlying hero image.
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    // Subtle shadow so the buttons read as "floating" cards.
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    elevation: 2,
   },
   iconBtnActive: { backgroundColor: Colors.light.sageDeep, borderColor: Colors.light.sageDeep },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
-  // Negative margin pulls the hero out of the ScrollView's horizontal
-  // padding so the image runs edge-to-edge.
+  // Negative margins pull the hero out of the ScrollView's horizontal
+  // padding so the image runs edge-to-edge horizontally; the floating
+  // topBar (position: absolute) lets the image sit flush with the top
+  // of the safe area without a header gap.
   heroBleed: {
     marginHorizontal: -Spacing.xl,
     marginBottom: Spacing.xl,
