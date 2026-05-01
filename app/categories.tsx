@@ -143,10 +143,13 @@ export default function Categories() {
     })).filter((g) => g.items.length > 0);
   }, [filter, filtered]);
 
-  const headline =
-    filter === 'all'
-      ? 'Make something with what you have'
-      : categoryByKey(filter)?.label ?? 'Recipes';
+  // The "all" view gets a brand-emphasized headline ("Make something
+  // pure" with the last word in sage). For specific categories we use
+  // the category's own label as the title.
+  const isAllFilter = filter === 'all';
+  const categoryHeadline = isAllFilter
+    ? null
+    : categoryByKey(filter)?.label ?? 'Recipes';
   const hasSubFilter = safeForKidsParam || !!tagParam || !!query.trim();
   const headlineCaption =
     filter === 'all' && !hasSubFilter
@@ -171,7 +174,21 @@ export default function Categories() {
         >
           <Ionicons name="chevron-back" size={20} color={Colors.light.text} />
         </Pressable>
-        <Text style={styles.topTitle}>{headline}</Text>
+        <Text
+          style={styles.topTitle}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
+          {isAllFilter ? (
+            <>
+              Make something{' '}
+              <Text style={styles.topTitleAccent}>pure</Text>
+            </>
+          ) : (
+            categoryHeadline
+          )}
+        </Text>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Filter recipes"
@@ -528,7 +545,20 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   heroImage: { width: '100%', height: '100%' },
-  topTitle: { ...Type.bodyStrong, color: Colors.light.text },
+  // Premium-feel page title. Larger than the default bodyStrong so it
+  // reads as a screen heading; numberOfLines/adjustsFontSizeToFit on
+  // the JSX side keep long category labels (e.g. "Home & Air
+  // Freshening") from overflowing the toolbar.
+  topTitle: {
+    fontSize: 22,
+    fontWeight: '600',
+    letterSpacing: -0.3,
+    color: Colors.light.text,
+    flexShrink: 1,
+    paddingHorizontal: Spacing.sm,
+  },
+  // Sage accent for the "pure" word in the brand-emphasized headline.
+  topTitleAccent: { color: Colors.light.sageDeep },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
   sub: { ...Type.caption, color: Colors.light.textMuted, marginBottom: 10 },
   activePill: {
