@@ -253,31 +253,36 @@ export default function Saved() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Lifestyle hero — text on the left (kicker / title / sub),
-            soft brand image on the right. Swap the image source when
-            a dedicated 'saved-library' lifestyle photo lands in
-            assets/hero-images/. comfort.jpg is the closest existing
-            lifestyle shot in the bundle (warm, neutral, on-brand). */}
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.kicker}>LIBRARY</Text>
-            <Text style={styles.headerTitle}>Saved</Text>
-            <Text style={styles.headerSub}>
-              Your curated PureCraft collection
-            </Text>
-          </View>
+        {/* Contained lifestyle hero — text on the left, photo on the
+            right, soft fade overlay covering the left ~72% so the
+            headline reads on a clean wash and the photo's edge feels
+            integrated (not pasted-on). Swap comfort.jpg for a real
+            'saved-library' lifestyle shot when one lands in
+            assets/hero-images/. */}
+        <View style={styles.savedHero}>
           <Image
             source={require('../assets/images/comfort.jpg')}
-            style={styles.headerImage}
+            style={styles.savedHeroImage}
             resizeMode="cover"
             accessibilityIgnoresInvertColors
           />
+          {/* Fade overlay sits BETWEEN the image and the text so
+              text reads on a clean wash. zIndex on the text container
+              keeps the kicker / title / subtitle on top. */}
+          <View style={styles.savedHeroFade} />
+          <View style={styles.savedHeroText}>
+            <Text style={styles.kicker}>LIBRARY</Text>
+            <Text style={styles.savedTitle}>Saved</Text>
+            <Text style={styles.savedSubtitle}>
+              Your curated PureCraft collection
+            </Text>
+          </View>
         </View>
 
-        {/* Search row — full-bleed search bar with a filter / sort
-            chip on the right. Both are no-ops for now to match the
-            previous header's behavior; wire up real search/sort here
-            when the saved-list filter UX ships. */}
+        {/* Search row — taller pills (56) sit directly under the hero
+            with consistent 18pt top spacing. Both are no-ops for now
+            to match the previous header's behavior; wire up real
+            search/sort here when the saved-list filter UX ships. */}
         <View style={styles.searchRow}>
           <Pressable
             accessibilityRole="button"
@@ -288,7 +293,7 @@ export default function Saved() {
               pressed && { opacity: 0.85 },
             ]}
           >
-            <Ionicons name="search" size={16} color={PALETTE.textSubtle} />
+            <Ionicons name="search" size={18} color={PALETTE.textSubtle} />
             <Text style={styles.searchText}>Search your saved recipes</Text>
           </Pressable>
           <Pressable
@@ -300,7 +305,7 @@ export default function Saved() {
               pressed && { opacity: 0.7 },
             ]}
           >
-            <Ionicons name="options-outline" size={18} color={PALETTE.text} />
+            <Ionicons name="options-outline" size={20} color={PALETTE.text} />
           </Pressable>
         </View>
 
@@ -717,84 +722,95 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Lifestyle hero. Text occupies the left ~65% so the title doesn't
-  // overlap the image. overflow:'hidden' clips the right-side image
-  // to the rounded container. marginHorizontal:-Spacing.xl-equivalent
-  // would let it run edge-to-edge if the parent ScrollView ever drops
-  // its horizontal padding; today the scroll has its own padding so
-  // we keep the hero inset.
-  header: {
-    height: 160,
-    justifyContent: 'center',
-    // Header relies on the parent ScrollView's paddingHorizontal: 20
-    // for its left inset. Setting this to 0 keeps the total inset at
-    // exactly 20pt to match the design spec; bumping it adds extra
-    // gap that nudges the title rightward into the image zone.
-    paddingHorizontal: 0,
+  // Contained lifestyle hero. Rounded card with image bleeding the
+  // right ~58% and a fade overlay covering the left ~72% so the
+  // headline reads on a clean wash. The card relies on the parent
+  // ScrollView's paddingHorizontal: 20 for its outer inset (matches
+  // the spec's marginHorizontal: 20 visually); marginTop nudges it
+  // slightly down from the topbar.
+  savedHero: {
+    height: 190,
+    marginTop: 16,
+    borderRadius: 28,
     overflow: 'hidden',
+    backgroundColor: '#F3EFE7',
+    justifyContent: 'center',
     position: 'relative',
   },
-  headerContent: {
-    zIndex: 2,
-    maxWidth: '65%',
-  },
-  headerImage: {
+  savedHeroImage: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: '60%',
-    opacity: 0.9,
+    width: '58%',
+    height: '100%',
+  },
+  // Fade sits over the image and covers the left 72% so the title
+  // and subtitle land on a soft cream wash that matches the card bg.
+  // Anything past 72% lets the photo show through cleanly.
+  savedHeroFade: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '72%',
+    backgroundColor: 'rgba(243,239,231,0.88)',
+    zIndex: 2,
+  },
+  savedHeroText: {
+    zIndex: 3,
+    width: '58%',
+    paddingLeft: 20,
   },
   kicker: {
-    fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '600',
-    color: '#6B7D73',
-    marginBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 34,
+    fontSize: 13,
+    letterSpacing: 4,
     fontWeight: '700',
-    color: PALETTE.text,
-    letterSpacing: -0.5,
+    color: '#6F8A76',
+    marginBottom: 8,
   },
-  headerSub: {
-    fontSize: 15,
-    color: '#6B7D73',
-    marginTop: 4,
+  savedTitle: {
+    fontSize: 44,
+    fontWeight: '800',
+    letterSpacing: -1.2,
+    color: '#1E211F',
+  },
+  savedSubtitle: {
+    fontSize: 17,
+    lineHeight: 22,
+    color: '#6F7D73',
+    marginTop: 6,
   },
 
-  // Search + filter row. Sits directly under the hero with a small
-  // top margin to bridge the visual gap. Both elements are no-ops for
-  // now; replace with real search state when the saved-list search
-  // UX ships.
+  // Search + filter row. Taller (56) pill controls with 12pt gap.
+  // marginHorizontal is 0 because the parent ScrollView already
+  // contributes the 20pt inset the spec calls for.
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 18,
     marginBottom: 12,
+    gap: 12,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#F4F4F2',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    gap: 10,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F7F6F1',
+    paddingHorizontal: 18,
   },
   searchText: {
     color: PALETTE.textSubtle,
-    fontSize: 14,
+    fontSize: 15,
   },
   filterButton: {
-    marginLeft: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F4F4F2',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F7F6F1',
     justifyContent: 'center',
     alignItems: 'center',
   },
