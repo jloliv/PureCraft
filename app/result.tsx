@@ -28,6 +28,11 @@ import { computeMatch, MATCH_COPY } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
 import { recordRecipeView } from '@/lib/recent-recipes';
 import { recipeHeroImage } from '@/constants/recipeHeroImages';
+import SaveToCollectionSheet from '@/components/save-to-collection-sheet';
+import {
+  isRecipeInAnyCollection,
+  useCollections,
+} from '@/lib/collections-store';
 import { scaleAmount } from '@/lib/scale-amount';
 import { toggleSaved, useSavedRecipes } from '@/lib/saved-recipes';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
@@ -73,15 +78,52 @@ export default function Result() {
 
   const [gateModal, setGateModal] = useState<FreemiumKind | null>(null);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [saveSheetOpen, setSaveSheetOpen] = useState(false);
+  const [savedToast, setSavedToast] = useState<string | null>(null);
+
+  // Subscribe so the heart icon flips state instantly when a collection
+  // is added/removed, without requiring a re-render through saved-recipes.
+  const collections = useCollections();
+  const inAnyCollection = collections.some((c) =>
+    c.recipeIds.includes(product.id),
+  );
+  // Heart fills if either: (a) the recipe is in any local collection, or
+  // (b) it was saved through the legacy single-bucket flow before
+  // collections existed. Both states should look "saved" to the user.
+  const heartFilled = saved || inAnyCollection;
 
   const onToggleSave = () => {
     tapLight();
-    void (async () => {
-      const { gated, needsAuth } = await toggleSaved(product.id);
-      if (gated) setGateModal('save');
-      else if (needsAuth) setAuthPromptOpen(true);
-    })();
+    // Removing? Skip the sheet — direct unsave keeps the one-tap UX
+    // the user already had. Adding? Open the collection picker so the
+    // user can land it in the right bucket.
+    if (heartFilled) {
+      void (async () => {
+        const { gated, needsAuth } = await toggleSaved(product.id);
+        if (gated) setGateModal('save');
+        else if (needsAuth) setAuthPromptOpen(true);
+        // If we just unsaved via the legacy flow, also strip the recipe
+        // out of every collection so the visual state stays consistent.
+        const { getCollections, removeRecipeFromCollection } = await import(
+          '@/lib/collections-store'
+        );
+        for (const c of getCollections()) {
+          if (c.recipeIds.includes(product.id)) {
+            await removeRecipeFromCollection(c.id, product.id);
+          }
+        }
+      })();
+      return;
+    }
+    setSaveSheetOpen(true);
   };
+
+  // Auto-dismiss the "Saved to ..." toast after a couple of seconds.
+  useEffect(() => {
+    if (!savedToast) return;
+    const t = setTimeout(() => setSavedToast(null), 2200);
+    return () => clearTimeout(t);
+  }, [savedToast]);
   const savings = computeSavings(product.id);
   const retailLabel = `${formatRange(savings.retailLowUsd, savings.retailHighUsd, { currency })} at the store`;
   const savingsValue = savings.isEstimate
@@ -189,22 +231,45 @@ export default function Result() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={saved ? 'Saved' : 'Save'}
+            accessibilityLabel={heartFilled ? 'Saved' : 'Save'}
             style={({ pressed }) => [
               styles.iconBtn,
-              saved && styles.iconBtnActive,
+              heartFilled && styles.iconBtnActive,
               pressed && { opacity: 0.6 },
             ]}
             onPress={onToggleSave}
           >
             <Ionicons
-              name={saved ? 'heart' : 'heart-outline'}
+              name={heartFilled ? 'heart' : 'heart-outline'}
               size={18}
-              color={saved ? '#FFFFFF' : Colors.light.text}
+              color={heartFilled ? '#FFFFFF' : Colors.light.text}
             />
           </Pressable>
         </View>
       </View>
+
+      {/* Collection picker — opens when the user taps the heart on an
+          unsaved recipe. Removing from saved still uses the one-tap
+          path (no sheet) so the legacy UX is preserved. */}
+      <SaveToCollectionSheet
+        visible={saveSheetOpen}
+        recipeId={product.id}
+        onClose={() => setSaveSheetOpen(false)}
+        onSaved={(name) => setSavedToast(`Saved to ${name}`)}
+        onGated={() => {
+          setSaveSheetOpen(false);
+          setGateModal('save');
+        }}
+      />
+
+      {/* Saved-confirmation toast. Floats above the footer; auto-dismisses
+          after a couple of seconds (see useEffect that tracks savedToast). */}
+      {savedToast ? (
+        <View style={styles.toast} pointerEvents="none">
+          <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
+          <Text style={styles.toastText}>{savedToast}</Text>
+        </View>
+      ) : null}
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -1319,5 +1384,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: SECONDARY_ACTION_COLOR,
+  },
+  // Floating "Saved to <collection>" confirmation. Sits above the footer
+  // (bottom: 100ish) and is non-interactive so taps pass through.
+  toast: {
+    position: 'absolute',
+    bottom: 96,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: Colors.light.text,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });
