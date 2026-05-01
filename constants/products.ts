@@ -35,7 +35,13 @@ export const PRODUCT_GROUPS: { key: ProductGroup; label: string; caption: string
 ];
 
 export function findProduct(id: string | undefined): Product {
-  return PRODUCTS.find((p) => p.id === id) ?? PRODUCTS[0];
+  const direct = PRODUCTS.find((p) => p.id === id);
+  if (direct) return direct;
+  // Fall through to the remote layer so curated/Supabase recipes that
+  // aren't in the static PRODUCTS list (and aren't in v3 either) still
+  // land on the right detail page instead of defaulting to PRODUCTS[0].
+  const synthesized = id ? buildProductFromRemote(id) : null;
+  return synthesized ?? PRODUCTS[0];
 }
 
 export type Ingredient = {
@@ -381,7 +387,10 @@ export const RECIPES: Record<string, Recipe> = {
 };
 
 export function findRecipe(productId: string | undefined): Recipe {
-  return RECIPES[productId ?? ''] ?? RECIPES['bathroom-cleaner'];
+  const direct = RECIPES[productId ?? ''];
+  if (direct) return direct;
+  const synthesized = productId ? buildRecipeFromRemote(productId) : null;
+  return synthesized ?? RECIPES['bathroom-cleaner'];
 }
 
 // =============================================================================
@@ -451,4 +460,65 @@ for (const r of ALL_RECIPES) {
 
 export function isV3RecipeId(id: string | undefined): boolean {
   return id != null && V3_PRODUCT_IDS.has(id);
+}
+
+// =============================================================================
+// Remote-recipe bridge: synthesize a Product / Recipe shape on demand for
+// recipes that exist in Supabase but not in the static PRODUCTS list and
+// not in the bundled v3 catalog (e.g. db/seed_curated_20.sql entries like
+// 'castile-soap-floor-cleaner', 'hydrogen-peroxide-mold-spray', etc.).
+//
+// This avoids result.tsx / preferences.tsx falling back to bathroom-cleaner
+// when the user opens a curated recipe. The bridge runs lazily (on each
+// findProduct/findRecipe call that misses the static map) — synchronously
+// reading the current snapshot from recipes-remote, no mutation, no async.
+// =============================================================================
+
+import { getAllRecipes } from './recipes-remote';
+import type { Recipe as V3Recipe } from './recipes';
+
+function bridgeRemoteToProduct(r: V3Recipe): Product {
+  const skin = SWATCH_BY_CATEGORY[r.categoryKey] ?? SWATCH_BY_CATEGORY.cleaning;
+  const tags = [...r.tags];
+  if (r.safeForKids && !tags.includes('Family-safe')) tags.unshift('Family-safe');
+  return {
+    id: r.id,
+    title: r.title,
+    group: skin.group,
+    emoji: skin.emoji,
+    swatch: skin.swatch,
+    accent: skin.accent,
+    time: r.time,
+    savingsUsd: recipeSavingsUsd(r),
+    storeBoughtUsd: 0,
+    tags,
+    blurb: r.instructions[0] ?? '',
+  };
+}
+
+function bridgeRemoteToRecipe(r: V3Recipe): Recipe {
+  return {
+    productId: r.id,
+    title: r.title,
+    blurb: r.instructions[0] ?? '',
+    ingredients: r.ingredients.map((i) => ({ name: i, amount: '' })),
+    steps: r.instructions,
+    warnings: [
+      'DIY at your own discretion — read PureCraft Terms before using.',
+      r.safeForKids
+        ? 'Family-safe formula, but always patch-test on sensitive surfaces.'
+        : 'Keep out of reach of children and pets while in use.',
+    ],
+    substitutions: [],
+  };
+}
+
+function buildProductFromRemote(id: string): Product | null {
+  const remote = getAllRecipes().find((r) => r.id === id);
+  return remote ? bridgeRemoteToProduct(remote) : null;
+}
+
+function buildRecipeFromRemote(productId: string): Recipe | null {
+  const remote = getAllRecipes().find((r) => r.id === productId);
+  return remote ? bridgeRemoteToRecipe(remote) : null;
 }

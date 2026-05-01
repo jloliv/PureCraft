@@ -11,7 +11,7 @@ import { formatMoney, useCurrency } from '@/constants/currency';
 import { hasIngredientHelp } from '@/constants/ingredient-help';
 import { findProduct, findRecipe } from '@/constants/products';
 import { autoBullets, benefitsFor } from '@/constants/recipe-benefits';
-import { findRecipeById } from '@/constants/recipes-remote';
+import { findRecipeById, useAllRecipes } from '@/constants/recipes-remote';
 import { shelfLifeFor } from '@/constants/recipe-shelf-life';
 import { computeSavings, formatRange } from '@/constants/savings';
 import { AuthPromptModal } from '@/components/auth-prompt-modal';
@@ -46,6 +46,12 @@ const SECONDARY_ACTION_COLOR = '#6B7D73';
 
 export default function Result() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  // Subscribe to the remote-recipes store so the screen re-renders
+  // when Supabase sync lands. findProduct/findRecipe internally read
+  // the same snapshot via getAllRecipes(); without this subscription,
+  // a curated recipe opened BEFORE sync completes would render with
+  // the bathroom-cleaner fallback and never refresh.
+  useAllRecipes();
   const product = findProduct(id);
   const recipe = findRecipe(id);
   const { currency } = useCurrency();

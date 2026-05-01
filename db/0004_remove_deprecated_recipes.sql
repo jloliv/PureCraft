@@ -13,7 +13,12 @@
 -- Apply order: this should run AFTER 20260428000002_seed_curated_20.sql.
 
 delete from public.recipes
-where id in ('62', '64', '91', '93')
+where id in (
+        '62', '64', '91', '93',
+        -- curated_20 entries removed in a follow-up
+        'sugar-lip-scrub',
+        'diy-fabric-softener'
+      )
    or numeric_id in (62, 64, 91, 93);
 
 -- Sanity guard: if any of those titles still exist with different

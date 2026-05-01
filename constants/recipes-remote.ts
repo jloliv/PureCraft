@@ -41,6 +41,14 @@ const DEPRECATED_TITLES = new Set<string>([
   'Faucet Shine Spray',
   'Window Track Cleaner',
   'Quick Sink Shine',
+  'DIY Sugar Lip Scrub',
+  'DIY Fabric Softener',
+]);
+// Slug ids — used for curated rows that have a slug-style id but no
+// numeric_id. Keeps the filter consistent across both id forms.
+const DEPRECATED_SLUG_IDS = new Set<string>([
+  'sugar-lip-scrub',
+  'diy-fabric-softener',
 ]);
 
 function rowToRecipe(r: RecipeRow): Recipe {
@@ -109,6 +117,7 @@ async function syncFromSupabase(): Promise<void> {
           ) {
             return false;
           }
+          if (r.id && DEPRECATED_SLUG_IDS.has(r.id)) return false;
           if (r.title && DEPRECATED_TITLES.has(r.title)) {
             return false;
           }
