@@ -54,19 +54,19 @@ export default function RecipeHero({
         resizeMode="cover"
         accessibilityIgnoresInvertColors
       >
-        {/* Light-only fade: top ~65% of the photo stays fully clear so
-            the product reads sharply, then a soft white wash blends the
-            lower third into the page background. Terminal stop is the
-            actual page bg color (not pure white) so the hero's bottom
-            edge has no visible seam against the page. */}
+        {/* Light-only fade tuned so the photo reads crisp through the
+            top ~55%, the wash starts gently around the middle, then
+            ramps to a strong-but-not-opaque white at 80% — the title
+            lands in this clear zone. Terminal stop is the page bg so
+            the hero's bottom edge has no visible seam. */}
         <LinearGradient
           colors={[
             'rgba(255,255,255,0)',
-            'rgba(255,255,255,0.1)',
-            'rgba(255,255,255,0.6)',
+            'rgba(255,255,255,0.05)',
+            'rgba(255,255,255,0.7)',
             BACKGROUND_PRIMARY,
           ]}
-          locations={[0, 0.65, 0.85, 1]}
+          locations={[0, 0.55, 0.8, 1]}
           style={styles.gradient}
           pointerEvents="none"
         />
@@ -107,7 +107,11 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    // paddingTop pushes the headline DOWN into the lower fade band so
+    // it never sits on top of crisp photo detail; paddingBottom holds
+    // it clear of the hero's terminal blend into the page bg.
+    paddingTop: 40,
+    paddingBottom: 32,
   },
   title: {
     fontSize: 32,
@@ -115,6 +119,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.4,
     color: '#1E1E1E',
+    // Hairline white halo lifts the title off any underlying texture
+    // (a stray plant leaf, a counter highlight) without looking glowy.
+    textShadowColor: 'rgba(255,255,255,0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   subtitle: {
     marginTop: 6,
