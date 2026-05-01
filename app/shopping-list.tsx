@@ -1,7 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
@@ -36,6 +45,31 @@ export default function ShoppingList() {
 
   const toggle = (name: string) => {
     setChecked((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
+  // Native share-sheet handler. Builds a plain-text shopping list with
+  // the to-buy items and (when present) what the user already has,
+  // signs it 'Made with PureCraft', and hands it to the system Share
+  // API. Works the same on iOS, Android, and web.
+  const handleShareList = async () => {
+    tapLight();
+    const formatLine = (ing: { amount?: string; name: string }) =>
+      ing.amount ? `• ${ing.amount} ${ing.name}` : `• ${ing.name}`;
+    const toBuySection = toBuy.length
+      ? `Pick up:\n${toBuy.map(formatLine).join('\n')}`
+      : 'You already have everything for this one.';
+    const haveSection = haveIt.length
+      ? `\n\nYou already have:\n${haveIt.map(formatLine).join('\n')}`
+      : '';
+    const message = `Shopping list — ${recipe.title}\n\n${toBuySection}${haveSection}\n\nMade with PureCraft`;
+    try {
+      await Share.share({
+        message,
+        title: `PureCraft — ${recipe.title} shopping list`,
+      });
+    } catch {
+      // User cancelled or share unavailable — silently no-op.
+    }
   };
 
   // Build the Amazon search URL from the "to buy" list. We strip quantities
@@ -231,11 +265,17 @@ export default function ShoppingList() {
       <View style={styles.footer}>
         <View style={styles.footerActions}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Share shopping list"
             style={({ pressed }) => [styles.smallAction, pressed && { opacity: 0.7 }]}
-            onPress={() => {}}
+            onPress={handleShareList}
           >
-            <Ionicons name="phone-portrait-outline" size={18} color={Colors.light.text} />
-            <Text style={styles.smallActionText}>Send to phone</Text>
+            <Ionicons
+              name="share-outline"
+              size={18}
+              color={Colors.light.text}
+            />
+            <Text style={styles.smallActionText}>Share list</Text>
           </Pressable>
           <View style={{ flex: 1 }}>
             <PrimaryButton
