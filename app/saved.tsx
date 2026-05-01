@@ -23,6 +23,12 @@ import { useAuth } from '@/lib/auth';
 import { recipeIcon as iconFor, RECIPE_ICON_BLEND } from '@/lib/recipe-icons';
 import { useRecentRecipes } from '@/lib/recent-recipes';
 import { useSavedRecipes } from '@/lib/saved-recipes';
+import {
+  type Collection as StoredCollection,
+  createCollection,
+  FAVORITES_ID,
+  useCollections,
+} from '@/lib/collections-store';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -84,8 +90,13 @@ const DEMO_FALLBACK: SavedItem[] = [
 const FILTERS = ['All', 'Favorites', 'Cleaning', 'Beauty', 'Home', 'Custom', 'Premium'] as const;
 type Filter = (typeof FILTERS)[number];
 
-type Collection = {
-  key: string;
+// CollectionView is the display-shape derived from a StoredCollection
+// in lib/collections-store. The store keeps only stable data (id, name,
+// recipeIds, createdAt); the visual decoration (accent/icon/sub copy)
+// is assigned at render time so future palette tweaks don't require a
+// data migration.
+type CollectionView = {
+  id: string;
   name: string;
   count: number;
   sub: string;
@@ -94,7 +105,13 @@ type Collection = {
   icon: keyof typeof Ionicons.glyphMap;
 };
 
-const DEFAULT_COLLECTIONS: Collection[] = [
+// Legacy demo seed — kept around for reference, no longer rendered.
+// The real source of truth is now lib/collections-store. Safe to
+// delete on the next pass.
+type DemoCollection = CollectionView & { key: string };
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const DEMO_COLLECTIONS: DemoCollection[] = [
   {
     key: 'spring-reset',
     name: 'Spring Reset',
@@ -134,26 +151,53 @@ const DEFAULT_COLLECTIONS: Collection[] = [
 ];
 
 // Cycle these accents for new collections so they look intentional, not random.
-const NEW_COLLECTION_ACCENTS: Array<Pick<Collection, 'accent' | 'accentDeep' | 'icon'>> = [
+const NEW_COLLECTION_ACCENTS: Array<Pick<CollectionView, 'accent' | 'accentDeep' | 'icon'>> = [
   { accent: '#EFE7D2', accentDeep: '#A98A4D', icon: 'star-outline' },
   { accent: '#E8F0EA', accentDeep: '#5F876A', icon: 'leaf-outline' },
   { accent: '#F4EAD5', accentDeep: '#8B6A2F', icon: 'flame-outline' },
   { accent: '#ECE7F2', accentDeep: '#6F5FA3', icon: 'sparkles-outline' },
 ];
 
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    || `collection-${Date.now()}`;
+// Decorate a stored Collection with display-only fields (accent / icon /
+// sub copy). Favorites gets a special heart-shaped treatment; all other
+// collections cycle through NEW_COLLECTION_ACCENTS by index so they
+// look intentional instead of randomly themed.
+function decorateCollection(c: StoredCollection, index: number): CollectionView {
+  if (c.id === FAVORITES_ID) {
+    return {
+      id: c.id,
+      name: c.name,
+      count: c.recipeIds.length,
+      sub: 'Your hand-picked favorites',
+      accent: '#FCE9E1',
+      accentDeep: '#C26B5A',
+      icon: 'heart-outline',
+    };
+  }
+  const palette = NEW_COLLECTION_ACCENTS[index % NEW_COLLECTION_ACCENTS.length];
+  return {
+    id: c.id,
+    name: c.name,
+    count: c.recipeIds.length,
+    sub:
+      c.recipeIds.length === 0
+        ? 'Empty — add recipes from a card'
+        : `${c.recipeIds.length === 1 ? 'recipe' : 'recipes'} saved`,
+    ...palette,
+  };
 }
 
 export default function Saved() {
   const { currency } = useCurrency();
   const [filter, setFilter] = useState<Filter>('All');
-  const [collections, setCollections] = useState<Collection[]>(DEFAULT_COLLECTIONS);
+  // Real, persisted collections from lib/collections-store. Decorated
+  // with accent/icon below for the grid render. Falsey "isHydrated" on
+  // first launch falls back to the demo seed so the screen doesn't
+  // flicker an empty grid before storage hydrates.
+  const storedCollections = useCollections();
+  const collections = useMemo<CollectionView[]>(() => {
+    return storedCollections.map((c, i) => decorateCollection(c, i));
+  }, [storedCollections]);
   const [createOpen, setCreateOpen] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const { user } = useAuth();
@@ -349,7 +393,7 @@ export default function Saved() {
         <View style={styles.collectionsGrid}>
           {collections.map((c) => (
             <Pressable
-              key={c.key}
+              key={c.id}
               onPress={() => {}}
               style={({ pressed }) => [
                 styles.collectionCard,
@@ -460,19 +504,11 @@ export default function Saved() {
               onSubmitEditing={() => {
                 const name = newCollectionName.trim();
                 if (!name) return;
-                const accent =
-                  NEW_COLLECTION_ACCENTS[collections.length % NEW_COLLECTION_ACCENTS.length];
-                setCollections((prev) => [
-                  ...prev,
-                  {
-                    key: `${slugify(name)}-${Date.now()}`,
-                    name,
-                    count: 0,
-                    sub: 'New collection',
-                    ...accent,
-                  },
-                ]);
                 tapLight();
+                // createCollection persists to AsyncStorage and emits
+                // an update so the grid + the save-to-collection sheet
+                // both pick up the new entry on the next render.
+                void createCollection(name);
                 setNewCollectionName('');
                 setCreateOpen(false);
               }}
@@ -493,19 +529,8 @@ export default function Saved() {
                 onPress={() => {
                   const name = newCollectionName.trim();
                   if (!name) return;
-                  const accent =
-                    NEW_COLLECTION_ACCENTS[collections.length % NEW_COLLECTION_ACCENTS.length];
-                  setCollections((prev) => [
-                    ...prev,
-                    {
-                      key: `${slugify(name)}-${Date.now()}`,
-                      name,
-                      count: 0,
-                      sub: 'New collection',
-                      ...accent,
-                    },
-                  ]);
                   tapLight();
+                  void createCollection(name);
                   setNewCollectionName('');
                   setCreateOpen(false);
                 }}
