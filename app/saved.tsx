@@ -522,12 +522,14 @@ function ContinueMakingCard({
           style={styles.continueImage}
           resizeMode="cover"
         />
-        {/* Optional polish: gradient fade (rather than a flat overlay)
-            so the image edge dissolves smoothly into the text zone. */}
+        {/* Tight transition: transparent at x:0.35, fully opaque cream
+            by x:0.55 — that's where the title's left edge sits, so
+            the headline reads on solid color instead of bleeding into
+            the photo. */}
         <LinearGradient
           colors={['transparent', '#F1ECE0']}
           start={{ x: 0.35, y: 0 }}
-          end={{ x: 0.9, y: 0 }}
+          end={{ x: 0.55, y: 0 }}
           style={styles.continueGradient}
         />
         <View style={styles.continueText}>
@@ -788,9 +790,10 @@ const styles = StyleSheet.create({
     right: 18,
     top: 16,
     bottom: 16,
-    // Aligns text within the right-hand fade zone; with the image at
-    // 65%, ~50% from left puts the text squarely in the readable area.
-    left: '50%',
+    // Text starts at x:55% (just past the gradient's opaque point) so
+    // the title's first letter sits on solid cream, never on the
+    // photo. Tweak in pair with the LinearGradient end above.
+    left: '55%',
     justifyContent: 'center',
   },
   continueBadgeText: {

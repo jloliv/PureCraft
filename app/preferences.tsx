@@ -77,10 +77,14 @@ export default function Preferences() {
             style={styles.productImage}
             resizeMode="cover"
           />
+          {/* Tight transition: transparent at x:0.35 (image still clean),
+              fully opaque swatch by x:0.55 — that's where the title's
+              left edge sits, so the headline reads on solid color
+              instead of bleeding into the photo. */}
           <LinearGradient
             colors={['transparent', product.swatch]}
             start={{ x: 0.35, y: 0 }}
-            end={{ x: 0.9, y: 0 }}
+            end={{ x: 0.55, y: 0 }}
             style={styles.productGradient}
           />
           <View style={styles.productText}>
@@ -242,7 +246,10 @@ const styles = StyleSheet.create({
   },
   productText: {
     position: 'absolute',
-    left: '50%',
+    // Text starts at x:55% (just past the gradient's opaque point) so
+    // the title's first letter sits on solid swatch, never on the
+    // photo. Tweak in pair with the gradient end above.
+    left: '55%',
     right: 18,
     top: 16,
     bottom: 16,
