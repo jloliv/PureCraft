@@ -2,10 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { findProduct } from '@/constants/products';
+import {
+  hasRecipeHeroImage,
+  recipeHeroImage,
+} from '@/constants/recipeHeroImages';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 const STAGES = [
@@ -66,7 +70,23 @@ export default function Loading() {
               colors={['#7B9E89', '#5C7F6B']}
               style={StyleSheet.absoluteFillObject}
             />
-            <Text style={styles.orbEmoji}>{product.emoji}</Text>
+            {/* Show the recipe's dedicated hero photo if one is
+                registered; otherwise fall back to the product emoji
+                so older / un-photographed recipes still look right.
+                We gate on hasRecipeHeroImage rather than recipeHero-
+                Image's truthiness because the helper falls back
+                through icon -> category icon -> fallback.png and
+                never actually returns null. */}
+            {hasRecipeHeroImage(product.id) ? (
+              <Image
+                source={recipeHeroImage(product.id)}
+                style={styles.orbImage}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <Text style={styles.orbEmoji}>{product.emoji}</Text>
+            )}
           </Animated.View>
         </View>
 
@@ -146,6 +166,17 @@ const styles = StyleSheet.create({
     ...Shadow.raised,
   },
   orbEmoji: { fontSize: 56 },
+  // Hero image sits on top of the green gradient inside the orb. The
+  // 92% sizing + borderRadius keeps a thin ring of green visible
+  // around the photo so the orb still reads as a green orb, not a
+  // floating image. overflow: 'hidden' on the orb already crops to a
+  // circle, but borderRadius:999 here makes the image itself round
+  // so its own edge is clean (no clipped square corners).
+  orbImage: {
+    width: '92%',
+    height: '92%',
+    borderRadius: 999,
+  },
   eyebrow: { ...Type.caption, color: Colors.light.sageDeep, textTransform: 'uppercase' },
   title: { ...Type.title, color: Colors.light.text, textAlign: 'center' },
   stageList: { marginTop: Spacing.xl, gap: Spacing.md, alignSelf: 'stretch' },
