@@ -503,7 +503,14 @@ function ContinueMakingCard({
   item: SavedItem;
   currencySymbol: string;
 }) {
-  const progress = 0.6;
+  // Premium hero-card layout: full-bleed image on the left, soft fade
+  // into cream on the right, label + title + meta stacked over the
+  // fade. The Pressable wrapping the whole card already navigates to
+  // /result, so the explicit "Resume" CTA was redundant — tapping
+  // anywhere on the card resumes.
+  const savings = item.product.savingsUsd ?? 0;
+  const savingsLabel =
+    savings > 0 ? `${currencySymbol}${savings.toFixed(2)}` : null;
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/result', params: { id: item.product.id } })}
@@ -515,30 +522,23 @@ function ContinueMakingCard({
           style={styles.continueImage}
           resizeMode="cover"
         />
+        {/* Optional polish: gradient fade (rather than a flat overlay)
+            so the image edge dissolves smoothly into the text zone. */}
         <LinearGradient
           colors={['transparent', '#F1ECE0']}
-          start={{ x: 0.4, y: 0 }}
-          end={{ x: 0.95, y: 0 }}
+          start={{ x: 0.35, y: 0 }}
+          end={{ x: 0.9, y: 0 }}
           style={styles.continueGradient}
         />
         <View style={styles.continueText}>
-          <View style={styles.continueBadge}>
-            <View style={styles.continuePulse} />
-            <Text style={styles.continueBadgeText}>You&apos;re making</Text>
-          </View>
+          <Text style={styles.continueBadgeText}>You&apos;re making</Text>
           <Text style={styles.continueTitle} numberOfLines={1}>
             {item.product.title}
           </Text>
-          <Text style={styles.continueMeta}>
-            Step 3 of 5 · {item.product.time}
+          <Text style={styles.continueMeta} numberOfLines={1}>
+            {item.product.time}
+            {savingsLabel ? ` • save ${savingsLabel}` : ''}
           </Text>
-          <View style={styles.continueProgressTrack}>
-            <View style={[styles.continueProgressFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <View style={styles.continueCta}>
-            <Text style={styles.continueCtaText}>Resume</Text>
-            <Ionicons name="arrow-forward" size={13} color="#FFFFFF" />
-          </View>
         </View>
       </View>
     </Pressable>
@@ -759,7 +759,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   continueCard: {
-    height: 152,
+    height: 120,
+    borderRadius: 20,
     backgroundColor: '#F1ECE0',
     position: 'relative',
     overflow: 'hidden',
@@ -769,76 +770,49 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    width: '60%',
+    // 65% controls how much of the photo is visible before the fade
+    // takes over. Bumping this shifts the image–text balance; the
+    // gradient/text positions below adjust automatically.
+    width: '65%',
     height: '100%',
   },
   continueGradient: {
     position: 'absolute',
-    left: '40%',
+    left: 0,
     right: 0,
     top: 0,
     bottom: 0,
   },
   continueText: {
     position: 'absolute',
-    right: 16,
+    right: 18,
     top: 16,
     bottom: 16,
-    width: '46%',
+    // Aligns text within the right-hand fade zone; with the image at
+    // 65%, ~50% from left puts the text squarely in the readable area.
+    left: '50%',
     justifyContent: 'center',
-  },
-  continueBadge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFFCC',
-  },
-  continuePulse: {
-    width: 6,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: PALETTE.sageDeep,
   },
   continueBadgeText: {
     fontSize: 10,
     letterSpacing: 1.2,
     fontWeight: '700',
-    color: PALETTE.text,
+    color: PALETTE.textMuted,
     textTransform: 'uppercase',
   },
   continueTitle: {
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: '700',
     color: PALETTE.text,
     letterSpacing: -0.3,
-    marginTop: 8,
+    marginTop: 6,
   },
-  continueMeta: { fontSize: 11.5, color: PALETTE.textMuted, marginTop: 2 },
-  continueProgressTrack: {
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFFAA',
-    marginTop: 10,
-    overflow: 'hidden',
+  continueMeta: {
+    fontSize: 12,
+    color: PALETTE.textMuted,
+    marginTop: 4,
   },
-  continueProgressFill: { height: '100%', backgroundColor: PALETTE.sageDeep, borderRadius: 999 },
-  continueCta: {
-    marginTop: 12,
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: PALETTE.text,
-  },
-  continueCtaText: { fontSize: 11.5, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.4 },
   continueSwatch: {
     width: 96,
     height: 96,
