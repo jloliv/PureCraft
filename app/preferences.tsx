@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -7,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct } from '@/constants/products';
-import { recipeIcon } from '@/lib/recipe-icons';
+import { recipeHeroImage } from '@/constants/recipeHeroImages';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 type Pref = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap };
@@ -64,17 +65,32 @@ export default function Preferences() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        {/* Premium hero-card layout — mirrors saved.tsx's ContinueMakingCard.
+            Image bleeds the left ~65% of the card; LinearGradient fades it
+            into product.swatch (the per-recipe themed color) so the seam is
+            invisible regardless of which recipe is shown. Text sits on the
+            right over the fade. */}
         <View style={[styles.productCard, { backgroundColor: product.swatch }]}>
           <Image
-            source={recipeIcon(product.id)}
+            source={recipeHeroImage(product.id)}
             testID="pc-recipe-icon"
-            style={styles.productIcon}
-            resizeMode="contain"
+            style={styles.productImage}
+            resizeMode="cover"
           />
-          <View style={{ flex: 1 }}>
+          <LinearGradient
+            colors={['transparent', product.swatch]}
+            start={{ x: 0.35, y: 0 }}
+            end={{ x: 0.9, y: 0 }}
+            style={styles.productGradient}
+          />
+          <View style={styles.productText}>
             <Text style={styles.productEyebrow}>You&apos;re making</Text>
-            <Text style={styles.productTitle}>{product.title}</Text>
-            <Text style={styles.productMeta}>{product.time} · save {formatMoney(product.savingsUsd, { currency })}</Text>
+            <Text style={styles.productTitle} numberOfLines={1}>
+              {product.title}
+            </Text>
+            <Text style={styles.productMeta} numberOfLines={1}>
+              {product.time} • save {formatMoney(product.savingsUsd, { currency })}
+            </Text>
           </View>
         </View>
 
@@ -200,18 +216,58 @@ const styles = StyleSheet.create({
   topTitle: { ...Type.bodyStrong, color: Colors.light.text },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
   productCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.lg,
-    padding: Spacing.lg,
-    borderRadius: Radius.lg,
-    ...Shadow.card,
+    height: 120,
+    borderRadius: 20,
+    position: 'relative',
+    overflow: 'hidden',
+    // backgroundColor is applied inline with product.swatch so each
+    // recipe keeps its themed color and the gradient terminus matches.
   },
-  productEmoji: { fontSize: 44 },
-  productIcon: { width: 72, height: 72 },
-  productEyebrow: { ...Type.caption, color: Colors.light.sageDeep, textTransform: 'uppercase' },
-  productTitle: { ...Type.title, color: Colors.light.text, marginTop: 2 },
-  productMeta: { ...Type.caption, color: Colors.light.textMuted, marginTop: 4 },
+  productImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    // Mirrors saved.tsx ContinueMakingCard: image bleeds 65% of the
+    // card width; the gradient and text positions below assume this.
+    width: '65%',
+    height: '100%',
+  },
+  productGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  productText: {
+    position: 'absolute',
+    left: '50%',
+    right: 18,
+    top: 16,
+    bottom: 16,
+    justifyContent: 'center',
+  },
+  productEyebrow: {
+    fontSize: 10,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    color: Colors.light.sageDeep,
+    textTransform: 'uppercase',
+  },
+  productTitle: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '700',
+    color: Colors.light.text,
+    letterSpacing: -0.3,
+    marginTop: 6,
+  },
+  productMeta: {
+    fontSize: 12,
+    color: Colors.light.textMuted,
+    marginTop: 4,
+  },
   sectionTitle: { ...Type.sectionTitle, color: Colors.light.text, marginTop: Spacing.xxl },
   sectionSub: { ...Type.caption, color: Colors.light.textMuted, marginTop: 4, marginBottom: Spacing.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
