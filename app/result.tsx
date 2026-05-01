@@ -35,6 +35,10 @@ import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 const BATCH_OPTIONS = [1, 2, 3, 5] as const;
 type BatchSize = (typeof BATCH_OPTIONS)[number];
 
+// Muted sage-gray used for secondary actions (icon + label) so they
+// stay visible without competing visually with the primary CTA.
+const SECONDARY_ACTION_COLOR = '#6B7D73';
+
 export default function Result() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const product = findProduct(id);
@@ -519,11 +523,16 @@ export default function Result() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
         <View style={styles.footerActions}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Try another recipe"
             style={({ pressed }) => [styles.smallAction, pressed && { opacity: 0.7 }]}
             onPress={() => router.push('/categories')}
           >
-            <Ionicons name="refresh" size={18} color={Colors.light.text} />
-            <Text style={styles.smallActionText}>Make another</Text>
+            {/* Compass icon reads as "explore" — better fit than the
+                old refresh icon now that the copy is "Try another"
+                (exploring) instead of "Make another" (repeat). */}
+            <Ionicons name="compass-outline" size={18} color={SECONDARY_ACTION_COLOR} />
+            <Text style={styles.smallActionText}>Try another</Text>
           </Pressable>
           <View style={{ flex: 1 }}>
             <PrimaryButton
@@ -1303,5 +1312,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: Spacing.md,
   },
-  smallActionText: { ...Type.caption, color: Colors.light.text },
+  // Secondary action — intentionally lighter than the Shopping List
+  // CTA. Muted sage-gray (#6B7D73) keeps the option visible without
+  // competing for attention with the primary green button.
+  smallActionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: SECONDARY_ACTION_COLOR,
+  },
 });
