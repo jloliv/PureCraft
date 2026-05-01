@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -522,16 +521,6 @@ function ContinueMakingCard({
           style={styles.continueImage}
           resizeMode="cover"
         />
-        {/* Soft 30%-wide transition: transparent at x:0.3, fully
-            opaque cream by x:0.6 — that's where the title's left edge
-            sits, so the headline reads on solid color while the fade
-            itself feels gentle rather than abrupt. */}
-        <LinearGradient
-          colors={['transparent', '#F1ECE0']}
-          start={{ x: 0.3, y: 0 }}
-          end={{ x: 0.6, y: 0 }}
-          style={styles.continueGradient}
-        />
         <View style={styles.continueText}>
           <Text style={styles.continueBadgeText}>You&apos;re making</Text>
           <Text style={styles.continueTitle} numberOfLines={1}>
@@ -772,28 +761,21 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    // Image bleeds 70% of the card width. The right ~10% (60–70%)
-    // gets covered by the opaque part of the gradient, so the
-    // visible image content is the leftmost ~60% of the card.
-    width: '70%',
+    // Image fills exactly the left half of the card. Right half is
+    // pure cream with the text on top — no gradient, no overlap.
+    width: '50%',
     height: '100%',
-  },
-  continueGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   },
   continueText: {
     position: 'absolute',
     right: 18,
     top: 16,
     bottom: 16,
-    // Text starts at x:60% — exactly where the gradient becomes fully
-    // opaque — so the title's first letter sits on solid cream.
-    // Tweak in pair with the LinearGradient end above.
-    left: '60%',
+    // Text starts at x:50% (the image's right edge) so it sits
+    // entirely on solid cream. paddingLeft pulls it visually away
+    // from the hard image-cream boundary.
+    left: '50%',
+    paddingLeft: 16,
     justifyContent: 'center',
   },
   continueBadgeText: {

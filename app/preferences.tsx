@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -65,28 +64,16 @@ export default function Preferences() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Premium hero-card layout — mirrors saved.tsx's ContinueMakingCard.
-            Image bleeds the left ~65% of the card; LinearGradient fades it
-            into product.swatch (the per-recipe themed color) so the seam is
-            invisible regardless of which recipe is shown. Text sits on the
-            right over the fade. */}
+        {/* Hero-card layout: clean 50/50 split — image fills the left
+            half, text sits on solid product.swatch on the right half.
+            No gradient overlay; the boundary is a hard edge between
+            the photo and the swatch. */}
         <View style={[styles.productCard, { backgroundColor: product.swatch }]}>
           <Image
             source={recipeHeroImage(product.id)}
             testID="pc-recipe-icon"
             style={styles.productImage}
             resizeMode="cover"
-          />
-          {/* Soft 30%-wide transition: transparent at x:0.3 (clean image
-              through the first third), fully opaque swatch by x:0.6 —
-              that's where the title's left edge sits, so the headline
-              reads on solid color while the fade itself feels gentle
-              rather than abrupt. */}
-          <LinearGradient
-            colors={['transparent', product.swatch]}
-            start={{ x: 0.3, y: 0 }}
-            end={{ x: 0.6, y: 0 }}
-            style={styles.productGradient}
           />
           <View style={styles.productText}>
             <Text style={styles.productEyebrow}>You&apos;re making</Text>
@@ -233,25 +220,18 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    // Image bleeds 70% of the card width. The right ~10% (60–70%)
-    // gets covered by the opaque part of the gradient, so the
-    // visible image content is the leftmost ~60% of the card.
-    width: '70%',
+    // Image fills exactly the left half of the card. Right half is
+    // pure swatch with the text on top — no gradient, no overlap.
+    width: '50%',
     height: '100%',
-  },
-  productGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   },
   productText: {
     position: 'absolute',
-    // Text starts at x:60% — exactly where the gradient becomes fully
-    // opaque — so the title's first letter sits on solid swatch.
-    // Tweak in pair with the gradient end above.
-    left: '60%',
+    // Text starts at x:50% (the image's right edge) so it sits
+    // entirely on solid swatch. Small extra paddingLeft pulls it
+    // visually away from the hard image-swatch boundary.
+    left: '50%',
+    paddingLeft: 16,
     right: 18,
     top: 16,
     bottom: 16,
