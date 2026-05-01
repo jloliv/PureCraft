@@ -726,7 +726,11 @@ const styles = StyleSheet.create({
   header: {
     height: 160,
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    // Header relies on the parent ScrollView's paddingHorizontal: 20
+    // for its left inset. Setting this to 0 keeps the total inset at
+    // exactly 20pt to match the design spec; bumping it adds extra
+    // gap that nudges the title rightward into the image zone.
+    paddingHorizontal: 0,
     overflow: 'hidden',
     position: 'relative',
   },

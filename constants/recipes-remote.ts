@@ -23,6 +23,26 @@ function emit() {
   listeners.forEach((l) => l());
 }
 
+// Recipes that were removed from the bundled catalog but may still
+// exist in the Supabase `recipes` table until the next migration runs.
+// Filter them out at the sync boundary so the UI stops showing them
+// the moment this build lands, regardless of remote DB state.
+//
+// When the SQL migration (db/0004_remove_deprecated_recipes.sql) is
+// applied to Supabase, this set can be cleared — but keeping it as a
+// belt-and-braces guard does no harm.
+const DEPRECATED_NUMERIC_IDS = new Set<number>([
+  62, // Faucet Shine Spray
+  64, // Window Track Cleaner (original)
+  91, // Quick Sink Shine
+  93, // Window Track Cleaner (quick variant)
+]);
+const DEPRECATED_TITLES = new Set<string>([
+  'Faucet Shine Spray',
+  'Window Track Cleaner',
+  'Quick Sink Shine',
+]);
+
 function rowToRecipe(r: RecipeRow): Recipe {
   // Match against bundled entries in PRIORITY order, not OR. The old
   // `numericId === ... || id === ... || title === ...` collapsed any
@@ -69,7 +89,22 @@ async function syncFromSupabase(): Promise<void> {
         .order('numeric_id', { ascending: true });
       if (error) throw error;
       if (data && data.length) {
-        const mapped = (data as RecipeRow[]).map(rowToRecipe);
+        // Drop deprecated rows BEFORE mapping so the slug fallback in
+        // rowToRecipe doesn't accidentally resurrect them under a
+        // freshly-derived id.
+        const filtered = (data as RecipeRow[]).filter((r) => {
+          if (
+            r.numeric_id != null &&
+            DEPRECATED_NUMERIC_IDS.has(r.numeric_id)
+          ) {
+            return false;
+          }
+          if (r.title && DEPRECATED_TITLES.has(r.title)) {
+            return false;
+          }
+          return true;
+        });
+        const mapped = filtered.map(rowToRecipe);
         // Safety net: even after the priority-chain fix, dedupe by id
         // before the UI ever sees the list. If the matcher ever
         // regresses or the DB seed gets out of sync, the worst case
