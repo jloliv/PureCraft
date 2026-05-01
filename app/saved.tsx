@@ -761,9 +761,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     bottom: 0,
-    // Image fills exactly the left half of the card. Right half is
-    // pure cream with the text on top — no gradient, no overlap.
-    width: '50%',
+    // Image takes the left 40% of the card (shrunk from 50%) so the
+    // recipe title gets more horizontal breathing room on the right.
+    width: '40%',
     height: '100%',
   },
   continueText: {
@@ -771,10 +771,10 @@ const styles = StyleSheet.create({
     right: 18,
     top: 16,
     bottom: 16,
-    // Text starts at x:50% (the image's right edge) so it sits
-    // entirely on solid cream. paddingLeft pulls it visually away
-    // from the hard image-cream boundary.
-    left: '50%',
+    // Text starts at x:40% (the image's right edge). 60% of the card
+    // width minus paddings gives the headline ~176pt of room — long
+    // titles fit comfortably on one line at 18pt.
+    left: '40%',
     paddingLeft: 16,
     justifyContent: 'center',
   },
