@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IngredientHelpSheet } from '@/components/ingredient-help-sheet';
 import { PrimaryButton } from '@/components/primary-button';
@@ -42,6 +42,12 @@ export default function Result() {
   const { currency } = useCurrency();
   const { saved: savedMap } = useSavedRecipes();
   const saved = savedMap.has(product.id);
+  // Read the safe-area top inset at runtime so the floating topBar
+  // sits BELOW the status bar / Dynamic Island instead of fusing with
+  // it. SafeAreaView's edges={['top']} adds paddingTop to the view's
+  // content area but doesn't shift absolutely-positioned children, so
+  // we apply the inset directly to the topBar.
+  const insets = useSafeAreaInsets();
   const [helpFor, setHelpFor] = useState<string | null>(null);
   const [batch, setBatch] = useState<BatchSize>(1);
 
@@ -139,7 +145,7 @@ export default function Result() {
         visible={authPromptOpen}
         onClose={() => setAuthPromptOpen(false)}
       />
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back"
@@ -712,8 +718,11 @@ function capitalize(s: string): string {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.light.background },
   // Top bar floats over the hero photo so the image runs edge-to-edge
-  // top-to-bottom of the safe area. zIndex keeps the buttons above the
-  // ScrollView's contents.
+  // top-to-bottom of the screen. zIndex keeps the buttons above the
+  // ScrollView's contents. paddingTop is applied INLINE at the call
+  // site using useSafeAreaInsets so the buttons clear the status bar
+  // / Dynamic Island regardless of device — that runtime value can't
+  // live in StyleSheet.create.
   topBar: {
     position: 'absolute',
     top: 0,
@@ -724,7 +733,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
     paddingBottom: Spacing.sm,
   },
   topActions: { flexDirection: 'row', gap: Spacing.sm },
