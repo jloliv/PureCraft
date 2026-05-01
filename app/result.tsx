@@ -135,7 +135,12 @@ export default function Result() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    {/* No `edges` here on purpose: we want the hero photo to extend
+        UNDER the status bar / Dynamic Island for a true full-bleed
+        look. The floating topBar (which DOES need to clear the status
+        bar) handles its own clearance via `paddingTop: insets.top + 8`,
+        so removing the SafeAreaView's top inset is safe. */}
+    <SafeAreaView style={styles.safe} edges={[]}>
       <FreemiumModal
         visible={gateModal !== null}
         kind={gateModal ?? 'save'}
@@ -506,7 +511,12 @@ export default function Result() {
         <View style={{ height: Spacing.xxxl }} />
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* Footer absorbs the bottom safe-area inset since the SafeAreaView
+          above no longer applies one — this keeps the CTA out of the
+          home-indicator gesture zone on iPhones with one, while devices
+          without an inset (older iPhones / Android) get the static
+          paddingBottom alone. */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + Spacing.lg }]}>
         <View style={styles.footerActions}>
           <Pressable
             style={({ pressed }) => [styles.smallAction, pressed && { opacity: 0.7 }]}
