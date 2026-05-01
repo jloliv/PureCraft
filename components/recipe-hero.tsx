@@ -54,17 +54,19 @@ export default function RecipeHero({
         resizeMode="cover"
         accessibilityIgnoresInvertColors
       >
-        {/* Four-stop fade: image stays clean at the top, deepens into a
-            soft shadow that improves text contrast, then transitions to
-            opaque page-bg so the bottom edge has nothing to "end" on. */}
+        {/* Light-only fade: top ~65% of the photo stays fully clear so
+            the product reads sharply, then a soft white wash blends the
+            lower third into the page background. Terminal stop is the
+            actual page bg color (not pure white) so the hero's bottom
+            edge has no visible seam against the page. */}
         <LinearGradient
           colors={[
-            'rgba(0,0,0,0)',
-            'rgba(0,0,0,0.18)',
-            'rgba(242,237,227,0.9)',
+            'rgba(255,255,255,0)',
+            'rgba(255,255,255,0.1)',
+            'rgba(255,255,255,0.6)',
             BACKGROUND_PRIMARY,
           ]}
-          locations={[0, 0.4, 0.78, 1]}
+          locations={[0, 0.65, 0.85, 1]}
           style={styles.gradient}
           pointerEvents="none"
         />
