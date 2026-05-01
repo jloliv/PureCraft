@@ -58,7 +58,7 @@ export const RECIPE_CATEGORIES: RecipeCategory[] = [
   {
     key: 'home-air-freshening',
     label: 'Home & Air Freshening',
-    homeLabel: 'Comfort',
+    homeLabel: 'Home & Scent',
     description:
       'Linen sprays, room sprays, sachets, simmer pots, and fresheners.',
   },

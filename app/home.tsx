@@ -51,6 +51,10 @@ type Category = {
   image: ImageSourcePropType;
   imageScale?: number;
   imageOffsetY?: number;
+  /** Optional override route. Defaults to /categories?category=<key>.
+   *  Pantry Magic uses /pantry-results so it lands on the personalized
+   *  "what can I make right now" screen instead of a category list. */
+  route?: string;
 };
 
 // Each home tile maps to one canonical RecipeCategoryKey from
@@ -79,13 +83,16 @@ const CATEGORIES: Category[] = [
   },
   {
     key: 'home-air-freshening',
-    label: 'Comfort',
+    label: 'Home & Scent',
     image: require('../assets/images/comfort.jpg'),
   },
   {
     key: 'emergency-budget-hacks',
     label: 'Pantry Magic',
     image: require('../assets/images/Pantry-Magic.jpg'),
+    // Tap on Pantry Magic lands on the personalized
+    // /pantry-results screen rather than a filtered category list.
+    route: '/pantry-results',
   },
 ];
 
@@ -331,9 +338,18 @@ function CategoryCard({ category }: { category: Category }) {
 
   return (
     <Pressable
-      onPress={() =>
-        router.push({ pathname: '/categories', params: { category: category.key } })
-      }
+      onPress={() => {
+        // Categories that supply their own `route` (e.g. Pantry Magic
+        // -> /pantry-results) bypass the default category-list path.
+        if (category.route) {
+          router.push(category.route as never);
+          return;
+        }
+        router.push({
+          pathname: '/categories',
+          params: { category: category.key },
+        });
+      }}
       style={({ pressed }) => [styles.catCard, pressed && styles.cardPressed]}
     >
       <ImageBackground
