@@ -94,6 +94,22 @@ const INTENTS: Intent[] = [
   { key: 'fast', label: 'Fast to Make', icon: 'time-outline', tint: '#6F5FA3', bg: '#EDE9F2' },
 ];
 
+// Maps each intent chip to the filtered /categories route it should
+// open. Categories.tsx reads `category`, `safeForKids`, and `tag` from
+// useLocalSearchParams, so we just hand it the right slugs:
+//   - pet:  v3 'Pet Safe' -> categoryKey 'pet-safe' (5 recipes today)
+//   - baby: safeForKids=true selects every recipe flagged for kids
+//   - save: 'Emergency / Budget Hacks' -> 'emergency-budget-hacks'
+//   - sensitive / low-scent / fast: no precise filter wired yet, so
+//     they fall through to the unfiltered all-recipes list. When we
+//     add real tags ('low-scent', 'sensitive', 'fast'), drop them
+//     in here as { tag: 'low-scent' } etc.
+const INTENT_FILTERS: Record<string, Record<string, string>> = {
+  pet: { category: 'pet-safe' },
+  baby: { safeForKids: 'true' },
+  save: { category: 'emergency-budget-hacks' },
+};
+
 const TRENDING = [
   { id: 'bathroom-cleaner', stat: '1.2k made this week' },
   { id: 'linen-spray', stat: '880 made this week' },
@@ -745,9 +761,16 @@ function ChipRow() {
             style={{ opacity: v, transform: [{ translateY: tY }] }}
           >
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${it.label} recipes`}
               onPress={() => {
                 tapLight();
-                router.push('/categories');
+                const params = INTENT_FILTERS[it.key];
+                router.push(
+                  params
+                    ? { pathname: '/categories', params }
+                    : '/categories',
+                );
               }}
               style={({ pressed }) => [
                 styles.chip,
