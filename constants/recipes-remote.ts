@@ -57,8 +57,18 @@ function rowToRecipe(r: RecipeRow): Recipe {
       : undefined) ??
     BUNDLED.find((b) => b.id === r.id) ??
     BUNDLED.find((b) => b.title === r.title);
+  // When there's no bundled match: prefer the DB's own id if it
+  // already looks like a slug (e.g. 'dishwasher-deep-clean'). Only
+  // re-derive from title when the row has a legacy numeric id ('62',
+  // '93', etc.). Re-deriving from title is what was previously
+  // breaking image lookups for rows whose title has more words than
+  // the slug — e.g. title 'Dishwasher Deep Clean Powder' would
+  // produce the slug 'dishwasher-deep-clean-powder' which doesn't
+  // match the asset key 'dishwasher-deep-clean'.
+  const isSluglikeId = !!r.id && /[a-z]/.test(r.id) && !/^\d+$/.test(r.id);
+  const fallbackId = isSluglikeId ? r.id : slugifyRecipeId(r.title);
   return {
-    id: bundledMatch?.id ?? slugifyRecipeId(r.title),
+    id: bundledMatch?.id ?? fallbackId,
     // Slug-IDed recipes have null numeric_id — fall back to NaN so callers
     // doing numeric sorting can detect & deprioritize.
     numericId:
