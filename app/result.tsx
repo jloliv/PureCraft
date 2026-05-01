@@ -27,7 +27,7 @@ import { tapLight, tapSoft } from '@/lib/haptics';
 import { computeMatch, MATCH_COPY } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
 import { recordRecipeView } from '@/lib/recent-recipes';
-import { recipeIcon } from '@/lib/recipe-icons';
+import { recipeHeroImage } from '@/constants/recipeHeroImages';
 import { scaleAmount } from '@/lib/scale-amount';
 import { toggleSaved, useSavedRecipes } from '@/lib/saved-recipes';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
@@ -199,7 +199,7 @@ export default function Result() {
             image out of the ScrollView's contentContainer padding so it
             extends edge-to-edge while the rest of the page stays inset. */}
         <RecipeHero
-          image={recipeIcon(product.id)}
+          image={recipeHeroImage(product.id, v3Recipe?.categoryKey)}
           style={styles.heroBleed}
           testID="pc-recipe-icon"
         />
