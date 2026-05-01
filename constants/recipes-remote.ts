@@ -24,9 +24,19 @@ function emit() {
 }
 
 function rowToRecipe(r: RecipeRow): Recipe {
-  const bundledMatch = BUNDLED.find(
-    (b) => b.numericId === r.numeric_id || b.id === r.id || b.title === r.title,
-  );
+  // Match against bundled entries in PRIORITY order, not OR. The old
+  // `numericId === ... || id === ... || title === ...` collapsed any
+  // recipes that share a title (e.g. both "Window Track Cleaner"
+  // variants) onto the SAME bundled entry, because title-match fires
+  // for the first iterated bundled row regardless of numericId.
+  // Resolving each match category sequentially prevents the weaker
+  // criterion from shadowing the stronger one.
+  const bundledMatch =
+    (r.numeric_id != null
+      ? BUNDLED.find((b) => b.numericId === r.numeric_id)
+      : undefined) ??
+    BUNDLED.find((b) => b.id === r.id) ??
+    BUNDLED.find((b) => b.title === r.title);
   return {
     id: bundledMatch?.id ?? slugifyRecipeId(r.title),
     // Slug-IDed recipes have null numeric_id — fall back to NaN so callers
@@ -59,13 +69,34 @@ async function syncFromSupabase(): Promise<void> {
         .order('numeric_id', { ascending: true });
       if (error) throw error;
       if (data && data.length) {
-        const remote = (data as RecipeRow[]).map(rowToRecipe);
+        const mapped = (data as RecipeRow[]).map(rowToRecipe);
+        // Safety net: even after the priority-chain fix, dedupe by id
+        // before the UI ever sees the list. If the matcher ever
+        // regresses or the DB seed gets out of sync, the worst case
+        // is "we keep the first occurrence" instead of a React
+        // duplicate-key warning that breaks list rendering.
+        const seenIds = new Set<string>();
+        const remote: Recipe[] = [];
+        for (const r of mapped) {
+          if (seenIds.has(r.id)) {
+            // eslint-disable-next-line no-console
+            if (__DEV__) {
+              console.warn(
+                '[recipes-remote] dropping duplicate remote recipe id:',
+                r.id,
+                '(title:', r.title, ', numericId:', r.numericId, ')',
+              );
+            }
+            continue;
+          }
+          seenIds.add(r.id);
+          remote.push(r);
+        }
         // Bundled entries that aren't yet in remote (e.g. a new recipe
         // landed in the JSON but the seed hasn't been applied to Supabase)
         // are preserved on top of the remote set so the app stays current
         // without waiting on a DB push.
-        const remoteIds = new Set(remote.map((r) => r.id));
-        const onlyBundled = BUNDLED.filter((b) => !remoteIds.has(b.id));
+        const onlyBundled = BUNDLED.filter((b) => !seenIds.has(b.id));
         recipes = [...remote, ...onlyBundled];
         emit();
       }
