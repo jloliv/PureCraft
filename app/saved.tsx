@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -297,27 +298,35 @@ export default function Saved() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Contained lifestyle hero — text on the left, photo on the
-            right, soft fade overlay covering the left ~72% so the
-            headline reads on a clean wash and the photo's edge feels
-            integrated (not pasted-on). Swap comfort.jpg for a real
-            'saved-library' lifestyle shot when one lands in
-            assets/hero-images/. */}
-        <View style={styles.savedHero}>
+        {/* Background-image hero — photo fills the entire card and a
+            left-to-right gradient (cream-95% -> cream-60% -> clear)
+            lightens the left third so the title reads cleanly while
+            the right edge keeps the lifestyle scene visible. Removes
+            the previous split/boxed look so the surface feels
+            editorial, not utility. Swap comfort.jpg for a dedicated
+            'saved-library' shot when one is generated. */}
+        <View style={styles.heroContainer}>
           <Image
             source={require('../assets/images/comfort.jpg')}
-            style={styles.savedHeroImage}
+            style={styles.heroImage}
             resizeMode="cover"
             accessibilityIgnoresInvertColors
           />
-          {/* Fade overlay sits BETWEEN the image and the text so
-              text reads on a clean wash. zIndex on the text container
-              keeps the kicker / title / subtitle on top. */}
-          <View style={styles.savedHeroFade} />
-          <View style={styles.savedHeroText}>
-            <Text style={styles.kicker}>LIBRARY</Text>
-            <Text style={styles.savedTitle}>Saved</Text>
-            <Text style={styles.savedSubtitle}>
+          <LinearGradient
+            colors={[
+              'rgba(248,246,241,0.95)',
+              'rgba(248,246,241,0.6)',
+              'transparent',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <View style={styles.heroContent}>
+            <Text style={styles.heroLabel}>LIBRARY</Text>
+            <Text style={styles.heroTitle}>Saved</Text>
+            <Text style={styles.heroSubtitle}>
               Your curated PureCraft collection
             </Text>
           </View>
@@ -747,64 +756,48 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Contained lifestyle hero. Rounded card with image bleeding the
-  // right ~58% and a fade overlay covering the left ~72% so the
-  // headline reads on a clean wash. The card relies on the parent
+  // Editorial-style hero: photo fills the entire card; a left-to-
+  // right gradient (cream-95% -> cream-60% -> clear) lightens the
+  // left third so the title reads cleanly while the lifestyle scene
+  // stays visible on the right. The container relies on the parent
   // ScrollView's paddingHorizontal: 20 for its outer inset (matches
-  // the spec's marginHorizontal: 20 visually); marginTop nudges it
-  // slightly down from the topbar.
-  savedHero: {
-    height: 190,
+  // the spec's marginHorizontal: 16 intent — 20pt is close enough
+  // and keeps every other top-level child aligned).
+  heroContainer: {
+    height: 160,
     marginTop: 16,
-    borderRadius: 28,
+    borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#F3EFE7',
-    justifyContent: 'center',
+    backgroundColor: '#F8F6F1',
     position: 'relative',
   },
-  savedHeroImage: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: '58%',
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
     height: '100%',
   },
-  // Fade sits over the image and covers the left 72% so the title
-  // and subtitle land on a soft cream wash that matches the card bg.
-  // Anything past 72% lets the photo show through cleanly.
-  savedHeroFade: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: '72%',
-    backgroundColor: 'rgba(243,239,231,0.88)',
-    zIndex: 2,
+  heroContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  savedHeroText: {
-    zIndex: 3,
-    width: '58%',
-    paddingLeft: 20,
-  },
-  kicker: {
-    fontSize: 13,
-    letterSpacing: 4,
+  heroLabel: {
+    fontSize: 12,
+    letterSpacing: 2,
     fontWeight: '700',
-    color: '#6F8A76',
-    marginBottom: 8,
+    color: '#6F8A73',
+    marginBottom: 6,
   },
-  savedTitle: {
-    fontSize: 44,
-    fontWeight: '800',
-    letterSpacing: -1.2,
-    color: '#1E211F',
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1E1E1E',
+    letterSpacing: -0.5,
   },
-  savedSubtitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    color: '#6F7D73',
-    marginTop: 6,
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    marginTop: 4,
   },
 
   // Search + filter row. Taller (56) pill controls with 12pt gap.
