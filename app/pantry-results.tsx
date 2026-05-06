@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.textSubtle,
   },
   sectionDotReady: { backgroundColor: Colors.light.sageDeep },
-  sectionDotAlmost: { backgroundColor: Colors.light.gold },
+  sectionDotAlmost: { backgroundColor: '#C7A96B' },
   sectionTitle: {
     ...Type.sectionTitle,
     color: Colors.light.text,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.textSubtle,
   },
   matchDotReady: { backgroundColor: Colors.light.sageDeep },
-  matchDotAlmost: { backgroundColor: Colors.light.gold },
+  matchDotAlmost: { backgroundColor: '#C7A96B' },
   matchDotPartial: { backgroundColor: Colors.light.textSubtle },
   rowMatchText: {
     ...Type.caption,

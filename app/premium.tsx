@@ -4,12 +4,13 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { events } from '@/lib/analytics';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+import { restorePurchases } from '@/lib/paywall';
 
 const UNLOCK_ITEMS: string[] = [
   'Unlimited recipes',
@@ -52,11 +53,24 @@ const PLANS = [
 export default function Premium() {
   const { currency } = useCurrency();
   const [plan, setPlan] = useState<(typeof PLANS)[number]['id']>('yearly');
+  const [restoring, setRestoring] = useState(false);
 
   // Paywall view is the most important conversion event — fire on mount.
   useEffect(() => {
     events.paywallViewed();
   }, []);
+
+  const handleRestore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    const { error } = await restorePurchases();
+    setRestoring(false);
+    if (error) {
+      Alert.alert('Restore', error);
+      return;
+    }
+    Alert.alert('Restore', 'Your subscription has been restored.');
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -69,8 +83,15 @@ export default function Premium() {
         >
           <Ionicons name="close" size={20} color={Colors.light.text} />
         </Pressable>
-        <Pressable hitSlop={8} onPress={() => {}}>
-          <Text style={styles.restore}>Restore</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Restore purchases"
+          hitSlop={8}
+          onPress={handleRestore}
+          disabled={restoring}
+          style={({ pressed }) => [pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.restore}>{restoring ? 'Restoring…' : 'Restore'}</Text>
         </Pressable>
       </View>
 
