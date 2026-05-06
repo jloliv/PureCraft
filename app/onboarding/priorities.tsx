@@ -27,15 +27,25 @@ const MAX_PICKS = 3;
 
 type Priority = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap };
 
+// Six outcome-focused priorities. Trimmed from eight after a UX
+// review found "Luxury Feel" and "Natural" were too vague to drive
+// good algorithm signal. Each remaining option corresponds to a
+// concrete recipe-ranking lever:
+//   safety       — gentle ingredient profile (general safe use)
+//   budget       — cheaper recipes prioritized
+//   results      — strongest cleaning / efficacy
+//   fast         — shortest preparation time
+//   eco-friendly — low-waste / refillable bias
+//   allergy-free — irritant filtering (distinct from `safety` which
+//                  is broader; allergy-free specifically excludes
+//                  known irritants)
 const PRIORITIES: Priority[] = [
   { key: 'safety', label: 'Safety', icon: 'shield-checkmark-outline' },
   { key: 'budget', label: 'Budget', icon: 'cash-outline' },
-  { key: 'luxury', label: 'Luxury Feel', icon: 'sparkles-outline' },
   { key: 'results', label: 'Strong Results', icon: 'flash-outline' },
-  { key: 'natural', label: 'Natural', icon: 'leaf-outline' },
-  { key: 'fast', label: 'Fast Recipes', icon: 'time-outline' },
-  { key: 'sustain', label: 'Sustainability', icon: 'refresh-outline' },
-  { key: 'skin-friendly', label: 'Skin Friendly', icon: 'flower-outline' },
+  { key: 'fast', label: 'Fast', icon: 'time-outline' },
+  { key: 'eco-friendly', label: 'Eco Friendly', icon: 'leaf-outline' },
+  { key: 'allergy-free', label: 'Allergy-Free', icon: 'medkit-outline' },
 ];
 
 export default function Priorities() {
@@ -54,13 +64,12 @@ export default function Priorities() {
       <OnboardingHeader step={6} />
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Text style={styles.eyebrow}>Step 6</Text>
-        <Text style={styles.headline}>Pick your top 3.</Text>
+        <Text style={styles.headline}>Pick up to 3 priorities.</Text>
         <Text style={styles.sub}>
           The non-negotiables. We&apos;ll rank every recipe by these.
         </Text>
-        <Text style={styles.selectHint}>Choose up to 3</Text>
 
-        <View style={styles.grid}>
+        <View style={[styles.grid, styles.gridSpaceTop]}>
           {PRIORITIES.map((p) => {
             const isSelected = selected.includes(p.key);
             const disabled = !isSelected && selected.length >= MAX_PICKS;
@@ -129,47 +138,61 @@ const styles = StyleSheet.create({
     color: PALETTE.textMuted,
     marginTop: 10,
   },
-  selectHint: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: PALETTE.textSubtle,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    marginTop: 18,
-    marginBottom: 18,
-  },
+  // Picks up the visual breathing room the now-removed "Choose up to
+  // 3" hint used to provide. The headline + sub already communicate
+  // the rule, so a separate hint line was redundant.
+  gridSpaceTop: { marginTop: 28 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
+  // 3-column grid matching the standardized ingredient-card pattern.
+  // See preferences.tsx pantryGrid for why `justifyContent:
+  // space-between` (NOT `gap`) — gap + 31.5% overflows the row on
+  // phone widths and forces a 2-column wrap. Vertical spacing
+  // comes from marginBottom on the cell.
+  //
+  // 6 priorities in 3 columns now produces a clean 3+3 layout —
+  // the trim from 8 to 6 also dropped the trailing "lonely" row.
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   card: {
-    width: '47%',
+    width: '31.5%',
     aspectRatio: 1,
-    borderRadius: 20,
+    marginBottom: 12,
+    borderRadius: 16,
     backgroundColor: '#F6F1E8',
     borderWidth: 1,
     borderColor: '#E6DFD2',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: 10,
     position: 'relative',
   },
   cardSelected: {
     borderColor: PALETTE.sageDeep,
     backgroundColor: 'rgba(95,135,106,0.08)',
   },
+  // Sized for the 3-col card layout (cards are ~107px square at
+  // common phone widths). 52×52 wrap + 26 icon leaves room for the
+  // label below without cramping. Was 64×64 / 34 when the cards
+  // were 47% (2-col) and had room to spare.
   iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: 'rgba(95,135,106,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   label: {
-    fontSize: 16,
+    fontSize: 13,
+    lineHeight: 16,
     fontWeight: '600',
     textAlign: 'center',
     color: '#2F4F3E',
+    paddingHorizontal: 2,
   },
   checkmark: {
     position: 'absolute',

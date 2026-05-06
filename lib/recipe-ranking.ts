@@ -1,117 +1,149 @@
-// Recipe ranking — boosts/penalties based on the user's onboarding profile.
+// Weighted recipe ranking — turns the user's onboarding priorities
+// into a ranked top-N. The scoring layer (lib/recipe-scoring.ts)
+// derives 1-5 attribute scores per recipe; this module weights those
+// scores by what the user said matters most, applies a hard allergy
+// filter on top, and returns the best matches.
 //
-// Soft filter only: avoidances penalize, matching priorities + intent
-// boost. Recipes are never *hidden* unless the avoidance is severe (e.g.
-// the recipe contains an avoidance ingredient) — they just slide down the
-// list. This matches the freemium UX guideline "never block, always show
-// less prominently."
+// Two-stage pipeline:
+//   1. EXCLUDE recipes whose allergens overlap with the user's
+//      `avoidances`. This is non-negotiable — never bury an allergy
+//      hit, drop it.
+//   2. SCORE the rest. Selected priorities get a 2× weight; safety
+//      and effectiveness always get a 1× baseline so results don't
+//      degenerate when the user picks weird combinations
+//      (e.g. budget+fast+eco shouldn't crown a useless recipe).
 //
-// Pure function — call from a memo, never on render.
+// Caps output to the spec's "top 1-3 only" — surfacing more than
+// that defeats the personalization signal.
+//
+// Pure function — call from a useMemo, never on render.
 
 import type { Recipe } from '@/constants/recipes';
-import { extractIngredientName } from '@/constants/smart-swaps';
-import type { Profile } from './profile';
+import {
+  recipeHasUserAllergen,
+  scoreRecipe,
+  type RecipeScore,
+} from './recipe-scoring';
+
+// Priority keys must match the keys in app/onboarding/priorities.tsx.
+// Adding a new priority means adding a new entry here AND mapping it
+// to a score axis below.
+export type PriorityKey =
+  | 'safety'
+  | 'budget'
+  | 'results'
+  | 'fast'
+  | 'eco-friendly'
+  | 'allergy-free';
+
+// Maps a priority key to the score axis it boosts. 'allergy-free' is
+// special — it doesn't boost a numeric axis, it inverts allergen
+// count into a score (recipes with fewer allergens score higher when
+// allergy-free is selected).
+type ScoreAxis = keyof Omit<RecipeScore, 'allergens'>;
+const PRIORITY_TO_AXIS: Record<Exclude<PriorityKey, 'allergy-free'>, ScoreAxis> = {
+  safety: 'safety',
+  budget: 'budget',
+  results: 'effectiveness',
+  fast: 'speed',
+  'eco-friendly': 'eco',
+};
+
+// Weights applied to each axis. Selected priorities double; the two
+// "always counts" baselines (effectiveness + safety) keep a 1× even
+// when the user didn't pick them.
+const SELECTED_WEIGHT = 2;
+const BASELINE_WEIGHT = 1;
+const BASELINE_AXES: ScoreAxis[] = ['effectiveness', 'safety'];
+
+// Allergy-free bonus per zero-allergen recipe when the priority is
+// selected. Calibrated to outrank a single attribute's worth of
+// boost so a recipe with 0 allergens wins over one with 1 allergen
+// even if the latter scores slightly higher on other axes.
+const ALLERGY_FREE_BONUS = 4;
+
+export type RankOptions = {
+  /** Up to 3 priority keys from the onboarding picker. */
+  priorities?: readonly PriorityKey[];
+  /** Hard-exclude any recipe whose allergens overlap. Drawn from
+   *  profile.avoidances by the caller. */
+  avoidances?: readonly string[];
+  /** Result cap. Default 3 per spec ("top 1-3 only"). */
+  limit?: number;
+};
 
 export type RankedRecipe = {
   recipe: Recipe;
   score: number;
-  /** Reasons we ranked it higher — surface as chips if useful later. */
-  reasons: string[];
+  /** The component scores so callers can show "why" chips later. */
+  components: RecipeScore;
 };
 
-const SAFE_FOR_KIDS_BOOST = 1.5;
-const PRIORITY_BOOST = 0.6;
-const INTENT_BOOST = 1.0;
-const PANTRY_MAGIC_BOOST = 0.4;
-const AVOIDANCE_PENALTY = -2.0;
-const SCENT_FREE_BOOST = 0.3;
-
 export function rankRecipes(
-  recipes: Recipe[],
-  profile: Profile | null,
+  recipes: readonly Recipe[],
+  opts: RankOptions = {},
 ): RankedRecipe[] {
-  // No profile → no ranking, neutral order.
-  if (!profile) {
-    return recipes.map((recipe) => ({ recipe, score: 0, reasons: [] }));
+  const priorities = opts.priorities ?? [];
+  const avoidances = opts.avoidances ?? [];
+  const limit = opts.limit ?? 3;
+
+  const allergyFree = priorities.includes('allergy-free');
+  const selectedAxes = new Set<ScoreAxis>();
+  for (const p of priorities) {
+    if (p !== 'allergy-free') {
+      selectedAxes.add(PRIORITY_TO_AXIS[p]);
+    }
   }
 
-  const household = profile.household ?? [];
-  const hasYoungKids =
-    household.includes('baby') || household.includes('young');
-  const intent = new Set(profile.intent_categories ?? []);
-  const avoidances = (profile.avoidances ?? []).map((a) => a.toLowerCase());
-  const scentPrefs = profile.scent_preferences ?? [];
-  const wantsLowScent = scentPrefs.some((s) =>
-    /low|sensitive|unscented|fragrance.?free/i.test(s),
-  );
-  const priorities = (profile.priorities ?? []).map((p) => p.toLowerCase());
+  // Build the per-axis weight table. Baselines always count.
+  const weights: Record<ScoreAxis, number> = {
+    safety: 0,
+    budget: 0,
+    effectiveness: 0,
+    speed: 0,
+    eco: 0,
+  };
+  for (const axis of BASELINE_AXES) {
+    weights[axis] = BASELINE_WEIGHT;
+  }
+  for (const axis of selectedAxes) {
+    weights[axis] = SELECTED_WEIGHT;
+  }
 
-  const ranked = recipes.map((recipe) => {
+  const scored: RankedRecipe[] = [];
+  for (const recipe of recipes) {
+    const components = scoreRecipe(recipe);
+    // Stage 1 — hard allergen filter. Never surface a recipe that
+    // contains an ingredient the user explicitly avoids.
+    if (recipeHasUserAllergen(components, avoidances)) continue;
+
+    // Stage 2 — weighted score across the five numeric axes.
     let score = 0;
-    const reasons: string[] = [];
+    score += components.safety * weights.safety;
+    score += components.budget * weights.budget;
+    score += components.effectiveness * weights.effectiveness;
+    score += components.speed * weights.speed;
+    score += components.eco * weights.eco;
 
-    // --- Boosts ---------------------------------------------------------
-
-    if (hasYoungKids && recipe.safeForKids) {
-      score += SAFE_FOR_KIDS_BOOST;
-      reasons.push('Family-safe');
+    // Allergy-free bonus — only when explicitly prioritized AND the
+    // recipe has no allergens. Doesn't double-apply if the user
+    // already filtered via avoidances.
+    if (allergyFree && components.allergens.length === 0) {
+      score += ALLERGY_FREE_BONUS;
     }
 
-    if (intent.has(recipe.categoryKey)) {
-      score += INTENT_BOOST;
-      reasons.push('Matches your interests');
-    }
+    scored.push({ recipe, score, components });
+  }
 
-    if (recipe.pantryMagic) {
-      score += PANTRY_MAGIC_BOOST;
-    }
-
-    // Priority match — match priority text against tags + category label.
-    for (const p of priorities) {
-      if (
-        recipe.tags.some((t) => t.toLowerCase().includes(p)) ||
-        recipe.categoryLabel.toLowerCase().includes(p)
-      ) {
-        score += PRIORITY_BOOST;
-      }
-    }
-
-    // Low-scent preference: reward recipes without essential oils.
-    if (
-      wantsLowScent &&
-      !recipe.ingredients.some((i) => /essential oil|fragrance|perfume/i.test(i))
-    ) {
-      score += SCENT_FREE_BOOST;
-      reasons.push('Low-scent');
-    }
-
-    // --- Penalties ------------------------------------------------------
-
-    // Hard avoidance: recipe ingredient name overlaps with an avoidance term.
-    for (const a of avoidances) {
-      if (
-        recipe.ingredients.some((i) =>
-          extractIngredientName(i).includes(a),
-        )
-      ) {
-        score += AVOIDANCE_PENALTY;
-        break;
-      }
-    }
-
-    return { recipe, score, reasons };
-  });
-
-  return ranked.sort((a, b) => b.score - a.score);
+  // Sort descending by score. Stable: original catalog order breaks ties.
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
 }
 
-/** Convenience: filter a recipe list to only those that pass a soft cutoff
- *  (positive or zero score). Use when you need a "for you" subset. */
-export function filterForUser(
-  recipes: Recipe[],
-  profile: Profile | null,
+/** Convenience: just the recipe rows, top-N. */
+export function topRecipesForPriorities(
+  recipes: readonly Recipe[],
+  opts: RankOptions = {},
 ): Recipe[] {
-  return rankRecipes(recipes, profile)
-    .filter((r) => r.score >= 0)
-    .map((r) => r.recipe);
+  return rankRecipes(recipes, opts).map((r) => r.recipe);
 }

@@ -1,6 +1,10 @@
 import type { ImageSourcePropType } from 'react-native';
 
-export const RECIPE_FALLBACK_IMAGE: ImageSourcePropType = require('../assets/Recipes/fallback.png');
+// Generic fallback for any recipe id not in RECIPE_IMAGES below. Using
+// dog-paw-balm.png as the visual default — it's a soft amber jar that
+// reads as "natural recipe" without locking in to a specific category,
+// so an unmapped entry never feels jarring next to mapped ones.
+export const RECIPE_FALLBACK_IMAGE: ImageSourcePropType = require('../assets/Recipes/dog-paw-balm.png');
 
 export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'air-gel-freshener': require('../assets/Recipes/air-gel-freshener.png'),
@@ -20,14 +24,14 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'candle-wax-melts': require('../assets/Recipes/candle-wax-melts.png'),
   'car-freshener-jar': require('../assets/Recipes/car-freshener-jar.png'),
   'carpet-deodorizing-powder': require('../assets/Recipes/carpet-deodorizing-powder.png'),
-  'carpet-powder': require('../assets/Recipes/fallback.png'),
+  'carpet-powder': require('../assets/Recipes/dog-paw-balm.png'),
   'castile-soap-floor-cleaner': require('../assets/Recipes/castile-soap-floor-cleaner.png'),
   'citrus-glow-scrub': require('../assets/Recipes/citrus-glow-scrub.png'),
-  'citrus-room-spray': require('../assets/Recipes/fallback.png'),
+  'citrus-room-spray': require('../assets/Recipes/dog-paw-balm.png'),
   'citrus-vinegar-cleaner': require('../assets/Recipes/citrus-vinegar-cleaner.png'),
   'clay-mask': require('../assets/Recipes/clay-mask.png'),
   'closet-deodorizer-sachets': require('../assets/Recipes/closet-deodorizer-sachets.png'),
-  'closet-freshener-sachet': require('../assets/Recipes/fallback.png'),
+  'closet-freshener-sachet': require('../assets/Recipes/dog-paw-balm.png'),
   'closet-moisture-absorber': require('../assets/Recipes/closet-moisture-absorber.png'),
   'coconut-oil-hair-mask': require('../assets/Recipes/coconut-oil-hair-mask.png'),
   'coffee-scrub': require('../assets/Recipes/coffee-scrub.png'),
@@ -39,7 +43,7 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'diaper-rash-balm': require('../assets/Recipes/diaper-rash-balm-extra.png'),
   'dishwasher-deep-clean': require('../assets/Recipes/dishwasher-deep-clean.png'),
   'diy-toilet-bombs': require('../assets/Recipes/toilet-bombs.png'),
-  'dog-paw-balm': require('../assets/Recipes/fallback.png'),
+  'dog-paw-balm': require('../assets/Recipes/dog-paw-balm.png'),
   'drain-freshener': require('../assets/Recipes/drain-freshener.png'),
   'dry-shampoo': require('../assets/Recipes/dry-shampoo.png'),
   'dryer-sheets': require('../assets/Recipes/dryer-sheets.png'),
@@ -62,7 +66,7 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'hand-cream': require('../assets/Recipes/hand-cream.png'),
   'holiday-pine-spray': require('../assets/Recipes/holiday-pine-spray.png'),
   'honey-face-cleanser': require('../assets/Recipes/honey-face-cleanser.png'),
-  'hydrogen-peroxide-mold-spray': require('../assets/Recipes/fallback.png'),
+  'hydrogen-peroxide-mold-spray': require('../assets/Recipes/dog-paw-balm.png'),
   'iron-spray': require('../assets/Recipes/iron-spray.png'),
   'iron-spray-softener': require('../assets/Recipes/iron-spray.png'),
   'kid-bubble-bath': require('../assets/Recipes/kid-bubble-bath.png'),
@@ -107,7 +111,7 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'shower-spray': require('../assets/Recipes/shower-spray.png'),
   'simmer-pot-spice-blend': require('../assets/Recipes/simmer-pot-spice-blend.png'),
   'sink-scrub': require('../assets/Recipes/sink-scrub.png'),
-  'sportswear-wash': require('../assets/Recipes/fallback.png'),
+  'sportswear-wash': require('../assets/Recipes/dog-paw-balm.png'),
   'stain-stick': require('../assets/Recipes/stain-stick.png'),
   'stainless-steel-polish': require('../assets/Recipes/stainless-steel-polish.png'),
   'stainless-steel-spray': require('../assets/Recipes/stainless-steel-spray.png'),

@@ -50,3 +50,4 @@ app-example
 
 # Static demo assets (kept out of app bundle; large)
 forge-hq/
+test-search.mjs

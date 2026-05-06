@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IngredientHelpSheet } from '@/components/ingredient-help-sheet';
@@ -17,6 +17,12 @@ import { computeSavings, formatRange } from '@/constants/savings';
 import { AuthPromptModal } from '@/components/auth-prompt-modal';
 import { FreemiumModal, type FreemiumKind } from '@/components/freemium-modal';
 import { events } from '@/lib/analytics';
+import { useAuth } from '@/lib/auth';
+import { shareRecipe } from '@/lib/share-recipe';
+import {
+  addRecipeToList,
+  useShoppingList,
+} from '@/lib/shopping-list-store';
 import {
   avoidIfFromIngredients,
   bestForFromIngredients,
@@ -34,7 +40,7 @@ import {
   useCollections,
 } from '@/lib/collections-store';
 import { scaleAmount } from '@/lib/scale-amount';
-import { toggleSaved, useSavedRecipes } from '@/lib/saved-recipes';
+import { saveRecipe as saveRecipeRow, toggleSaved, useSavedRecipes } from '@/lib/saved-recipes';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
 const BATCH_OPTIONS = [1, 2, 3, 5] as const;
@@ -45,7 +51,14 @@ type BatchSize = (typeof BATCH_OPTIONS)[number];
 const SECONDARY_ACTION_COLOR = '#6B7D73';
 
 export default function Result() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  // `save` is set by AuthPromptModal's email-signup return URL — when
+  // the user signs up via that flow, AuthForm replaces back to
+  // /result?id=…&save=<id>, and the useEffect below picks that up to
+  // resume the save the user originally tried to make.
+  const { id, save: saveTrigger } = useLocalSearchParams<{
+    id?: string;
+    save?: string;
+  }>();
   // Subscribe to the remote-recipes store so the screen re-renders
   // when Supabase sync lands. findProduct/findRecipe internally read
   // the same snapshot via getAllRecipes(); without this subscription,
@@ -86,6 +99,30 @@ export default function Result() {
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
   const [saveSheetOpen, setSaveSheetOpen] = useState(false);
   const [savedToast, setSavedToast] = useState<string | null>(null);
+  // Auth gate on save — when a guest taps the heart we stash the id of
+  // the recipe they wanted to save and pop the AuthPromptModal. After
+  // a successful auth (OAuth modal-close OR email signup return), the
+  // resume effect below re-opens the collection sheet so the save
+  // completes without the user having to re-tap.
+  const { user } = useAuth();
+  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
+  // Single-fire guard for the resume effect — prevents firing the save
+  // (and the feedback animation) more than once per resume.
+  const resumedSaveRef = useRef(false);
+  // Animated "Saved ✓" pill shown after the auth-resume save completes.
+  // Drives the visible pill via `showSavedFeedback`; the Animated values
+  // own the fade + spring scale.
+  const [showSavedFeedback, setShowSavedFeedback] = useState(false);
+  const savedFeedbackOpacity = useRef(new Animated.Value(0)).current;
+  const savedFeedbackScale = useRef(new Animated.Value(0.8)).current;
+
+  // Shopping-list toast — shown after "Add to List" lands a recipe's
+  // ingredients in the persistent shopping list. Carries the latest
+  // count via the live shopping-list snapshot so the CTA always reads
+  // the true total (covers the "user added 3 from this recipe and
+  // already had 2 from another" case).
+  const shoppingList = useShoppingList();
+  const [listToast, setListToast] = useState<string | null>(null);
 
   // Subscribe so the heart icon flips state instantly when a collection
   // is added/removed, without requiring a re-render through saved-recipes.
@@ -121,6 +158,17 @@ export default function Result() {
       })();
       return;
     }
+    // Guest add — gate behind AuthPromptModal. Stash the recipe id so
+    // the resume effect below re-opens the collection sheet once the
+    // user finishes signing up. Skips the lib/guest-saves buffer that
+    // used to allow N free guest saves; the new flow is "sign in to
+    // save anything" per spec.
+    if (!user) {
+      setPendingSaveId(product.id);
+      resumedSaveRef.current = false;
+      setAuthPromptOpen(true);
+      return;
+    }
     setSaveSheetOpen(true);
   };
 
@@ -130,6 +178,95 @@ export default function Result() {
     const t = setTimeout(() => setSavedToast(null), 2200);
     return () => clearTimeout(t);
   }, [savedToast]);
+
+  // Auto-dismiss the "Added to your shopping list" toast. 3s gives the
+  // user enough time to register the count change AND tap "View List"
+  // before it slides away.
+  useEffect(() => {
+    if (!listToast) return;
+    const t = setTimeout(() => setListToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [listToast]);
+
+  // Resume-after-auth: when the user signs in (OAuth path inside
+  // AuthPromptModal stays mounted; email path replaces back here with
+  // ?save=<id>), the recipe they originally tapped to save lands in
+  // their library AUTOMATICALLY — no second tap, no collection picker.
+  // That's the spec's "frictionless" point: by the time the user is
+  // signed in, the recipe is already saved.
+  //
+  // We bypass the SaveToCollectionSheet on this path on purpose. The
+  // user can still re-categorize from /saved later; here we optimize
+  // for completing the action they already started.
+  useEffect(() => {
+    if (!user) return;
+    if (resumedSaveRef.current) return;
+    const target =
+      pendingSaveId ?? (typeof saveTrigger === 'string' ? saveTrigger : null);
+    if (!target || target !== product.id) return;
+    resumedSaveRef.current = true;
+    setPendingSaveId(null);
+    void (async () => {
+      // Direct save — lands in the default favorites bucket. The
+      // saved-recipes store hydrates from Supabase on auth so the
+      // hearted state on this screen flips to "saved" as soon as the
+      // round-trip completes.
+      const { error } = await saveRecipeRow(product.id);
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.warn('[result] auto-save after auth failed:', error);
+        return;
+      }
+      // Trigger the animated "Saved ✓" pill. Spring + fade so the
+      // moment feels intentional but never showy. Spec: ~1 second
+      // total presence on screen.
+      setShowSavedFeedback(true);
+    })();
+    // Drop the ?save= param so a back-swipe doesn't re-trigger this
+    // on a return visit. The ref guard above is the real defense;
+    // this is just URL hygiene.
+    if (saveTrigger) {
+      router.setParams({ save: undefined as never });
+    }
+  }, [user, pendingSaveId, saveTrigger, product.id]);
+
+  // Drive the pill's animated entry / exit. Spring in (scale 0.8 → 1
+  // + fade), hold ~900ms, fade + scale out, then unmount.
+  useEffect(() => {
+    if (!showSavedFeedback) return;
+    savedFeedbackOpacity.setValue(0);
+    savedFeedbackScale.setValue(0.8);
+    Animated.parallel([
+      Animated.spring(savedFeedbackScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        damping: 14,
+        stiffness: 200,
+      }),
+      Animated.timing(savedFeedbackOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    const t = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(savedFeedbackOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(savedFeedbackScale, {
+          toValue: 0.94,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) setShowSavedFeedback(false);
+      });
+    }, 900);
+    return () => clearTimeout(t);
+  }, [showSavedFeedback, savedFeedbackOpacity, savedFeedbackScale]);
   const savings = computeSavings(product.id);
   const retailLabel = `${formatRange(savings.retailLowUsd, savings.retailHighUsd, { currency })} at the store`;
   const savingsValue = savings.isEstimate
@@ -201,6 +338,22 @@ export default function Result() {
       <AuthPromptModal
         visible={authPromptOpen}
         onClose={() => setAuthPromptOpen(false)}
+        // Custom copy when the modal is triggered by a guest tapping the
+        // heart on a recipe — feels like an invitation, not a wall.
+        title={pendingSaveId ? 'Save this recipe' : 'Save your recipes'}
+        subtitle={
+          pendingSaveId
+            ? 'Create a free account to save recipes and access them anytime.'
+            : undefined
+        }
+        // Email-signup return URL — round-trips back to this same recipe
+        // with ?save=<id> so the resume effect re-opens the collection
+        // sheet after AuthForm.replace() lands the user back here.
+        next={
+          pendingSaveId
+            ? `/result?id=${encodeURIComponent(product.id)}&save=${encodeURIComponent(product.id)}`
+            : undefined
+        }
       />
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <Pressable
@@ -216,21 +369,21 @@ export default function Result() {
             accessibilityRole="button"
             accessibilityLabel="Share"
             style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-            onPress={async () => {
+            onPress={() => {
               tapLight();
-              try {
-                await Share.share({
-                  // Native share sheet handles email/Messages/Twitter/etc.
-                  // Deep link uses the app's purecraft:// scheme; ensure
-                  // app.json sets `scheme: "purecraft"` for native handling,
-                  // and a public web preview at /r/<id> for browsers.
-                  message: `${recipe.title} — a PureCraft DIY recipe.\nhttps://purecraft.app/r/${product.id}`,
-                  url: `https://purecraft.app/r/${product.id}`,
-                  title: recipe.title,
-                });
-              } catch {
-                // User cancelled or share unavailable — silently no-op.
-              }
+              // Plain-text recipe share — no URL, no deep link. The
+              // message body is built in lib/share-recipe.ts; we hand it
+              // a payload assembled from the fields the UI already has
+              // in scope: blurb (description), v3 time, the same
+              // flattened ingredient strings rendered on screen, and
+              // the curated benefits + autoBullets list.
+              void shareRecipe({
+                title: recipe.title,
+                description: recipe.blurb,
+                time: v3Recipe?.time ?? '',
+                ingredients: flatIngredients,
+                benefits: allBullets,
+              });
             }}
           >
             <Ionicons name="share-outline" size={18} color={Colors.light.text} />
@@ -607,9 +760,38 @@ export default function Result() {
           </Pressable>
           <View style={{ flex: 1 }}>
             <PrimaryButton
-              label="Shopping list"
+              label="Add to List"
               leadingIcon="cart-outline"
-              onPress={() => router.push({ pathname: '/shopping-list', params: { id: product.id } })}
+              onPress={() => {
+                tapLight();
+                // Add the recipe's not-haveIt ingredients to the
+                // persistent shopping list. The store dedupes by
+                // recipeId+name so a second tap on the same recipe
+                // is a no-op rather than producing duplicates.
+                const itemsToAdd = recipe.ingredients
+                  .filter((i) => !i.haveIt)
+                  .map((i) => ({
+                    name: i.name,
+                    amount: i.amount ?? '',
+                  }));
+                if (itemsToAdd.length === 0) {
+                  setListToast('Already have everything for this one');
+                  return;
+                }
+                void (async () => {
+                  const { added, alreadyPresent } = await addRecipeToList(
+                    { id: product.id, title: recipe.title },
+                    itemsToAdd,
+                  );
+                  if (added > 0) {
+                    setListToast(
+                      `Added ${added} ${added === 1 ? 'item' : 'items'}`,
+                    );
+                  } else if (alreadyPresent > 0) {
+                    setListToast('Already on your list');
+                  }
+                })();
+              }}
             />
           </View>
         </View>
@@ -625,6 +807,59 @@ export default function Result() {
           // shopping list is reachable via the footer button.
         }}
       />
+
+      {/* "Added to your shopping list" toast — appears after the
+          "Add to List" footer button fires, with a tappable
+          "View List (N)" CTA that routes to the persistent shopping
+          list. Auto-dismisses in 3s. Sits ABOVE the "Saved" pill so
+          they don't overlap if both somehow trigger together. */}
+      {listToast ? (
+        <View style={styles.listToastWrap} pointerEvents="box-none">
+          <View style={styles.listToastPill}>
+            <Ionicons name="cart" size={14} color="#FFFFFF" />
+            <Text style={styles.listToastText}>{listToast}</Text>
+            {shoppingList.items.length > 0 ? (
+              <Pressable
+                onPress={() => {
+                  tapLight();
+                  setListToast(null);
+                  router.push('/shopping-list');
+                }}
+                hitSlop={8}
+                style={styles.listToastCta}
+                accessibilityRole="button"
+                accessibilityLabel={`View shopping list, ${shoppingList.items.length} items`}
+              >
+                <Text style={styles.listToastCtaText}>
+                  View list ({shoppingList.items.length})
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
+      {/* "Saved ✓" pill — overlays content, fades in after the auth-
+          resume save lands, holds for ~900ms, fades out. Sage pill so
+          it reads as "good news" instead of a system toast.
+          pointerEvents:none keeps it out of the touch path so it never
+          blocks interaction with the screen behind. */}
+      {showSavedFeedback ? (
+        <View style={styles.savedFeedbackWrap} pointerEvents="none">
+          <Animated.View
+            style={[
+              styles.savedFeedbackPill,
+              {
+                opacity: savedFeedbackOpacity,
+                transform: [{ scale: savedFeedbackScale }],
+              },
+            ]}
+          >
+            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
+            <Text style={styles.savedFeedbackText}>Saved</Text>
+          </Animated.View>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -1413,6 +1648,83 @@ const styles = StyleSheet.create({
   toastText: {
     color: '#FFFFFF',
     fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+
+  // "Added to your shopping list" toast wrapper. Sits a bit higher
+  // than the existing toasts (bottom: 132) so its "View list" CTA
+  // doesn't collide with the footer button the user just tapped.
+  listToastWrap: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 132,
+    alignItems: 'center',
+  },
+  listToastPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingLeft: 16,
+    paddingRight: 6,
+    paddingVertical: 8,
+    borderRadius: 24,
+    backgroundColor: Colors.light.text,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  listToastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  listToastCta: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: Colors.light.sageDeep,
+    marginLeft: 4,
+  },
+  listToastCtaText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  // "Saved ✓" feedback pill — separate from the static "Saved to <X>"
+  // toast above so the auth-resume case has a brief, scaled-in
+  // animation instead of inheriting the static toast's hard show/hide.
+  savedFeedbackWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 120,
+    alignItems: 'center',
+    pointerEvents: 'none',
+  },
+  savedFeedbackPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: Colors.light.sageDeep,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  savedFeedbackText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
     letterSpacing: 0.2,
   },

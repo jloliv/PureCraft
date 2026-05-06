@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 import { View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -39,23 +40,32 @@ export default function RootLayout() {
   }
 
   return (
-    // SafeAreaProvider must wrap the whole app so useSafeAreaInsets()
-    // returns real values (status-bar / Dynamic Island / home-indicator
-    // heights). Without it, screens like result.tsx that read insets at
-    // runtime get {top: 0, bottom: 0, ...} and any layout that depends on
-    // those values silently collapses to "no inset" — e.g. the floating
-    // topBar ends up overlapping the system clock.
-    <SafeAreaProvider>
-      <ThemeProvider value={navTheme}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: BACKGROUND_PRIMARY },
-            animation: 'slide_from_right',
-          }}
-        />
-        <StatusBar style="dark" backgroundColor={BACKGROUND_PRIMARY} />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    // GestureHandlerRootView must be the outermost wrapper for any
+    // PanGestureHandler / Gesture API consumers. Without it, gestures
+    // inside Modals fail silently on Android (the Make Hub's swipe-
+    // down-to-dismiss is the active consumer). flex:1 is required —
+    // without it the root collapses to 0 height.
+    //
+    // SafeAreaProvider must also wrap the whole app so
+    // useSafeAreaInsets() returns real values (status-bar / Dynamic
+    // Island / home-indicator heights). Without it, screens like
+    // result.tsx that read insets at runtime get {top: 0, bottom: 0,
+    // ...} and any layout that depends on those values silently
+    // collapses to "no inset" — e.g. the floating topBar ends up
+    // overlapping the system clock.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider value={navTheme}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: BACKGROUND_PRIMARY },
+              animation: 'slide_from_right',
+            }}
+          />
+          <StatusBar style="dark" backgroundColor={BACKGROUND_PRIMARY} />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

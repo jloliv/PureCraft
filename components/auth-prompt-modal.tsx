@@ -24,6 +24,12 @@ type Props = {
   onClose: () => void;
   title?: string;
   subtitle?: string;
+  /** Where to send the user after a successful auth. Forwarded as a
+   *  ?next=<url> query param to /auth/sign-up so the email-signup path
+   *  can route back to the originating screen (e.g. the recipe the
+   *  user was about to save). OAuth paths don't navigate away from the
+   *  current screen at all, so this prop only affects the email flow. */
+  next?: string;
 };
 
 export function AuthPromptModal({
@@ -31,11 +37,16 @@ export function AuthPromptModal({
   onClose,
   title = 'Save your recipes',
   subtitle = 'Create an account to keep your recipes and access them anytime.',
+  next,
 }: Props) {
   const goToEmail = () => {
     tapLight();
     onClose();
-    router.push('/auth/sign-up');
+    if (next) {
+      router.push({ pathname: '/auth/sign-up', params: { next } });
+    } else {
+      router.push('/auth/sign-up');
+    }
   };
 
   const handleApple = async () => {

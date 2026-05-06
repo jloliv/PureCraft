@@ -22,7 +22,7 @@ const UNLOCK_ITEMS: string[] = [
 const PREMIUM_PREVIEW = {
   title: 'Luxury Glass Cleaner',
   subtitle: 'Streak-free · Non-toxic · High shine',
-  image: require('../assets/window-recipe-icon.jpg'),
+  image: require('../assets/luxury-glass-cleaner.png'),
 };
 
 const PLANS = [

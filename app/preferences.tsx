@@ -153,7 +153,9 @@ export default function Preferences() {
                 ]}
               >
                 <Text style={styles.pantryEmoji}>{p.emoji}</Text>
-                <Text style={styles.pantryLabel}>{p.label}</Text>
+                <Text style={styles.pantryLabel} numberOfLines={2}>
+                  {p.label}
+                </Text>
                 <View style={[styles.pantryCheck, isSelected && styles.pantryCheckSelected]}>
                   {isSelected ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
                 </View>
@@ -294,17 +296,33 @@ const styles = StyleSheet.create({
   },
   strengthLabel: { ...Type.caption, color: Colors.light.textMuted },
   strengthLabelActive: { color: Colors.light.text, fontWeight: '600' },
-  pantryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
+  // 3-column grid — values match app/pantry.tsx sheetCard so both
+  // ingredient surfaces (Tailor It here, Manage Pantry there) feel
+  // visually identical. If you change one, change both.
+  //
+  // IMPORTANT: do NOT add `gap` to this row. Combining 31.5% width
+  // with a 12px gap overflows the container by ~5px on phone-sized
+  // viewports (3 × 31.5% = 94.5%, plus 2 × 12px gap doesn't fit in
+  // the remaining 5.5%), which forces the third card to wrap and
+  // produces a 2-column layout. `justifyContent: space-between`
+  // auto-computes the horizontal gap so all three cards fit on the
+  // same row regardless of screen width. Vertical spacing comes
+  // from marginBottom on the cell.
+  pantryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   pantryCell: {
     width: '31.5%',
+    aspectRatio: 1,
+    marginBottom: 12,
     backgroundColor: Colors.light.surface,
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.sm,
+    borderRadius: 16,
+    padding: 10,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.light.border,
-    minHeight: 100,
     justifyContent: 'center',
     position: 'relative',
   },
@@ -312,12 +330,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.sageSoft,
     borderColor: Colors.light.sage,
   },
-  pantryEmoji: { fontSize: 26 },
-  pantryLabel: { ...Type.caption, color: Colors.light.text, marginTop: 6, textAlign: 'center' },
+  pantryEmoji: { fontSize: 28, marginBottom: 6 },
+  pantryLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.light.text,
+    textAlign: 'center',
+    paddingHorizontal: 2,
+  },
   pantryCheck: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     width: 18,
     height: 18,
     borderRadius: Radius.pill,

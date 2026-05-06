@@ -12,10 +12,17 @@ import {
   Text,
   View,
 } from 'react-native';
+import {
+  type PanGestureHandlerGestureEvent,
+  type PanGestureHandlerStateChangeEvent,
+  PanGestureHandler,
+  State,
+} from 'react-native-gesture-handler';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FreemiumModal } from './freemium-modal';
+import { PantrySheet } from './pantry-sheet';
 import { checkPantryScanGate } from '@/lib/freemium';
 import { tapLight, tapMedium, tapSoft } from '@/lib/haptics';
 
@@ -49,6 +56,10 @@ type MakeAction = {
   /** When true, tapping shows the `pantry-preview` freemium gate instead
    *  of navigating directly. The preview modal then routes to /premium. */
   premiumGate?: boolean;
+  /** When true, tapping opens the consolidated PantrySheet (Use what I
+   *  have / Add manually / Scan) instead of routing. Replaces the three
+   *  separate pantry tiles that used to live in this menu. */
+  managePantry?: boolean;
 };
 
 const ACTIONS: MakeAction[] = [
@@ -61,13 +72,20 @@ const ACTIONS: MakeAction[] = [
     badge: 'Popular',
     route: '/categories',
   },
+  // Single consolidated pantry entry — opens the PantrySheet which has
+  // all three sub-actions (Use what I have / Add manually / Scan).
+  // Replaces what used to be three separate cards in this menu so the
+  // hub stays focused on five clear "ways to start something pure."
   {
-    key: 'pantry',
-    title: 'Use Ingredients I Have',
-    blurb: 'Match your cabinet to instant recipes.',
+    key: 'manage-pantry',
+    title: 'Manage My Pantry',
+    blurb: 'Add, scan, or use what you already have.',
     icon: 'leaf',
     tint: '#5C7F6B',
+    // Route is unused while managePantry=true — kept as a defensive
+    // fallback so the type stays satisfied.
     route: '/pantry',
+    managePantry: true,
   },
   {
     key: 'scan',
@@ -85,24 +103,6 @@ const ACTIONS: MakeAction[] = [
     icon: 'flask',
     tint: '#6F5FA3',
     route: '/build',
-  },
-  {
-    key: 'add-ingredient',
-    title: 'Add Ingredient to Pantry',
-    blurb: 'Keep your pantry up to date.',
-    icon: 'add-circle',
-    tint: '#A98A4D',
-    route: '/pantry?add=1',
-  },
-  {
-    key: 'scan-to-pantry',
-    title: 'Scan to Pantry',
-    blurb: 'Add ingredients instantly instead of typing.',
-    icon: 'scan-circle',
-    tint: '#7E8F75',
-    badge: 'PureCraft+',
-    route: '/pantry',
-    premiumGate: true,
   },
   {
     key: 'save-recipe',
@@ -190,7 +190,11 @@ export function MakeNav({ active }: { active: MakeNavTab }) {
                 <Ionicons name="add" size={28} color="#FFFFFF" />
               </Animated.View>
             </LinearGradient>
-            <View style={styles.makePulse} pointerEvents="none" />
+            {/* The gold "always-on" pulse dot was removed — it conveyed
+                no actual meaning and read as a passive notification dot
+                that confused users. New-content signalling now lives
+                in <NewRecipesPrompt /> on Home, which only fires when
+                there's actually something new to surface. */}
           </Animated.View>
         </Pressable>
         <NavItem
@@ -222,27 +226,77 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
   const screenH = Dimensions.get('window').height;
   const translate = useRef(new Animated.Value(screenH)).current;
   const fade = useRef(new Animated.Value(0)).current;
+  // Drag offset driven by the swipe-down gesture. Composed with
+  // `translate` (the slide-in animation) via Animated.add so finger
+  // tracking and entry/exit animations share one transform.
+  const dragY = useRef(new Animated.Value(0)).current;
+  const sheetY = useRef(Animated.add(translate, dragY)).current;
   const items = useRef(ACTIONS.map(() => new Animated.Value(0))).current;
   const [mounted, setMounted] = useState(false);
   const [pantryGate, setPantryGate] = useState(false);
+  // Consolidated pantry sub-menu opened by the "Manage My Pantry" action.
+  // Same hand-off pattern as the freemium gate — close MakeSheet first
+  // so the slide animation finishes, then open the next sheet.
+  const [pantrySheetVisible, setPantrySheetVisible] = useState(false);
+
+  // Swipe-down dismiss. We use the JS-side gesture event (no native
+  // driver) so we can clamp upward drags to 0 and combine with the
+  // slide animation cleanly. For a single sheet drag this is fine —
+  // the perf cost is negligible vs. the readability win.
+  const onGestureEvent = (event: PanGestureHandlerGestureEvent) => {
+    const dy = event.nativeEvent.translationY;
+    // Clamp to downward motion only — pulling the sheet UP shouldn't
+    // distort the open layout; the entry animation already handled
+    // that direction.
+    dragY.setValue(Math.max(0, dy));
+  };
+
+  const onHandlerStateChange = (
+    event: PanGestureHandlerStateChangeEvent,
+  ) => {
+    if (event.nativeEvent.state !== State.END) return;
+    const dy = event.nativeEvent.translationY;
+    // Threshold per spec: anything past 120px is intent to dismiss.
+    if (dy > 120) {
+      // Pre-set translate to the user's current visual position and
+      // reset dragY so the close timing animation slides smoothly
+      // from where they released — not from translate=0 which would
+      // cause a visible jump back to the top before sliding off.
+      translate.setValue(dy);
+      dragY.setValue(0);
+      onClose();
+      return;
+    }
+    // Under threshold — spring the sheet back to its rest position.
+    Animated.spring(dragY, {
+      toValue: 0,
+      useNativeDriver: false,
+      damping: 22,
+      stiffness: 250,
+      mass: 0.9,
+    }).start();
+  };
 
   useEffect(() => {
     if (visible) {
       setMounted(true);
       items.forEach((v) => v.setValue(0));
+      // Reset the drag offset on every open so a partially-released
+      // gesture from a previous open never carries forward.
+      dragY.setValue(0);
       Animated.parallel([
         Animated.timing(fade, {
           toValue: 1,
           duration: 220,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.spring(translate, {
           toValue: 0,
           damping: 22,
           stiffness: 220,
           mass: 0.9,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
       Animated.stagger(
@@ -262,22 +316,30 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
           toValue: 0,
           duration: 180,
           easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(translate, {
           toValue: screenH,
           duration: 240,
           easing: Easing.in(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(({ finished }) => {
         if (finished) setMounted(false);
       });
     }
-  }, [visible, fade, translate, items, screenH, mounted]);
+  }, [visible, fade, translate, dragY, items, screenH, mounted]);
 
   const go = (action: MakeAction) => {
     tapSoft();
+    // Manage My Pantry — open the sub-sheet rather than routing. We
+    // close the parent first so the slide-out animation finishes
+    // cleanly before the sub-sheet slides up.
+    if (action.managePantry) {
+      onClose();
+      setTimeout(() => setPantrySheetVisible(true), 220);
+      return;
+    }
     // Premium-gated actions show the soft preview modal first; only after
     // the user taps Continue do we route to /premium.
     if (action.premiumGate) {
@@ -292,7 +354,11 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
     setTimeout(() => router.push(action.route as never), 200);
   };
 
-  if (!mounted && !visible && !pantryGate) return null;
+  // Keep the host mounted while EITHER follow-up sheet (freemium gate
+  // or pantry sub-menu) is open, otherwise React unmounts this tree
+  // when MakeSheet closes and the sub-sheet never gets a chance to
+  // render.
+  if (!mounted && !visible && !pantryGate && !pantrySheetVisible) return null;
 
   return (
     <>
@@ -300,6 +366,10 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
         visible={pantryGate}
         kind="pantry-preview"
         onClose={() => setPantryGate(false)}
+      />
+      <PantrySheet
+        visible={pantrySheetVisible}
+        onClose={() => setPantrySheetVisible(false)}
       />
     <Modal
       transparent
@@ -317,17 +387,25 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
       </Animated.View>
 
-      <Animated.View
-        style={[styles.sheet, { transform: [{ translateY: translate }] }]}
+      <PanGestureHandler
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onHandlerStateChange}
+        // Activate after a small downward shift so vertical taps on
+        // action cards don't get hijacked. activeOffsetY is iOS-style
+        // pan-recognizer hysteresis.
+        activeOffsetY={[-1, 8]}
       >
-        <LinearGradient
-          colors={['#F7F2E7', '#F8F6F1', '#EFE7D2']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.sheetGradient}
+        <Animated.View
+          style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}
         >
-          <SafeAreaView edges={['top']} style={styles.sheetSafeArea}>
-          <View style={styles.sheetHandle} />
+          <LinearGradient
+            colors={['#F7F2E7', '#F8F6F1', '#EFE7D2']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.sheetGradient}
+          >
+            <SafeAreaView edges={['top']} style={styles.sheetSafeArea}>
+            <View style={styles.sheetHandle} />
 
           <View style={styles.sheetHeader}>
             <View style={styles.eyebrowRow}>
@@ -338,7 +416,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
               What would you like{`\n`}to create today?
             </Text>
             <Text style={styles.sheetSub}>
-              Six ways to start something pure. Pick one — we&apos;ll guide every step.
+              Five ways to start something pure. Pick one — we&apos;ll guide every step.
             </Text>
           </View>
 
@@ -408,9 +486,10 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
           >
             <Text style={styles.closeBtnText}>Maybe later</Text>
           </Pressable>
-          </SafeAreaView>
-        </LinearGradient>
-      </Animated.View>
+            </SafeAreaView>
+          </LinearGradient>
+        </Animated.View>
+      </PanGestureHandler>
     </Modal>
     </>
   );
@@ -492,17 +571,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  makePulse: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 14,
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: PALETTE.gold,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
+  // makePulse style removed alongside the View — see comment in the
+  // Pressable above. Kept here as a marker so future contributors know
+  // the FAB intentionally has no notification dot.
 
   sheet: {
     position: 'absolute',
@@ -523,7 +594,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   sheetSafeArea: {
-    paddingTop: 24,
+    // Bumped from 24 to 54 (+30) so the headline doesn't collide with
+    // the iOS status bar / Dynamic Island. The Modal renders with
+    // statusBarTranslucent: true, which means SafeAreaView's edges=top
+    // accounts for the system inset, but tight headlines still ride up
+    // against the time / battery glyphs without this extra breathing
+    // room.
+    paddingTop: 54,
   },
   sheetHandle: {
     alignSelf: 'center',

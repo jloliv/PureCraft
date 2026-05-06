@@ -1,15 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,6 +38,12 @@ const COLORS = {
 type Mode = 'sign-in' | 'sign-up';
 
 export function AuthForm({ mode }: { mode: Mode }) {
+  // Optional ?next=<url> param — when present we replace to that URL
+  // after a successful auth instead of /home. Used by AuthPromptModal
+  // so a user who tapped Save on a recipe lands back on the recipe
+  // (with a ?save=<id> trigger) rather than getting dumped on Home.
+  const params = useLocalSearchParams<{ next?: string }>();
+  const next = typeof params.next === 'string' ? params.next : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,7 +68,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
       return;
     }
     setOnboardingComplete(true);
-    router.replace('/home');
+    // Honour the ?next= return URL when AuthPromptModal sent us here.
+    // Falls back to /home when the user opened the auth screens directly.
+    router.replace((next ?? '/home') as never);
   };
 
   const handleOAuth = async (provider: 'apple' | 'google') => {
@@ -75,137 +86,186 @@ export function AuthForm({ mode }: { mode: Mode }) {
     }
   };
 
+  // Layout strategy — keyboard-safe by construction.
+  //
+  //  SafeAreaView
+  //    TopBar (fixed, always visible above the keyboard)
+  //    KeyboardAvoidingView (padding on iOS, height on Android)
+  //      ScrollView (flexGrow:1 so the inner space-between layout still
+  //                  expands to fill on tall phones; scrolls on small
+  //                  ones; keyboardShouldPersistTaps="handled" so taps
+  //                  on buttons inside the scroll dismiss the keyboard
+  //                  AND fire their onPress)
+  //        TouchableWithoutFeedback → Keyboard.dismiss  (tap empty
+  //                  space to close the keyboard)
+  //          View flex:1 justifyContent:'space-between'
+  //            top    — logo, headline, sub, email, password, error
+  //            bottom — primary CTA, Apple, Google, switch + forgot
+  //
+  // Why this order: the inputs sit in the upper third of the screen so
+  // the keyboard never reaches them. The CTA + OAuth buttons live at
+  // the bottom and ride upward as the keyboard rises (KeyboardAvoiding
+  // padding pushes them up over the keyboard's top edge).
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.topBar}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={10}
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={COLORS.deep} />
+        </Pressable>
+        <View style={{ width: 38 }} />
+      </View>
+
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <View style={styles.topBar}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            hitSlop={10}
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-          >
-            <Ionicons name="chevron-back" size={20} color={COLORS.deep} />
-          </Pressable>
-          <View style={{ width: 38 }} />
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.content}>
+              {/* ===================== TOP SECTION ===================== */}
+              <View>
+                <Image source={LOGO} style={styles.logo} resizeMode="contain" />
 
-        <View style={styles.content}>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" />
+                <Text style={styles.headline}>{headline}</Text>
+                <Text style={styles.sub}>{sub}</Text>
 
-          <Text style={styles.headline}>{headline}</Text>
-          <Text style={styles.sub}>{sub}</Text>
+                <View style={styles.field}>
+                  <Text style={styles.label}>EMAIL</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="you@example.com"
+                    placeholderTextColor={COLORS.textSubtle}
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    keyboardType="email-address"
+                    style={styles.input}
+                  />
+                </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => handleOAuth('apple')}
-            style={({ pressed }) => [styles.oauthBtn, styles.oauthApple, pressed && { opacity: 0.92 }]}
-          >
-            <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-            <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
-          </Pressable>
+                <View style={styles.field}>
+                  <Text style={styles.label}>PASSWORD</Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder={isSignUp ? 'At least 6 characters' : '••••••••'}
+                    placeholderTextColor={COLORS.textSubtle}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoComplete={
+                      isSignUp ? 'new-password' : 'current-password'
+                    }
+                    style={styles.input}
+                  />
+                </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => handleOAuth('google')}
-            style={({ pressed }) => [styles.oauthBtn, styles.oauthGoogle, pressed && { opacity: 0.92 }]}
-          >
-            <Ionicons name="logo-google" size={18} color={COLORS.deep} />
-            <Text style={styles.oauthTextLight}>Sign in with Google</Text>
-          </Pressable>
+                {error ? (
+                  <View style={styles.errorPill}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={14}
+                      color={COLORS.danger}
+                    />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                ) : null}
+              </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
+              {/* =================== BOTTOM SECTION ==================== */}
+              <View>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={!canSubmit}
+                  onPress={submit}
+                  style={({ pressed }) => [
+                    styles.cta,
+                    !canSubmit && styles.ctaDisabled,
+                    pressed && canSubmit && { opacity: 0.92 },
+                  ]}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.ctaText}>{cta}</Text>
+                      <Ionicons
+                        name="arrow-forward"
+                        size={18}
+                        color="#FFFFFF"
+                      />
+                    </>
+                  )}
+                </Pressable>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>EMAIL</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={COLORS.textSubtle}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              style={styles.input}
-            />
-          </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleOAuth('apple')}
+                  style={({ pressed }) => [
+                    styles.oauthBtn,
+                    styles.oauthApple,
+                    pressed && { opacity: 0.92 },
+                  ]}
+                >
+                  <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+                  <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
+                </Pressable>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>PASSWORD</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder={isSignUp ? 'At least 6 characters' : '••••••••'}
-              placeholderTextColor={COLORS.textSubtle}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete={isSignUp ? 'new-password' : 'current-password'}
-              style={styles.input}
-            />
-          </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleOAuth('google')}
+                  style={({ pressed }) => [
+                    styles.oauthBtn,
+                    styles.oauthGoogle,
+                    pressed && { opacity: 0.92 },
+                  ]}
+                >
+                  <Ionicons name="logo-google" size={18} color={COLORS.deep} />
+                  <Text style={styles.oauthTextLight}>Sign in with Google</Text>
+                </Pressable>
 
-          {error ? (
-            <View style={styles.errorPill}>
-              <Ionicons name="alert-circle-outline" size={14} color={COLORS.danger} />
-              <Text style={styles.errorText}>{error}</Text>
+                <Pressable
+                  hitSlop={10}
+                  onPress={() =>
+                    router.replace(isSignUp ? '/auth/sign-in' : '/auth/sign-up')
+                  }
+                >
+                  <Text style={styles.switchText}>
+                    {isSignUp
+                      ? 'Already have an account? Sign in'
+                      : 'New to PureCraft? Create account'}
+                  </Text>
+                </Pressable>
+
+                {!isSignUp ? (
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => router.push('/auth/forgot-password')}
+                    style={{ marginTop: 10 }}
+                  >
+                    <Text
+                      style={[
+                        styles.switchText,
+                        { fontSize: 12, opacity: 0.85 },
+                      ]}
+                    >
+                      Forgot your password?
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
-          ) : null}
-
-          <Pressable
-            accessibilityRole="button"
-            disabled={!canSubmit}
-            onPress={submit}
-            style={({ pressed }) => [
-              styles.cta,
-              !canSubmit && styles.ctaDisabled,
-              pressed && canSubmit && { opacity: 0.92 },
-            ]}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.ctaText}>{cta}</Text>
-                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-              </>
-            )}
-          </Pressable>
-
-          <Pressable
-            hitSlop={10}
-            onPress={() =>
-              router.replace(isSignUp ? '/auth/sign-in' : '/auth/sign-up')
-            }
-          >
-            <Text style={styles.switchText}>
-              {isSignUp
-                ? 'Already have an account? Sign in'
-                : 'New to PureCraft? Create account'}
-            </Text>
-          </Pressable>
-
-          {!isSignUp ? (
-            <Pressable
-              hitSlop={10}
-              onPress={() => router.push('/auth/forgot-password')}
-              style={{ marginTop: 10 }}
-            >
-              <Text
-                style={[styles.switchText, { fontSize: 12, opacity: 0.85 }]}
-              >
-                Forgot your password?
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+          </TouchableWithoutFeedback>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -232,9 +292,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  content: { flex: 1, paddingHorizontal: 28, alignItems: 'center' },
+  // contentContainerStyle for the ScrollView. flexGrow:1 makes the
+  // inner space-between layout fill the viewport on tall phones, while
+  // still allowing scroll if content overflows on small ones.
+  scroll: { flexGrow: 1 },
+  // The space-between container — top section sticks to the top, bottom
+  // section to the bottom, keyboard rises into the gap. alignItems
+  // stayed as 'stretch' (default) instead of 'center' because each
+  // section now owns its own padding via paddingHorizontal here.
+  content: {
+    flex: 1,
+    paddingHorizontal: 28,
+    paddingBottom: 16,
+    justifyContent: 'space-between',
+  },
 
-  logo: { width: 130, height: 110, marginTop: 16, marginBottom: 24 },
+  logo: { width: 130, height: 110, marginTop: 8, marginBottom: 18, alignSelf: 'center' },
 
   headline: {
     fontSize: 26,
@@ -250,7 +323,10 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     textAlign: 'center',
     marginTop: 10,
-    marginBottom: 28,
+    // Slightly tighter — the bigger gap below was previously needed
+    // because OAuth buttons followed; now the email field follows
+    // directly and 18px reads better with the tighter top section.
+    marginBottom: 18,
     paddingHorizontal: 8,
   },
 
@@ -272,21 +348,6 @@ const styles = StyleSheet.create({
   },
   oauthTextDark: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
   oauthTextLight: { color: COLORS.deep, fontSize: 15, fontWeight: '600', letterSpacing: 0.2 },
-  divider: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginVertical: 14,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: {
-    fontSize: 11,
-    color: COLORS.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.6,
-    fontWeight: '600',
-  },
 
   field: { width: '100%', marginBottom: 14 },
   label: {
@@ -333,7 +394,10 @@ const styles = StyleSheet.create({
   cta: {
     width: '100%',
     height: 56,
-    marginTop: 14,
+    // Was 14 when the CTA followed the password input; now it leads
+    // the bottom section so margin is small — space-between provides
+    // the visual separation from the inputs above.
+    marginBottom: 12,
     borderRadius: 999,
     backgroundColor: COLORS.sage,
     flexDirection: 'row',

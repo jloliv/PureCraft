@@ -42,6 +42,7 @@ const CARD_GAP = 12;
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { formatMoney, useCurrency } from '@/constants/currency';
+import { INGREDIENTS } from '@/constants/ingredients';
 import { findProduct, PRODUCTS, RECIPES, type Product } from '@/constants/products';
 import { tapLight, tapMedium } from '@/lib/haptics';
 import {
@@ -90,29 +91,24 @@ type PantryItem = {
   aliases: string[];
 };
 
-const PANTRY: PantryItem[] = [
-  { key: 'baking-soda', name: 'Baking Soda', emoji: '🧂', group: 'pantry', defaultIn: true, aliases: ['baking soda'] },
-  { key: 'white-vinegar', name: 'White Vinegar', emoji: '🍶', group: 'pantry', defaultIn: true, aliases: ['white vinegar', 'vinegar'] },
-  { key: 'lemon', name: 'Lemon', emoji: '🍋', group: 'pantry', defaultIn: true, aliases: ['lemon', 'lemon peels', 'lemon juice'] },
-  { key: 'coconut-oil', name: 'Coconut Oil', emoji: '🥥', group: 'pantry', defaultIn: true, aliases: ['coconut oil'] },
-  { key: 'olive-oil', name: 'Olive Oil', emoji: '🫒', group: 'pantry', defaultIn: true, aliases: ['olive oil'] },
-  { key: 'sugar', name: 'Sugar', emoji: '🍚', group: 'pantry', defaultIn: true, aliases: ['sugar', 'cane sugar', 'brown sugar'] },
-  { key: 'castile-soap', name: 'Castile Soap', emoji: '🫧', group: 'pantry', aliases: ['castile soap'] },
-  { key: 'witch-hazel', name: 'Witch Hazel', emoji: '🌿', group: 'pantry', aliases: ['witch hazel'] },
-  { key: 'distilled-water', name: 'Distilled Water', emoji: '💧', group: 'pantry', aliases: ['distilled water', 'water'] },
-  { key: 'sea-salt', name: 'Sea Salt', emoji: '🧂', group: 'pantry', aliases: ['sea salt', 'salt'] },
-  { key: 'cornstarch', name: 'Cornstarch', emoji: '🌽', group: 'pantry', aliases: ['cornstarch'] },
-  { key: 'honey', name: 'Honey', emoji: '🍯', group: 'pantry', aliases: ['honey'] },
-  { key: 'rubbing-alcohol', name: 'Rubbing Alcohol', emoji: '🧴', group: 'pantry', aliases: ['rubbing alcohol', 'isopropyl alcohol'] },
-  { key: 'lavender-oil', name: 'Lavender Oil', emoji: '🪻', group: 'oils', aliases: ['lavender oil', 'lavender essential oil'] },
-  { key: 'tea-tree-oil', name: 'Tea Tree Oil', emoji: '🌱', group: 'oils', aliases: ['tea tree oil'] },
-  { key: 'eucalyptus-oil', name: 'Eucalyptus Oil', emoji: '🌿', group: 'oils', aliases: ['eucalyptus oil'] },
-  { key: 'rosemary-oil', name: 'Rosemary Oil', emoji: '🌾', group: 'oils', aliases: ['rosemary oil'] },
-  { key: 'lemon-eo', name: 'Lemon Essential Oil', emoji: '🍋', group: 'oils', aliases: ['lemon essential oil', 'lemon eo'] },
-  { key: 'spray-bottles', name: 'Spray Bottles', emoji: '🧴', group: 'tools', defaultIn: true, aliases: ['spray bottle'] },
-  { key: 'glass-jars', name: 'Glass Jars', emoji: '🫙', group: 'tools', aliases: ['glass jar', 'jar'] },
-  { key: 'funnel', name: 'Funnel', emoji: '🥽', group: 'tools', aliases: ['funnel'] },
-];
+// PANTRY now derives from the canonical INGREDIENTS catalog in
+// constants/ingredients.ts so we don't keep a parallel copy here.
+// The local PantryItem shape stays identical to what it was — we
+// just project the source-of-truth into it. Adding a new pantry
+// item is now a one-line edit in constants/ingredients.ts; this
+// file picks it up automatically.
+//
+// `id` from the canonical Ingredient maps to the legacy `key` here
+// so existing consumers (matching loop, filter chips, search) keep
+// working without changes.
+const PANTRY: PantryItem[] = INGREDIENTS.map((i) => ({
+  key: i.id,
+  name: i.name,
+  emoji: i.emoji,
+  group: i.group,
+  defaultIn: i.defaultIn,
+  aliases: i.aliases,
+}));
 
 const GROUP_LABELS: Record<PantryItem['group'], { label: string; caption: string }> = {
   pantry: { label: 'Pantry', caption: 'Cooking + cleaning staples' },
@@ -885,7 +881,7 @@ function ManageSheet({
                           ]}
                         >
                           <Text style={styles.sheetCardEmoji}>{it.emoji}</Text>
-                          <Text style={styles.sheetCardName} numberOfLines={1}>
+                          <Text style={styles.sheetCardName} numberOfLines={2}>
                             {it.name}
                           </Text>
                           {isIn ? (
@@ -1474,10 +1470,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 2,
   },
+  // top:6/right:6 is the standardized check position used across every
+  // ingredient grid in the app (preferences.tsx uses the same numbers).
   sheetCardCheck: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 6,
+    right: 6,
     width: 18,
     height: 18,
     borderRadius: 999,

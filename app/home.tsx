@@ -21,15 +21,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PROBLEMS } from '@/constants/recipe-problems';
 
+import { HomeSearch } from '@/components/home-search';
 import { MakeNav } from '@/components/make-nav';
+import { NewRecipesPrompt } from '@/components/new-recipes-prompt';
+import { PantrySheet } from '@/components/pantry-sheet';
 import { useAllRecipes } from '@/constants/recipes-remote';
+import { useOnboardingAnswers } from '@/lib/onboarding-answers';
+import {
+  rankRecipes,
+  type PriorityKey,
+} from '@/lib/recipe-ranking';
 import { findProduct } from '@/constants/products';
 import { tapLight } from '@/lib/haptics';
 import { computeMatch } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
 import { usePaywall } from '@/lib/paywall';
 import { recipeIcon } from '@/lib/recipe-icons';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -89,12 +97,14 @@ const CATEGORIES: Category[] = [
     image: require('../assets/images/comfort.jpg'),
   },
   {
-    key: 'emergency-budget-hacks',
-    label: 'Pantry Magic',
+    // Single consolidated entry for everything pantry — opens an action
+    // sheet with "Use ingredients I have" (the old Pantry Magic flow),
+    // "Add ingredient manually," and "Scan ingredients." This replaces
+    // the previous Pantry Magic tile so Home stays clean while every
+    // pantry surface stays one tap away. See components/pantry-sheet.tsx.
+    key: 'manage-pantry',
+    label: 'Manage My Pantry',
     image: require('../assets/images/Pantry-Magic.jpg'),
-    // Tap on Pantry Magic lands on the personalized
-    // /pantry-results screen rather than a filtered category list.
-    route: '/pantry-results',
   },
 ];
 
@@ -115,6 +125,10 @@ const QUICK_TOOLS: QuickTool[] = [
 ];
 
 export default function HomeScreen() {
+  // Pantry action sheet — opened from the "Manage My Pantry" tile in
+  // the categories grid. Hoisted to the screen root so the Modal sits
+  // above MakeNav (and any other absolutely-positioned siblings).
+  const [pantrySheetOpen, setPantrySheetOpen] = useState(false);
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView
@@ -124,6 +138,12 @@ export default function HomeScreen() {
         <Header />
 
         <Hero />
+
+        {/* Smart Search bar — placed between Hero and "What You Can Make
+            Right Now" per spec. Owns its own focus / debounce / live
+            results dropdown / suggestion chips, and routes to /search
+            for full results. */}
+        <HomeSearch />
 
         <MakeNowSection />
 
@@ -138,7 +158,18 @@ export default function HomeScreen() {
 
         <View style={styles.grid}>
           {CATEGORIES.map((c) => (
-            <CategoryCard key={c.key} category={c} />
+            <CategoryCard
+              key={c.key}
+              category={c}
+              // Special-case the consolidated pantry tile — instead of
+              // routing it pops the action sheet so the user picks one
+              // of the three pantry flows.
+              onPressOverride={
+                c.key === 'manage-pantry'
+                  ? () => setPantrySheetOpen(true)
+                  : undefined
+              }
+            />
           ))}
         </View>
 
@@ -180,6 +211,17 @@ export default function HomeScreen() {
       </ScrollView>
 
       <MakeNav active="home" />
+
+      {/* Controlled "✨ New recipes available" pill. Renders only when
+          the catalog has grown since the user last saw it; auto-hides
+          after 4s; tap routes to /discover. Replaces the always-on
+          pulse dot that used to sit on the FAB. */}
+      <NewRecipesPrompt />
+
+      <PantrySheet
+        visible={pantrySheetOpen}
+        onClose={() => setPantrySheetOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -272,17 +314,51 @@ function ProblemSection() {
 function MakeNowSection() {
   const allRecipes = useAllRecipes();
   const pantry = usePantry();
+  // Pull the user's priorities + avoidances from the onboarding
+  // buffer. We use the local buffer (not Supabase profile) because
+  // it covers guest mode AND signed-in mode — the buffer is
+  // hydrated immediately on launch, while the profile may still be
+  // loading on first paint.
+  const answers = useOnboardingAnswers();
 
   const ready = useMemo(() => {
+    // Stage 1 — pantry match. Same filter as before: only recipes
+    // every ingredient is satisfied for.
     const matches = allRecipes
       .map((r) => ({
         recipe: r,
         match: computeMatch(r.ingredients, pantry),
       }))
-      .filter((m) => m.match.status === 'ready' && m.match.total > 0)
-      .sort((a, b) => b.match.percent - a.match.percent);
-    return matches.slice(0, 5);
-  }, [allRecipes, pantry]);
+      .filter((m) => m.match.status === 'ready' && m.match.total > 0);
+    if (matches.length === 0) return [];
+
+    // Stage 2 — rank the pantry-ready set by the user's priorities
+    // (lib/recipe-ranking.ts handles weighting + allergy filter +
+    // top-N cap). When the user has no priorities yet (skipped
+    // onboarding), fall back to the original pantry-coverage sort
+    // so empty-priority users aren't worse off than before.
+    const priorities = (answers.priorities ?? []) as PriorityKey[];
+    if (priorities.length === 0) {
+      return matches
+        .sort((a, b) => b.match.percent - a.match.percent)
+        .slice(0, 5);
+    }
+    const ranked = rankRecipes(
+      matches.map((m) => m.recipe),
+      {
+        priorities,
+        avoidances: answers.avoidances ?? [],
+        limit: 5,
+      },
+    );
+    // Pair the ranked recipes back with their match objects so the
+    // existing card renderer (which uses match.percent etc.) keeps
+    // working unchanged.
+    const byId = new Map(matches.map((m) => [m.recipe.id, m]));
+    return ranked
+      .map((r) => byId.get(r.recipe.id))
+      .filter((m): m is NonNullable<typeof m> => Boolean(m));
+  }, [allRecipes, pantry, answers.priorities, answers.avoidances]);
 
   if (ready.length === 0) return null;
 
@@ -377,7 +453,15 @@ function Hero() {
   );
 }
 
-function CategoryCard({ category }: { category: Category }) {
+function CategoryCard({
+  category,
+  onPressOverride,
+}: {
+  category: Category;
+  /** When set, runs instead of the default routing — used by the
+   *  Manage My Pantry tile to open the pantry action sheet. */
+  onPressOverride?: () => void;
+}) {
   const transforms: ({ scale: number } | { translateY: number })[] = [];
   if (category.imageScale != null) transforms.push({ scale: category.imageScale });
   if (category.imageOffsetY != null) transforms.push({ translateY: category.imageOffsetY });
@@ -388,8 +472,12 @@ function CategoryCard({ category }: { category: Category }) {
   return (
     <Pressable
       onPress={() => {
-        // Categories that supply their own `route` (e.g. Pantry Magic
-        // -> /pantry-results) bypass the default category-list path.
+        if (onPressOverride) {
+          onPressOverride();
+          return;
+        }
+        // Categories that supply their own `route` (e.g. legacy Pantry
+        // Magic) bypass the default category-list path.
         if (category.route) {
           router.push(category.route as never);
           return;

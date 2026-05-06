@@ -10,6 +10,7 @@ import { tapLight, tapSoft, warning } from '@/lib/haptics';
 import { useOnboardingAnswers } from '@/lib/onboarding-answers';
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
 import { useProfile } from '@/lib/profile';
+import { storeOption, useStorePrefs } from '@/lib/store-prefs';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
 // Display-label mappings for keys captured during onboarding. Keep in sync
@@ -69,6 +70,13 @@ export default function Settings() {
     profile?.household?.length ? profile.household : localAnswers.household;
   const intentSubtitle = formatSelected(intentKeys, INTENT_LABELS);
   const householdSubtitle = formatSelected(householdKeys, HOUSEHOLD_LABELS);
+  // Reads the same local store the shopping-list footer uses so the
+  // subtitle stays in sync the moment the user updates their picks.
+  const storeKeys = useStorePrefs();
+  const storesSubtitle =
+    storeKeys.length === 0
+      ? 'Not configured'
+      : storeKeys.map((k) => storeOption(k).label).join(', ');
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     notifications: true,
     safetyAlerts: true,
@@ -174,6 +182,12 @@ export default function Settings() {
         </Section>
 
         <Section title="Preferences">
+          <Row
+            icon="storefront-outline"
+            title="Where you shop"
+            sub={storesSubtitle}
+            onPress={() => router.push('/store-preferences')}
+          />
           <Row
             icon="cash-outline"
             title="Currency"

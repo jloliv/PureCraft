@@ -121,14 +121,14 @@ export default function TimePref() {
           trailingIcon="sparkles"
           onPress={() => {
             void patchOnboardingAnswers({ routine: { time_minutes: value } });
-            router.push('/onboarding/loading');
+            router.push('/onboarding/stores');
           }}
         />
         <Pressable
           hitSlop={8}
           onPress={() => {
             void patchOnboardingAnswers({ routine: { time_minutes: value } });
-            router.push('/onboarding/loading');
+            router.push('/onboarding/stores');
           }}
         >
           <Text style={styles.skip}>Skip for now</Text>

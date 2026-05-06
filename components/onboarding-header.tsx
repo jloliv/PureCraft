@@ -12,7 +12,10 @@ const PALETTE = {
   sageDeep: '#5F876A',
 };
 
-const TOTAL_STEPS = 8;
+// Bumped to 9 when /onboarding/stores was added as the final gate
+// before /loading. Keep in sync with the highest step number passed to
+// <OnboardingHeader step={N} />.
+const TOTAL_STEPS = 9;
 
 export function OnboardingHeader({
   step,

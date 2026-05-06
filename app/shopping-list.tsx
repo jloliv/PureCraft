@@ -1,10 +1,24 @@
+// Persistent multi-recipe shopping list. Replaces the previous per-
+// recipe view that took an `id` route param and rendered one recipe's
+// ingredients alongside store-cart integrations and price totals.
+//
+// New shape (per spec):
+//   - Items grouped under "For: <recipe>" section eyebrows.
+//   - Checkbox interaction tracks per-item state in lib/shopping-list-
+//     store.ts (AsyncStorage-backed).
+//   - Native Share button outputs the spec's clean text format —
+//     no URLs, no pricing, no store CTAs.
+//   - Empty state nudges back to recipe browsing.
+//
+// What's intentionally NOT here: pricing, savings cards, "Search on
+// Amazon", store-cart drop-ups. The store-action infrastructure remains
+// in the codebase (lib/store-actions.ts, etc.) for the deferred
+// "store mode" feature, but is not wired into this surface.
+
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useMemo } from 'react';
 import {
-  Image,
-  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -15,404 +29,287 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
-import { formatMoney, useCurrency } from '@/constants/currency';
-import { findProduct, findRecipe } from '@/constants/products';
-import { recipeHeroImage } from '@/constants/recipeHeroImages';
-import { extractIngredientName } from '@/constants/smart-swaps';
+import { TopBar } from '@/components/top-bar';
 import { tapLight } from '@/lib/haptics';
+import {
+  clearCheckedItems,
+  formatShareText,
+  removeRecipeFromList,
+  toggleListItem,
+  useShoppingList,
+  type ShoppingItem,
+} from '@/lib/shopping-list-store';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
-// Amazon affiliate tag — flip this on by setting EXPO_PUBLIC_AMAZON_TAG in
-// .env once the Amazon Associates account is approved. Until then we ship
-// the button without a tag (still works, just no commission).
-const AMAZON_TAG = process.env.EXPO_PUBLIC_AMAZON_TAG;
-
 export default function ShoppingList() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
-  const product = findProduct(id);
-  const recipe = findRecipe(id);
-  const { currency } = useCurrency();
+  const list = useShoppingList();
 
-  const initialChecked = useMemo(
-    () => Object.fromEntries(recipe.ingredients.map((i) => [i.name, false])) as Record<string, boolean>,
-    [recipe.ingredients],
-  );
-  const [checked, setChecked] = useState<Record<string, boolean>>(initialChecked);
+  // Group items by recipeId so the UI can render a "For: <title>"
+  // header above each block. Stable order = recipe-add order; within
+  // a recipe, item insertion order is preserved.
+  const grouped = useMemo(() => {
+    return list.recipes
+      .map((r) => ({
+        recipe: r,
+        items: list.items.filter((i) => i.recipeId === r.id),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [list.recipes, list.items]);
 
-  const toBuy = recipe.ingredients.filter((i) => !i.haveIt);
-  const haveIt = recipe.ingredients.filter((i) => i.haveIt);
-  const totalUsd = toBuy.reduce((sum, i) => sum + (i.storePriceUsd ?? 0), 0);
-  const checkedCount = toBuy.filter((i) => checked[i.name]).length;
+  const totalItems = list.items.length;
+  const checkedItems = list.items.filter((i) => i.checked).length;
+  const hasAnyChecked = checkedItems > 0;
 
-  const toggle = (name: string) => {
-    setChecked((prev) => ({ ...prev, [name]: !prev[name] }));
-  };
-
-  // Native share-sheet handler. Builds a plain-text shopping list with
-  // the to-buy items and (when present) what the user already has,
-  // signs it 'Made with PureCraft', and hands it to the system Share
-  // API. Works the same on iOS, Android, and web.
-  const handleShareList = async () => {
+  const handleShare = async () => {
+    const text = formatShareText(list);
+    if (!text) return;
     tapLight();
-    const formatLine = (ing: { amount?: string; name: string }) =>
-      ing.amount ? `• ${ing.amount} ${ing.name}` : `• ${ing.name}`;
-    const toBuySection = toBuy.length
-      ? `Pick up:\n${toBuy.map(formatLine).join('\n')}`
-      : 'You already have everything for this one.';
-    const haveSection = haveIt.length
-      ? `\n\nYou already have:\n${haveIt.map(formatLine).join('\n')}`
-      : '';
-    const message = `Shopping list — ${recipe.title}\n\n${toBuySection}${haveSection}\n\nMade with PureCraft`;
     try {
-      await Share.share({
-        message,
-        title: `PureCraft — ${recipe.title} shopping list`,
-      });
+      await Share.share({ message: text });
     } catch {
-      // User cancelled or share unavailable — silently no-op.
+      // User cancelled or no share target. The library already
+      // distinguishes dismissedAction from real errors, so this is a
+      // best-effort silent no-op for cancels.
     }
   };
 
-  // Build the Amazon search URL from the "to buy" list. We strip quantities
-  // and units via extractIngredientName so the search reads as plain
-  // ingredient names ("epsom salt+lavender oil") instead of "2+cups+epsom".
-  // Keeping this memoized is cheap but avoids re-encoding on every press.
-  const amazonUrl = useMemo(() => {
-    const terms = toBuy
-      .map((i) => extractIngredientName(i.name))
-      .filter((s) => s.length > 0)
-      .map((s) => encodeURIComponent(s))
-      .join('+');
-    if (!terms) return null;
-    const tag = AMAZON_TAG ? `&tag=${encodeURIComponent(AMAZON_TAG)}` : '';
-    return `https://www.amazon.com/s?k=${terms}${tag}`;
-  }, [toBuy]);
-
-  const onSearchAmazon = async () => {
-    if (!amazonUrl) return;
+  const handleClearChecked = async () => {
     tapLight();
-    try {
-      await Linking.openURL(amazonUrl);
-    } catch {
-      // Browser/Amazon app missing — silently no-op rather than crash.
-    }
+    await clearCheckedItems();
   };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.topBar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => router.back()}
-          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
+      {/* No trailing — sharing lives in the footer. The TopBar
+          component intentionally renders nothing on the right when
+          no trailing prop is passed, instead of a placeholder bubble. */}
+      <TopBar title="Shopping list" />
+
+      {totalItems === 0 ? (
+        <EmptyState onBrowse={() => router.replace('/categories')} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="chevron-back" size={20} color={Colors.light.text} />
-        </Pressable>
-        <Text style={styles.topTitle}>Shopping list</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Share"
-          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-          onPress={() => {}}
-        >
-          <Ionicons name="share-outline" size={18} color={Colors.light.text} />
-        </Pressable>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Mini hero — image fills the entire card edge-to-edge, a
-            left-to-right gradient (white-95 -> 70 -> transparent)
-            keeps the FOR/title legible on the left while the photo
-            stays visible on the right behind the price column. Same
-            visual language as the recipe-detail hero and the saved-
-            screen hero, scaled down for an inline header role. */}
-        <View style={[styles.heroCard, { backgroundColor: product.swatch }]}>
-          <Image
-            source={recipeHeroImage(product.id)}
-            testID="pc-recipe-icon"
-            style={styles.heroImage}
-            resizeMode="cover"
-            accessibilityIgnoresInvertColors
-          />
-          <LinearGradient
-            colors={[
-              'rgba(255,255,255,0.95)',
-              'rgba(255,255,255,0.7)',
-              'transparent',
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.heroGradient}
-            pointerEvents="none"
-          />
-          <View style={styles.heroContent}>
-            <Text style={styles.heroEyebrow}>FOR</Text>
-            <Text style={styles.heroTitle} numberOfLines={1}>
-              {recipe.title}
+          <View style={styles.summary}>
+            <Text style={styles.summaryTitle}>
+              {totalItems} {totalItems === 1 ? 'item' : 'items'}
+              {checkedItems > 0 ? `  ·  ${checkedItems} checked` : ''}
             </Text>
-          </View>
-          <View style={styles.heroPrice}>
-            <Text style={styles.heroPriceValue}>
-              {formatMoney(totalUsd, { currency })}
-            </Text>
-            <Text style={styles.heroPriceLabel}>est. total</Text>
-          </View>
-        </View>
-
-        <View style={styles.progressBlock}>
-          <Text style={styles.progressLabel}>
-            {checkedCount} of {toBuy.length} in cart
-          </Text>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${toBuy.length > 0 ? (checkedCount / toBuy.length) * 100 : 0}%` },
-              ]}
-            />
-          </View>
-        </View>
-
-        <SectionHeader title={`You'll need (${toBuy.length})`} caption="Pick these up" />
-        <View style={styles.list}>
-          {toBuy.map((ing, i) => {
-            const isChecked = checked[ing.name];
-            return (
-              <Pressable
-                key={ing.name}
-                onPress={() => toggle(ing.name)}
-                style={({ pressed }) => [
-                  styles.row,
-                  i === 0 && { borderTopWidth: 0 },
-                  pressed && { backgroundColor: Colors.light.surfaceAlt },
-                ]}
-              >
-                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                  {isChecked ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowTitle, isChecked && styles.rowTitleChecked]}>{ing.name}</Text>
-                  <Text style={styles.rowMeta}>{ing.amount}</Text>
-                </View>
-                <Text style={[styles.rowPrice, isChecked && styles.rowMeta]}>{ing.storePriceUsd != null ? formatMoney(ing.storePriceUsd, { currency }) : ''}</Text>
+            {hasAnyChecked ? (
+              <Pressable hitSlop={8} onPress={handleClearChecked}>
+                <Text style={styles.summaryAction}>Clear checked</Text>
               </Pressable>
-            );
-          })}
-        </View>
-
-        {haveIt.length > 0 ? (
-          <>
-            <SectionHeader title={`In your pantry (${haveIt.length})`} caption="No need to buy" />
-            <View style={[styles.list, styles.listMuted]}>
-              {haveIt.map((ing, i) => (
-                <View
-                  key={ing.name}
-                  style={[styles.row, i === 0 && { borderTopWidth: 0 }]}
-                >
-                  <View style={styles.haveDot}>
-                    <Ionicons name="leaf" size={12} color={Colors.light.sageDeep} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.rowTitle}>{ing.name}</Text>
-                    <Text style={styles.rowMeta}>{ing.amount}</Text>
-                  </View>
-                  <Text style={styles.haveTag}>Have it</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        ) : null}
-
-        <View style={styles.savingsCard}>
-          <View style={styles.savingsIcon}>
-            <Ionicons name="trending-down" size={18} color={Colors.light.sageDeep} />
+            ) : null}
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.savingsTitle}>You&apos;re saving {formatMoney(product.savingsUsd, { currency })}</Text>
-            <Text style={styles.savingsSub}>
-              Store-bought equivalent runs about {formatMoney(product.storeBoughtUsd, { currency })}.
-            </Text>
-          </View>
-        </View>
 
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel={
-            amazonUrl
-              ? 'Search all ingredients on Amazon'
-              : 'Add items to search'
-          }
-          onPress={onSearchAmazon}
-          disabled={!amazonUrl}
-          style={({ pressed }) => [
-            styles.amazonBtn,
-            !amazonUrl && styles.amazonBtnDisabled,
-            pressed && amazonUrl && { opacity: 0.92, transform: [{ scale: 0.99 }] },
-          ]}
-        >
-          <View style={styles.amazonIcon}>
-            <Ionicons
-              name="search"
-              size={16}
-              color={amazonUrl ? Colors.light.text : Colors.light.textSubtle}
+          {grouped.map(({ recipe, items }) => (
+            <RecipeBlock
+              key={recipe.id}
+              title={recipe.title}
+              items={items}
+              onRemoveAll={() => {
+                tapLight();
+                void removeRecipeFromList(recipe.id);
+              }}
             />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={[styles.amazonText, !amazonUrl && { color: Colors.light.textSubtle }]}
-            >
-              {amazonUrl ? 'Search on Amazon' : 'Add items to search'}
-            </Text>
-            <Text style={styles.amazonSub}>
-              {amazonUrl
-                ? `Find all ${toBuy.length} ${toBuy.length === 1 ? 'item' : 'items'} in one tap`
-                : 'No items currently need to be bought'}
-            </Text>
-          </View>
-          {amazonUrl ? (
+          ))}
+
+          {/* Reassurance copy — explicit "no checkout, no store",
+              keeps the spec's promise visible and pre-empts the
+              "where's the buy button?" question. */}
+          <View style={styles.note}>
             <Ionicons
-              name="open-outline"
-              size={16}
+              name="information-circle-outline"
+              size={14}
               color={Colors.light.textMuted}
             />
-          ) : null}
-        </Pressable>
-
-        <View style={{ height: Spacing.xxl }} />
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <View style={styles.footerActions}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Share shopping list"
-            style={({ pressed }) => [styles.smallAction, pressed && { opacity: 0.7 }]}
-            onPress={handleShareList}
-          >
-            <Ionicons
-              name="share-outline"
-              size={18}
-              color={Colors.light.text}
-            />
-            <Text style={styles.smallActionText}>Share list</Text>
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton
-              label="Open in Instacart"
-              trailingIcon="arrow-forward"
-              onPress={() => {}}
-            />
+            <Text style={styles.noteText}>
+              Take this list to the store you already use — Share it to yourself
+              or anyone helping you shop.
+            </Text>
           </View>
+
+          <View style={{ height: Spacing.xxxl }} />
+        </ScrollView>
+      )}
+
+      {/* Bottom action bar — single primary CTA. The footer is the
+          natural "next step" position for sharing because it sits
+          AFTER the user has reviewed the list. Hidden when the list
+          is empty (the empty-state component already owns that
+          screen's CTA). */}
+      {totalItems > 0 ? (
+        <View style={styles.footer}>
+          <PrimaryButton
+            label="Send list"
+            leadingIcon="paper-plane-outline"
+            onPress={handleShare}
+          />
         </View>
-      </View>
+      ) : null}
     </SafeAreaView>
   );
 }
 
-function SectionHeader({ title, caption }: { title: string; caption?: string }) {
+// =============================================================================
+// Per-recipe block
+// =============================================================================
+
+function RecipeBlock({
+  title,
+  items,
+  onRemoveAll,
+}: {
+  title: string;
+  items: ShoppingItem[];
+  onRemoveAll: () => void;
+}) {
   return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {caption ? <Text style={styles.sectionCaption}>{caption}</Text> : null}
+    <View style={styles.block}>
+      <View style={styles.blockHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.eyebrow}>FOR</Text>
+          <Text style={styles.blockTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+        <Pressable
+          hitSlop={8}
+          onPress={onRemoveAll}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${title} from list`}
+        >
+          <Text style={styles.removeText}>Remove</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.list}>
+        {items.map((it, i) => (
+          <Row key={it.key} item={it} isFirst={i === 0} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function Row({ item, isFirst }: { item: ShoppingItem; isFirst: boolean }) {
+  return (
+    <Pressable
+      onPress={() => {
+        tapLight();
+        void toggleListItem(item.key);
+      }}
+      style={({ pressed }) => [
+        styles.row,
+        isFirst && { borderTopWidth: 0 },
+        pressed && { backgroundColor: Colors.light.surfaceAlt },
+      ]}
+    >
+      <View
+        style={[styles.checkbox, item.checked && styles.checkboxChecked]}
+      >
+        {item.checked ? (
+          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+        ) : null}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={[styles.rowTitle, item.checked && styles.rowTitleChecked]}
+          numberOfLines={2}
+        >
+          {item.name}
+        </Text>
+        {item.amount ? (
+          <Text style={[styles.rowMeta, item.checked && styles.rowMetaChecked]}>
+            {item.amount}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+// =============================================================================
+// Empty state
+// =============================================================================
+
+function EmptyState({ onBrowse }: { onBrowse: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyMark}>
+        <Ionicons name="cart-outline" size={26} color={Colors.light.sageDeep} />
+      </View>
+      <Text style={styles.emptyTitle}>Your shopping list is empty</Text>
+      <Text style={styles.emptyBody}>
+        Tap “Add to Shopping List” on any recipe and the ingredients you
+        don&apos;t already have will land here.
+      </Text>
+      <Pressable
+        onPress={onBrowse}
+        style={({ pressed }) => [
+          styles.emptyCta,
+          pressed && { opacity: 0.92 },
+        ]}
+      >
+        <Text style={styles.emptyCtaText}>Browse recipes</Text>
+        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.light.background },
-  topBar: {
+  scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
+
+  summary: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topTitle: { ...Type.bodyStrong, color: Colors.light.text },
-  scroll: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xl },
-  // Mini hero card. Image bleeds the full container; gradient fades
-  // the left third toward white so the FOR/title text reads clearly
-  // while the right side keeps the lifestyle photo visible behind the
-  // absolute-positioned price column.
-  heroCard: {
-    height: 110,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  heroImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-  },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroContent: {
-    paddingLeft: 20,
-    // Reserve room on the right for the absolute-positioned price
-    // column (~84pt wide for a 5-char total like '$12.40' + label).
-    paddingRight: 100,
-  },
-  heroEyebrow: {
-    fontSize: 12,
-    letterSpacing: 1.5,
-    fontWeight: '700',
-    color: '#6F8A73',
-    marginBottom: 4,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1E1E1E',
-    letterSpacing: -0.3,
-  },
-  heroPrice: {
-    position: 'absolute',
-    right: 16,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-  },
-  heroPriceValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.light.text,
-    letterSpacing: -0.3,
-  },
-  heroPriceLabel: {
-    fontSize: 12,
+  summaryTitle: {
+    ...Type.caption,
     color: Colors.light.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  summaryAction: {
+    ...Type.caption,
+    color: Colors.light.sageDeep,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  block: {
+    marginBottom: Spacing.xl,
+  },
+  blockHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: Spacing.md,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.6,
+    color: Colors.light.sageDeep,
+  },
+  blockTitle: {
+    ...Type.sectionTitle,
+    color: Colors.light.text,
     marginTop: 2,
   },
-  progressBlock: { marginTop: Spacing.lg, gap: Spacing.sm },
-  progressLabel: { ...Type.caption, color: Colors.light.textMuted },
-  progressTrack: {
-    height: 6,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.light.surfaceAlt,
-    overflow: 'hidden',
+  removeText: {
+    ...Type.caption,
+    color: Colors.light.textMuted,
+    fontWeight: '600',
+    paddingBottom: 2,
   },
-  progressFill: { height: '100%', backgroundColor: Colors.light.sageDeep, borderRadius: Radius.pill },
-  sectionHeader: { marginTop: Spacing.xxl, marginBottom: Spacing.md },
-  sectionTitle: { ...Type.sectionTitle, color: Colors.light.text },
-  sectionCaption: { ...Type.caption, color: Colors.light.textMuted, marginTop: 2 },
+
   list: {
     backgroundColor: Colors.light.surface,
     borderRadius: Radius.lg,
@@ -420,7 +317,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     overflow: 'hidden',
   },
-  listMuted: { backgroundColor: Colors.light.cream, borderColor: Colors.light.creamDeep },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,82 +336,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: Colors.light.sageDeep, borderColor: Colors.light.sageDeep },
+  checkboxChecked: {
+    backgroundColor: Colors.light.sageDeep,
+    borderColor: Colors.light.sageDeep,
+  },
   rowTitle: { ...Type.bodyStrong, color: Colors.light.text },
-  rowTitleChecked: { color: Colors.light.textSubtle, textDecorationLine: 'line-through' },
-  rowMeta: { ...Type.caption, color: Colors.light.textMuted, marginTop: 2 },
-  rowPrice: { ...Type.bodyStrong, color: Colors.light.text },
-  haveDot: {
-    width: 24,
-    height: 24,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.light.sageSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  rowTitleChecked: {
+    color: Colors.light.textSubtle,
+    textDecorationLine: 'line-through',
   },
-  haveTag: {
-    ...Type.caption,
-    color: Colors.light.sageDeep,
-    fontWeight: '600',
-  },
-  savingsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    padding: Spacing.lg,
-    backgroundColor: Colors.light.sageSoft,
-    borderRadius: Radius.lg,
-    marginTop: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.light.sage,
-  },
-  savingsIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.pill,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  savingsTitle: { ...Type.bodyStrong, color: Colors.light.text },
-  savingsSub: { ...Type.caption, color: Colors.light.textMuted, marginTop: 2 },
-
-  amazonBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: 14,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    marginTop: Spacing.md,
-  },
-  amazonBtnDisabled: {
-    backgroundColor: Colors.light.cream,
-    borderColor: Colors.light.creamDeep,
-  },
-  amazonIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.light.cream,
-    borderWidth: 1,
-    borderColor: Colors.light.creamDeep,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  amazonText: {
-    ...Type.bodyStrong,
-    color: Colors.light.text,
-    letterSpacing: -0.1,
-  },
-  amazonSub: {
+  rowMeta: {
     ...Type.caption,
     color: Colors.light.textMuted,
     marginTop: 2,
   },
+  rowMetaChecked: { color: Colors.light.textSubtle },
+
+  note: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: Spacing.lg,
+    paddingHorizontal: 4,
+  },
+  noteText: {
+    flex: 1,
+    fontSize: 12.5,
+    lineHeight: 17,
+    color: Colors.light.textMuted,
+  },
+
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxxl,
+  },
+  emptyMark: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.light.sageSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.lg,
+  },
+  emptyTitle: { ...Type.sectionTitle, color: Colors.light.text },
+  emptyBody: {
+    ...Type.body,
+    color: Colors.light.textMuted,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+  },
+  emptyCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: 12,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.light.sageDeep,
+  },
+  emptyCtaText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+
+  // Bottom action bar — sits below the scroll content, above any
+  // home-indicator inset. Single primary CTA per the spec's
+  // "one primary, one secondary" hierarchy (the secondary "Clear
+  // checked" lives inline in the summary row so it's contextual to
+  // the data, not duplicated in the footer).
   footer: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.md,
@@ -524,13 +420,4 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.light.border,
     backgroundColor: Colors.light.background,
   },
-  footerActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  smallAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.md,
-  },
-  smallActionText: { ...Type.caption, color: Colors.light.text },
 });

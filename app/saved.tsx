@@ -88,7 +88,11 @@ const DEMO_FALLBACK: SavedItem[] = [
   { product: PRODUCTS.find((p) => p.id === 'glass-cleaner')!, madeCount: 1, lastMade: '2 months ago', totalSavedUsd: 2.40 },
 ];
 
-const FILTERS = ['All', 'Favorites', 'Cleaning', 'Beauty', 'Home', 'Custom', 'Premium'] as const;
+// "Custom" used to live here too, but the bottom of the screen now has
+// dedicated "Saved" and "My Recipes" sections so the chip is redundant.
+// Removing it keeps the chip row from offering two ways to do the same
+// thing.
+const FILTERS = ['All', 'Favorites', 'Cleaning', 'Beauty', 'Home', 'Premium'] as const;
 type Filter = (typeof FILTERS)[number];
 
 // CollectionView is the display-shape derived from a StoredCollection
@@ -262,11 +266,23 @@ export default function Saved() {
   const filtered = useMemo(() => {
     if (filter === 'All') return baseList;
     if (filter === 'Favorites') return baseList.filter((s) => s.madeCount >= 2);
-    if (filter === 'Custom') return baseList.filter((s) => s.custom);
     if (filter === 'Premium') return baseList.filter((s) => s.premium);
     const groupKey = filter.toLowerCase();
     return baseList.filter((s) => s.product.group === groupKey);
   }, [filter, baseList]);
+
+  // Split into Saved (browsed-and-bookmarked) vs My Recipes (created
+  // by the user). Same source list and same filter chips apply to
+  // both, so toggling "Cleaning" trims both sections; the chips affect
+  // the visible subset, the section split affects the grouping.
+  const savedItems = useMemo(
+    () => filtered.filter((s) => !s.custom),
+    [filtered],
+  );
+  const myItems = useMemo(
+    () => filtered.filter((s) => s.custom),
+    [filtered],
+  );
 
   const recent = [...baseList].slice(0, 5);
   // Last-10-viewed list, persisted via AsyncStorage. Falls back to the
@@ -289,7 +305,9 @@ export default function Saved() {
       })
       .filter((x): x is SavedItem => x !== null);
   }, [recentIds, recent]);
-  const isEmpty = filtered.length === 0;
+  // Per-section empty-states drive their own copy/CTA now — see the
+  // Saved + My Recipes blocks below — so we no longer need a screen-
+  // wide isEmpty flag.
   const CONTINUE_MAKING = baseList[0];
 
   return (
@@ -325,7 +343,10 @@ export default function Saved() {
           />
           <View style={styles.heroContent}>
             <Text style={styles.heroLabel}>LIBRARY</Text>
-            <Text style={styles.heroTitle}>Saved</Text>
+            {/* Header reads as a personal space, not a generic bookmark
+                bin — and explicitly DOESN'T repeat the section names
+                ("Saved", "My Recipes") that appear below it. */}
+            <Text style={styles.heroTitle}>Your Collection</Text>
             <Text style={styles.heroSubtitle}>
               Your curated PureCraft collection
             </Text>
@@ -466,16 +487,47 @@ export default function Saved() {
           ))}
         </ScrollView>
 
+        {/* ============================== Saved ============================ */}
+        {/* Recipes the user has bookmarked from the catalog. Distinct
+            from the user's own creations so the two streams don't fight
+            for attention as the library grows. */}
         <SectionHeader
-          title={filter === 'All' ? 'All saved' : filter}
-          caption={`${filtered.length} ${filtered.length === 1 ? 'recipe' : 'recipes'}`}
+          title="Saved"
+          caption={`${savedItems.length} ${savedItems.length === 1 ? 'recipe' : 'recipes'}`}
         />
-
-        {isEmpty ? (
+        {savedItems.length === 0 ? (
           <EmptyState onBrowse={() => router.push('/discover')} />
         ) : (
           <View style={styles.grid}>
-            {filtered.map((s) => (
+            {savedItems.map((s) => (
+              <SavedCard
+                key={s.product.id}
+                item={s}
+                currencySymbol={currency.symbol}
+              />
+            ))}
+          </View>
+        )}
+
+        {/* ============================ My Recipes ========================== */}
+        {/* User-created recipes (custom: true on SavedItem). Empty state
+            converts the section from "missing data" into a creation
+            prompt — that's the entire point of separating the two
+            lists. */}
+        <SectionHeader
+          title="My Recipes"
+          caption={`${myItems.length} ${myItems.length === 1 ? 'recipe' : 'recipes'}`}
+        />
+        {myItems.length === 0 ? (
+          <MyRecipesEmptyState
+            onCreate={() => {
+              tapLight();
+              router.push('/my-recipe');
+            }}
+          />
+        ) : (
+          <View style={styles.grid}>
+            {myItems.map((s) => (
               <SavedCard
                 key={s.product.id}
                 item={s}
@@ -660,6 +712,31 @@ function EmptyState({ onBrowse }: { onBrowse: () => void }) {
         style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.92 }]}
       >
         <Text style={styles.emptyCtaText}>Browse Discover</Text>
+        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+      </Pressable>
+    </View>
+  );
+}
+
+// Shown when the My Recipes section is empty. Doubles as the entry
+// point into /my-recipe for first-time creators — the CTA copy ("Create
+// your first recipe") is what makes this screen feel intentional
+// rather than just "no data."
+function MyRecipesEmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <View style={styles.empty}>
+      <View style={styles.emptyMark}>
+        <Ionicons name="flask-outline" size={26} color={PALETTE.sageDeep} />
+      </View>
+      <Text style={styles.emptyTitle}>You haven’t created any recipes yet</Text>
+      <Text style={styles.emptyBody}>
+        Capture a formula you love, scan a label, or build one from scratch — they all land here.
+      </Text>
+      <Pressable
+        onPress={onCreate}
+        style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.92 }]}
+      >
+        <Text style={styles.emptyCtaText}>Create your first recipe</Text>
         <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
       </Pressable>
     </View>
