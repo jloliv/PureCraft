@@ -10,8 +10,53 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BACKGROUND_PRIMARY, Colors } from '@/constants/theme';
+import * as Sentry from '@sentry/react-native';
 
-export default function RootLayout() {
+// Native-backed integrations (mobileReplay, feedback) are only added
+// when a native build is running. In Expo Go those constructors throw
+// because the native module isn't bundled, which previously caused the
+// entire Sentry.init() call to abort and made every captureException
+// a silent no-op. Adding them only when the native module is detected
+// keeps the basic event flow working in both Expo Go AND dev builds.
+// Mixed integration types — use a structural element type so both
+// mobileReplay and feedback can coexist in the same array.
+const nativeIntegrations: { name: string }[] = [];
+try {
+  // mobileReplayIntegration / feedbackIntegration are only safe to
+  // construct when the native module is linked. We probe by checking
+  // for the global SENTRY_RELEASE shim that the native module sets;
+  // when it's missing we're in Expo Go and we skip gracefully.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((globalThis as any).HermesInternal && Sentry.mobileReplayIntegration) {
+    nativeIntegrations.push(Sentry.mobileReplayIntegration());
+    nativeIntegrations.push(Sentry.feedbackIntegration());
+  }
+} catch {
+  // Native module not linked — leave nativeIntegrations empty so
+  // Sentry.init still succeeds with the JS-only event path.
+}
+
+Sentry.init({
+  dsn: 'https://f6c96fa14c2a977761212bc5fcdb344d@o4511343830892544.ingest.us.sentry.io/4511343918055424',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Session Replay only kicks in when native integrations were added
+  // above. Without them these rates are inert.
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: nativeIntegrations,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+export default Sentry.wrap(function RootLayout() {
   // Preload the icon font so glyphs render reliably on web — without this,
   // Ionicons show as empty boxes because the font CSS isn't injected.
   const [fontsLoaded] = useFonts({
@@ -68,4 +113,4 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-}
+});

@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+// TEMPORARY — Sentry verification only. Remove this import along with
+// the SentryTestButton component below once events are confirmed flowing.
+import * as SentryTest from '@sentry/react-native';
 import {
   Dimensions,
   Image,
@@ -231,6 +234,11 @@ function Header() {
   return (
     <View style={styles.header}>
       <View style={{ flex: 1 }} />
+      {/* TEMPORARY — Sentry verification button. Renders only in
+          dev so it never ships to production. Remove this entire
+          Pressable + the import below once Sentry is confirmed
+          working in the dashboard. */}
+      {__DEV__ ? <SentryTestButton /> : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isPremium ? 'PureCraft+ membership' : 'Upgrade to PureCraft+'}
@@ -259,6 +267,46 @@ function Header() {
         </Text>
       </Pressable>
     </View>
+  );
+}
+
+// =============================================================================
+// TEMPORARY — Sentry verification button (delete after confirmation).
+// =============================================================================
+//
+// Direct-import pattern matches the wizard's recommended snippet so
+// we route through whatever init the wizard wired up. Tapping fires
+// `captureException` synchronously — within ~30s the error appears
+// in https://futurebuilt-tech.sentry.io/issues/?project=…
+//
+// To remove: delete this function + the `__DEV__ &&` line above + the
+// `import * as Sentry from '@sentry/react-native'` line at the top.
+// Three deletions, all in this file. No other surface depends on it.
+
+function SentryTestButton() {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Send test event to Sentry"
+      onPress={() => {
+        // Throwing-and-catching keeps the test contained — RN's
+        // ErrorUtils handler would otherwise turn an uncaught throw
+        // into a red-screen crash, which sends a DIFFERENT (uncaught)
+        // event. Explicit captureException is what the wizard wants.
+        try {
+          throw new Error('Sentry test event from Home header');
+        } catch (e) {
+          SentryTest.captureException(e);
+        }
+      }}
+      style={({ pressed }) => [
+        styles.sentryTestBtn,
+        pressed && { opacity: 0.7 },
+      ]}
+    >
+      <Ionicons name="bug-outline" size={11} color="#A98A4D" />
+      <Text style={styles.sentryTestText}>Test Sentry</Text>
+    </Pressable>
   );
 }
 
@@ -548,6 +596,26 @@ const styles = StyleSheet.create({
   plusBadgeFree: {
     backgroundColor: PALETTE.surface,
     borderColor: '#E5DCC2',
+  },
+  // TEMPORARY — Sentry verification button. Delete with the
+  // SentryTestButton component once events are confirmed.
+  sentryTestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E5DCC2',
+    backgroundColor: '#FFF8EC',
+    marginRight: 8,
+  },
+  sentryTestText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#A98A4D',
+    letterSpacing: 0.4,
   },
   plusBadgePaid: {
     backgroundColor: PALETTE.gold,
