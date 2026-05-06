@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useCurrency } from '@/constants/currency';
@@ -126,8 +126,15 @@ export default function Settings() {
           </View>
           {user ? (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
               style={({ pressed }) => [styles.editBtn, pressed && { opacity: 0.7 }]}
-              onPress={() => {}}
+              onPress={() =>
+                Alert.alert(
+                  'Edit profile',
+                  'Profile editing is coming soon.',
+                )
+              }
             >
               <Text style={styles.editBtnText}>Edit</Text>
             </Pressable>
@@ -243,7 +250,17 @@ export default function Settings() {
               void Linking.openURL('mailto:hello@purecraftliving.com?subject=PureCraft Support');
             }}
           />
-          <Row icon="star-outline" title="Rate PureCraft" onPress={() => {}} isLast />
+          <Row
+            icon="star-outline"
+            title="Rate PureCraft"
+            onPress={() =>
+              Alert.alert(
+                'Rate PureCraft',
+                'Ratings will go live with the App Store launch — thanks for the early support!',
+              )
+            }
+            isLast
+          />
         </Section>
 
         <Section title="Legal">

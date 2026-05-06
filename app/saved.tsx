@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -110,51 +111,6 @@ type CollectionView = {
   icon: keyof typeof Ionicons.glyphMap;
 };
 
-// Legacy demo seed — kept around for reference, no longer rendered.
-// The real source of truth is now lib/collections-store. Safe to
-// delete on the next pass.
-type DemoCollection = CollectionView & { key: string };
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const DEMO_COLLECTIONS: DemoCollection[] = [
-  {
-    key: 'spring-reset',
-    name: 'Spring Reset',
-    count: 8,
-    sub: 'Pollen, dust, fresh air',
-    accent: '#E4EDE5',
-    accentDeep: '#7E8F75',
-    icon: 'flower-outline',
-  },
-  {
-    key: 'weekly-staples',
-    name: 'Weekly Staples',
-    count: 12,
-    sub: 'The non-negotiables',
-    accent: '#F7F2E7',
-    accentDeep: '#A98A4D',
-    icon: 'leaf-outline',
-  },
-  {
-    key: 'self-care',
-    name: 'Self Care Sundays',
-    count: 6,
-    sub: 'Slow routines',
-    accent: '#F1ECE0',
-    accentDeep: '#9C7A4F',
-    icon: 'sparkles-outline',
-  },
-  {
-    key: 'baby-safe',
-    name: 'Baby Safe Home',
-    count: 5,
-    sub: 'Tiny-hands approved',
-    accent: '#EAF1F4',
-    accentDeep: '#4F7186',
-    icon: 'happy-outline',
-  },
-];
-
 // Cycle these accents for new collections so they look intentional, not random.
 const NEW_COLLECTION_ACCENTS: Array<Pick<CollectionView, 'accent' | 'accentDeep' | 'icon'>> = [
   { accent: '#EFE7D2', accentDeep: '#A98A4D', icon: 'star-outline' },
@@ -195,6 +151,7 @@ function decorateCollection(c: StoredCollection, index: number): CollectionView 
 export default function Saved() {
   const { currency } = useCurrency();
   const [filter, setFilter] = useState<Filter>('All');
+  const [search, setSearch] = useState('');
   // Real, persisted collections from lib/collections-store. Decorated
   // with accent/icon below for the grid render. Falsey "isHydrated" on
   // first launch falls back to the demo seed so the screen doesn't
@@ -264,12 +221,17 @@ export default function Saved() {
   const baseList = !user || liveSaved.length === 0 ? DEMO_FALLBACK : liveSaved;
 
   const filtered = useMemo(() => {
-    if (filter === 'All') return baseList;
-    if (filter === 'Favorites') return baseList.filter((s) => s.madeCount >= 2);
-    if (filter === 'Premium') return baseList.filter((s) => s.premium);
-    const groupKey = filter.toLowerCase();
-    return baseList.filter((s) => s.product.group === groupKey);
-  }, [filter, baseList]);
+    let list = baseList;
+    if (filter === 'Favorites') list = list.filter((s) => s.madeCount >= 2);
+    else if (filter === 'Premium') list = list.filter((s) => s.premium);
+    else if (filter !== 'All') {
+      const groupKey = filter.toLowerCase();
+      list = list.filter((s) => s.product.group === groupKey);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) list = list.filter((s) => s.product.title.toLowerCase().includes(q));
+    return list;
+  }, [filter, baseList, search]);
 
   // Split into Saved (browsed-and-bookmarked) vs My Recipes (created
   // by the user). Same source list and same filter chips apply to
@@ -353,27 +315,44 @@ export default function Saved() {
           </View>
         </View>
 
-        {/* Search row — taller pills (56) sit directly under the hero
-            with consistent 18pt top spacing. Both are no-ops for now
-            to match the previous header's behavior; wire up real
-            search/sort here when the saved-list filter UX ships. */}
+        {/* Search row — search filters savedItems + myItems by title in
+            real time; the icon button on the right is a placeholder for
+            advanced filters (ingredient, time, allergens) that haven't
+            shipped yet. The chip row directly below already covers
+            category filtering, so the icon is redundant for now. */}
         <View style={styles.searchRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Search saved recipes"
-            onPress={() => {}}
-            style={({ pressed }) => [
-              styles.searchBar,
-              pressed && { opacity: 0.85 },
-            ]}
-          >
+          <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color={PALETTE.textSubtle} />
-            <Text style={styles.searchText}>Search your saved recipes</Text>
-          </Pressable>
+            <TextInput
+              accessibilityLabel="Search saved recipes"
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search your saved recipes"
+              placeholderTextColor={PALETTE.textSubtle}
+              style={[styles.searchText, styles.searchInput]}
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+            {search.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                onPress={() => setSearch('')}
+                hitSlop={8}
+              >
+                <Ionicons name="close-circle" size={18} color={PALETTE.textSubtle} />
+              </Pressable>
+            ) : null}
+          </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Filter"
-            onPress={() => {}}
+            accessibilityLabel="More filters"
+            onPress={() =>
+              Alert.alert(
+                'More filters',
+                'Advanced filters (by ingredient, time, allergens) are coming soon. For now, use the chips below to filter by category.',
+              )
+            }
             style={({ pressed }) => [
               styles.filterButton,
               pressed && { opacity: 0.7 },
@@ -424,7 +403,7 @@ export default function Saved() {
           {collections.map((c) => (
             <Pressable
               key={c.id}
-              onPress={() => {}}
+              onPress={() => router.push({ pathname: '/collection/[id]', params: { id: c.id } })}
               style={({ pressed }) => [
                 styles.collectionCard,
                 pressed && styles.cardPressed,
@@ -900,6 +879,11 @@ const styles = StyleSheet.create({
   searchText: {
     color: PALETTE.textSubtle,
     fontSize: 15,
+  },
+  searchInput: {
+    flex: 1,
+    color: PALETTE.text,
+    paddingVertical: 0,
   },
   filterButton: {
     width: 56,
