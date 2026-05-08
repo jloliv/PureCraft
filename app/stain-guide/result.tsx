@@ -19,7 +19,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -56,8 +56,16 @@ export default function StainGuideStep3() {
     stainId && surfaceId ? resolveStainResult(stainId, surfaceId) : null;
 
   // Bad route state — bounce to step 1 instead of an empty screen.
+  // Gate on "never had a valid solution" so the redirect only fires for
+  // genuinely-bad URLs, not when params clear during a router.back()
+  // transition (which would race with the in-flight pop and make the
+  // back button feel broken).
+  const hasEverHadSolution = useRef(false);
+  if (solution) hasEverHadSolution.current = true;
   useEffect(() => {
-    if (!solution) router.replace('/stain-guide');
+    if (!solution && !hasEverHadSolution.current) {
+      router.replace('/stain-guide');
+    }
   }, [solution]);
 
   if (!solution || !surfaceId) return null;

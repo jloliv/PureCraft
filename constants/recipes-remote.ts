@@ -40,6 +40,7 @@ const DEPRECATED_NUMERIC_IDS = new Set<number>([
 const DEPRECATED_TITLES = new Set<string>([
   'Faucet Shine Spray',
   'Window Track Cleaner',
+  'Window Track Cleaner Paste',
   'Quick Sink Shine',
   'DIY Sugar Lip Scrub',
   'DIY Fabric Softener',
@@ -49,6 +50,7 @@ const DEPRECATED_TITLES = new Set<string>([
 const DEPRECATED_SLUG_IDS = new Set<string>([
   'sugar-lip-scrub',
   'diy-fabric-softener',
+  'window-track-cleaner-paste',
 ]);
 
 function rowToRecipe(r: RecipeRow): Recipe {
