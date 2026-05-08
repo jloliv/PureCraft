@@ -33,7 +33,11 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Colors, Radius, Spacing, Type } from '@/constants/theme';
 
 type Props = {
-  title: string;
+  /** Centered title. Optional — when omitted (or empty) the title
+   *  slot renders nothing, useful when an in-content headline (eg
+   *  the eyebrow + h1 on /collection) already serves as the primary
+   *  page title and a duplicate in the toolbar would feel redundant. */
+  title?: string;
   /** Custom leading element. Defaults to a back chevron. Pass null
    *  to suppress entirely (no leading slot rendered). */
   leading?: ReactNode | null;
@@ -83,9 +87,13 @@ export function TopBar({
       {leadingNode ? (
         <View style={styles.leadingSlot}>{leadingNode}</View>
       ) : null}
-      <Text style={styles.title} numberOfLines={1}>
-        {title}
-      </Text>
+      {/* Title renders only when a non-empty string is passed. Same
+          "no ghost UI" rule as the trailing slot. */}
+      {title ? (
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+      ) : null}
       {/* Trailing renders ONLY when provided. No placeholder bubble. */}
       {trailing ? (
         <View style={styles.trailingSlot}>{trailing}</View>

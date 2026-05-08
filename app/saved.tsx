@@ -424,7 +424,13 @@ export default function Saved() {
           {collections.map((c) => (
             <Pressable
               key={c.id}
-              onPress={() => {}}
+              onPress={() => {
+                tapLight();
+                router.push({
+                  pathname: '/collection',
+                  params: { id: c.id },
+                });
+              }}
               style={({ pressed }) => [
                 styles.collectionCard,
                 pressed && styles.cardPressed,
