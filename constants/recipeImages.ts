@@ -126,7 +126,6 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'weed-vinegar-spray': require('../assets/Recipes/weed-vinegar-spray.png'),
   'whites-brightener': require('../assets/Recipes/whites-brightener.png'),
   'whites-brightener-vinegar': require('../assets/Recipes/whites-brightener.png'),
-  'window-track-cleaner-paste': require('../assets/Recipes/window-track-cleaner.png'),
   'wood-furniture-cream': require('../assets/Recipes/wood-furniture-cream.png'),
   'wood-polish': require('../assets/Recipes/wood-polish.png'),
 };

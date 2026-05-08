@@ -9,9 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.futurebuilt.purecraft",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.futurebuilt.purecraft",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -45,6 +52,26 @@
           "url": "https://sentry.io/",
           "project": "purecraft",
           "organization": "futurebuilt-tech"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "PureCraft uses the camera so you can scan ingredient labels. Photos are sent to our AI to extract the recipe and are not stored."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PureCraft needs access to your photo library so you can pick recipe images to import.",
+          "cameraPermission": "PureCraft uses the camera so you can scan ingredient labels."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#ffffff"
         }
       ]
     ],

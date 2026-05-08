@@ -10,7 +10,7 @@
 // so the URL never ends up on a result page that can't render.
 
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -31,9 +31,17 @@ export default function StainGuideStep2() {
 
   // If we landed here without a valid stain id (deep link, manual URL,
   // back-forward edge case), redirect to step 1 instead of rendering
-  // a half-empty screen.
+  // a half-empty screen. Only redirect when the screen has NEVER had a
+  // valid solution — once it has, we treat any later null as a transient
+  // params-clear during the back transition and ignore it. Otherwise the
+  // redirect fires while router.back() is still animating and overrides
+  // it, making the back button feel broken.
+  const hasEverHadSolution = useRef(false);
+  if (solution) hasEverHadSolution.current = true;
   useEffect(() => {
-    if (!solution) router.replace('/stain-guide');
+    if (!solution && !hasEverHadSolution.current) {
+      router.replace('/stain-guide');
+    }
   }, [solution]);
 
   if (!solution) return null;

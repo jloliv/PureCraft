@@ -7,10 +7,9 @@
 -- The DELETE is keyed on both the canonical id and the numeric_id
 -- because rows that pre-date the slug-id migration use the numeric
 -- form ('62', '64', ...) while newer slug rows use descriptive ids.
--- Keeping window-track-cleaner-paste — that's a SEPARATE recipe in
--- the curated_20 seed, with its own ingredients.
 --
 -- Apply order: this should run AFTER 20260428000002_seed_curated_20.sql.
+-- A follow-up migration (0005) removes window-track-cleaner-paste.
 
 delete from public.recipes
 where id in (

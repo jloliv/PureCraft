@@ -304,11 +304,6 @@ export default function SearchResults() {
                       style={styles.cardIcon}
                       resizeMode="cover"
                     />
-                    <View style={[styles.savingsPill, { borderColor: accent }]}>
-                      <Text style={[styles.savingsText, { color: accent }]}>
-                        Save {formatMoney(recipeSavingsUsd(recipe), { currency })}
-                      </Text>
-                    </View>
                   </View>
                   <View style={styles.cardBody}>
                     <Text style={styles.cardTitle} numberOfLines={1}>
@@ -324,6 +319,11 @@ export default function SearchResults() {
                       <View style={styles.dot} />
                       <Text style={styles.cardMeta} numberOfLines={1}>
                         {recipe.safeForKids ? 'Family-safe' : recipe.categoryLabel}
+                      </Text>
+                    </View>
+                    <View style={[styles.savingsPill, { borderColor: accent }]}>
+                      <Text style={[styles.savingsText, { color: accent }]}>
+                        Save {formatMoney(recipeSavingsUsd(recipe), { currency })}
                       </Text>
                     </View>
                   </View>
@@ -574,14 +574,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   savingsPill: {
-    position: 'absolute',
-    top: Spacing.md,
-    left: Spacing.md,
+    alignSelf: 'flex-start',
+    marginTop: 6,
     paddingHorizontal: Spacing.md,
     paddingVertical: 4,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    backgroundColor: '#FFFFFFCC',
+    backgroundColor: Colors.light.surface,
   },
   savingsText: { ...Type.caption },
   cardBody: { padding: Spacing.md, gap: 4 },
