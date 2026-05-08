@@ -98,7 +98,7 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'pet-odor-neutralizer': require('../assets/Recipes/pet-odor-neutralizer.png'),
   'pet-toy-cleaner': require('../assets/Recipes/pet-toy-cleaner.png'),
   'plant-leaf-shine': require('../assets/Recipes/plant-leaf-shine.png'),
-  'protein-mask': require('../assets/Recipes/protein-hair--mask.png'),
+  'protein-mask': require('../assets/Recipes/protein-hair-mask.png'),
   'pumpkin-spice-scrub': require('../assets/Recipes/pumpkin-spice-scrub.png'),
   'reed-diffuser': require('../assets/Recipes/reed-diffuser.png'),
   'refrigerator-deodorizer': require('../assets/Recipes/refrigerator-deodorizer.png'),

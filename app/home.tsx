@@ -89,7 +89,7 @@ const CATEGORIES: Category[] = [
   {
     key: 'beauty-skincare',
     label: 'Beauty',
-    image: require('../assets/images/KitchenCleaners.jpg'),
+    image: require('../assets/beauty-card.png'),
   },
   {
     key: 'home-air-freshening',
@@ -134,6 +134,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Header />
 
@@ -202,8 +203,9 @@ export default function HomeScreen() {
 
         <View style={styles.trustBar}>
           <Text style={styles.trustText}>
-            Pure Ingredients <Text style={styles.trustDot}>•</Text> Family Safe{' '}
-            <Text style={styles.trustDot}>•</Text> Premium Results
+            Pure Ingredients <Text style={styles.trustDot}>•</Text> Family Safe
+            {'\n'}
+            Premium Results
           </Text>
         </View>
 
@@ -802,10 +804,15 @@ const styles = StyleSheet.create({
   },
   trustText: {
     fontSize: 11,
+    lineHeight: 18,
     letterSpacing: 1.6,
     color: PALETTE.textMuted,
     fontWeight: '600',
     textTransform: 'uppercase',
+    // Centers each line individually — without this the parent's
+    // alignItems:center only centers the multi-line text BOX, not
+    // the second line within it.
+    textAlign: 'center',
   },
   trustDot: {
     color: PALETTE.gold,

@@ -297,6 +297,29 @@ export default function Categories() {
           })}
         </ScrollView>
 
+        {problemParam === 'stains' ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open Stain Guide"
+            onPress={() => router.push('/stain-guide')}
+            style={({ pressed }) => [
+              styles.stainGuideCta,
+              pressed && { opacity: 0.9 },
+            ]}
+          >
+            <View style={styles.stainGuideCtaIcon}>
+              <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.stainGuideCtaTitle}>Use the Stain Guide</Text>
+              <Text style={styles.stainGuideCtaSub}>
+                Tell us the stain and surface — we&apos;ll match the right approach.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
+          </Pressable>
+        ) : null}
+
         {grouped.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>No recipes match your filters</Text>
@@ -622,6 +645,30 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: Colors.light.sageDeep, borderColor: Colors.light.sageDeep },
   filterText: { ...Type.caption, color: Colors.light.text },
   filterTextActive: { color: '#FFFFFF' },
+  stainGuideCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginTop: Spacing.lg,
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.light.sageDeep,
+    ...Shadow.card,
+  },
+  stainGuideCtaIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.pill,
+    backgroundColor: '#FFFFFF22',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stainGuideCtaTitle: { ...Type.bodyStrong, color: '#FFFFFF' },
+  stainGuideCtaSub: {
+    ...Type.caption,
+    color: '#FFFFFFCC',
+    marginTop: 2,
+  },
   groupBlock: { marginTop: Spacing.lg },
   groupHeader: { marginBottom: Spacing.lg },
   groupLabel: { ...Type.sectionTitle, color: Colors.light.text },

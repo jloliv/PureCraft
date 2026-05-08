@@ -7,9 +7,11 @@
 //  - 300ms debounce on input so big catalogs don't re-filter on every keystroke.
 //  - When focused: a panel expands below the input. Empty query → suggestion
 //    chips ("Grease", "Odor", "Stains", "Bathroom", "Laundry", "Kitchen") that
-//    auto-fill the input. Non-empty query → top 5 matching recipes with
-//    thumbnail / title / time, plus a "See all results" footer that navigates
-//    to /search?q=<query>.
+//    navigate directly: problem chips (Grease/Odor/Stains) → /categories with
+//    the matching problem filter; Laundry → /categories with the laundry
+//    category; Bathroom/Kitchen → /search?q=<label>. Non-empty query → top 5
+//    matching recipes with thumbnail / title / time, plus a "See all results"
+//    footer that navigates to /search?q=<query>.
 //  - Pressing Enter or "See all results" routes to the full Search Results
 //    screen at app/search.tsx.
 //
@@ -108,9 +110,38 @@ export function HomeSearch() {
 
   const handleSuggestionTap = (label: string) => {
     tapLight();
-    setQuery(label);
-    // Keep focus so the live dropdown stays open showing the results.
-    inputRef.current?.focus();
+    Keyboard.dismiss();
+    inputRef.current?.blur();
+    setQuery('');
+
+    // Problem chips route through the problem-driven /categories filter
+    // so the result matches the home page's other problem tiles. Stains
+    // additionally surfaces the Stain Guide CTA on that screen.
+    const problem: Record<string, string> = {
+      Grease: 'grease',
+      Odor: 'odor',
+      Stains: 'stains',
+    };
+    const category: Record<string, string> = {
+      Laundry: 'laundry',
+    };
+
+    if (problem[label]) {
+      router.push({
+        pathname: '/categories',
+        params: { problem: problem[label] },
+      });
+      return;
+    }
+    if (category[label]) {
+      router.push({
+        pathname: '/categories',
+        params: { category: category[label] },
+      });
+      return;
+    }
+    // Bathroom / Kitchen — fall through to keyword search.
+    router.push({ pathname: '/search', params: { q: label } });
   };
 
   const handleClear = () => {
