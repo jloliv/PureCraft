@@ -33,7 +33,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { isOnboardingComplete } from '@/lib/onboarding-storage';
+import {
+  isOnboardingComplete,
+  onboardingHydrated,
+} from '@/lib/onboarding-storage';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 // Total time the splash stays on screen end-to-end. Sits inside the
 // "1.2–1.5s" sweet spot — long enough for the logo to register, short
@@ -75,14 +79,48 @@ export default function SplashGate() {
       withTiming(1, { duration: 300, easing: Easing.out(Easing.cubic) }),
     );
 
-    // Route at HOLD_MS. Leaves ~200ms after the tagline lands for the
-    // composition to register before the screen transitions.
-    const timer = setTimeout(() => {
-      const complete = isOnboardingComplete();
-      router.replace(complete ? '/home' : '/onboarding/intro');
-    }, HOLD_MS);
+    // Route once BOTH conditions are met:
+    //   • The minimum splash hold has elapsed (so the animation doesn't
+    //     get clipped on a hot cache).
+    //   • Persistent state has hydrated:
+    //       - onboarding completion flag (AsyncStorage round-trip)
+    //       - Supabase session (auth getSession round-trip)
+    //
+    // Without the second wait, a returning signed-in user could be
+    // routed to /onboarding/intro for a frame before the session
+    // resolves — visible flash, broken-feeling. The hold timer fires
+    // immediately in parallel so a fast cold start still hits ~1.4s.
+    let cancelled = false;
+    const hold = new Promise<void>((resolve) => setTimeout(resolve, HOLD_MS));
+    // If supabase isn't configured (e.g. local dev without env vars) we
+    // skip the session probe entirely and let the onboarding flag alone
+    // decide. Otherwise we ask Supabase to surface its rehydrated
+    // session — auth.ts has already kicked off its own getSession() at
+    // module load, so this resolves quickly on warm caches.
+    const sessionReady: Promise<unknown> = supabaseConfigured && supabase
+      ? supabase.auth.getSession()
+      : Promise.resolve(null);
 
-    return () => clearTimeout(timer);
+    void Promise.all([hold, onboardingHydrated, sessionReady]).then(
+      async () => {
+        if (cancelled) return;
+        const complete = isOnboardingComplete();
+        // A signed-in user always lands on /home — the session is the
+        // strongest signal that they've used the app before, and routing
+        // them through onboarding would be a regression. A signed-out
+        // user falls back to the onboarding-complete flag.
+        let hasSession = false;
+        if (supabaseConfigured && supabase) {
+          const { data } = await supabase.auth.getSession();
+          hasSession = !!data.session;
+        }
+        router.replace(hasSession || complete ? '/home' : '/onboarding/intro');
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
