@@ -43,6 +43,12 @@ export type RawRecipe = {
   instructions: string[];
   safeForKids: boolean;
   costSavings: string;
+  /** Optional search-only aliases. Surfaces this recipe for natural-language
+   *  queries whose words don't appear in the title/category/ingredients
+   *  (e.g. "mosquito" → Bug Repellent Spray). Not rendered in UI; not fed
+   *  to the AI prompt. Add sparingly — keywords leak directly into the
+   *  search haystack. */
+  keywords?: string[];
 };
 
 export type Recipe = {
@@ -58,6 +64,9 @@ export type Recipe = {
   safeForKids: boolean;
   costSavings: string;
   tags: string[];
+  /** Search-only aliases. Always present; defaults to []. Included in the
+   *  search haystack but NOT displayed in UI and NOT passed to AI. */
+  keywords: string[];
   /** Curated flag — true = featured in Pantry Magic. Defaults to false
    *  for legacy/v3 entries that don't carry the column. */
   pantryMagic?: boolean;
@@ -117,6 +126,7 @@ const RECIPES: Recipe[] = RAW.map((r, index) => {
     safeForKids: r.safeForKids,
     costSavings: r.costSavings,
     tags: inferTags(r, categoryKey),
+    keywords: r.keywords ?? [],
   };
 });
 
@@ -263,6 +273,19 @@ function relevanceScore(
   q: string,
   expansions: TokenExpansion[],
 ): number {
+  // Curated alias hit — the full query (or its stripped singular) matches
+  // one of the recipe's keywords as a whole entry. Curated metadata is a
+  // stronger signal than coincidental title substrings, so it ranks above
+  // them: "ant" → Bug Repellent (curated) outranks "Pl[ant] Leaf Shine"
+  // (substring coincidence).
+  if (recipe.keywords.length) {
+    const qStripped = q.endsWith('s') && q.length > 2 ? q.slice(0, -1) : q;
+    const exactKeyword = recipe.keywords.some((k) => {
+      const kl = k.toLowerCase();
+      return kl === q || kl === qStripped;
+    });
+    if (exactKeyword) return -1;
+  }
   const title = recipe.title.toLowerCase();
   // Best — the full query is a substring of the title.
   if (title.includes(q)) return 0;
@@ -280,7 +303,7 @@ function relevanceScore(
     if (exp.synonym.some((n) => catText.includes(n))) return 4;
     if (exp.categoryKeys.includes(recipe.categoryKey)) return 5;
   }
-  const tagText = recipe.tags.join(' ').toLowerCase();
+  const tagText = [...recipe.tags, ...recipe.keywords].join(' ').toLowerCase();
   for (const exp of expansions) {
     if (exp.primary.some((n) => tagText.includes(n))) return 6;
   }
@@ -343,19 +366,21 @@ export function searchRecipes(query: string, source: Recipe[] = RECIPES): Recipe
       recipe.categoryLabel,
       recipe.categoryKey,
       ...recipe.tags,
+      ...recipe.keywords,
       ...recipe.ingredients,
     ]
       .join(' ')
       .toLowerCase();
-    // Strong fields only — title / category / tags. Synonym needles
-    // must hit here, never on an ingredient mention. This is the line
-    // that prevents "mirror" → "glass" from leaking a candle whose
-    // ingredient list happens to mention a glass jar.
+    // Strong fields only — title / category / tags / keywords. Synonym
+    // needles must hit here, never on an ingredient mention. This is
+    // the line that prevents "mirror" → "glass" from leaking a candle
+    // whose ingredient list happens to mention a glass jar.
     const strongHaystack = [
       recipe.title,
       recipe.categoryLabel,
       recipe.categoryKey,
       ...recipe.tags,
+      ...recipe.keywords,
     ]
       .join(' ')
       .toLowerCase();

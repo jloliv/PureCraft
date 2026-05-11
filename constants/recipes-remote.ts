@@ -93,6 +93,7 @@ function rowToRecipe(r: RecipeRow): Recipe {
     safeForKids: r.safe_for_kids,
     costSavings: r.cost_savings ?? '',
     tags: r.tags,
+    keywords: [],
     pantryMagic: r.pantry_magic ?? false,
   };
 }
