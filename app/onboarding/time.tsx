@@ -30,7 +30,7 @@ const VIBE: Record<number, { eyebrow: string; tagline: string; icon: keyof typeo
   1: { eyebrow: 'Lightning', tagline: 'A splash and pour.', icon: 'flash-outline' },
   5: { eyebrow: 'Quick', tagline: 'Done before the kettle boils.', icon: 'time-outline' },
   10: { eyebrow: 'Easy', tagline: 'A song-length recipe.', icon: 'musical-notes-outline' },
-  15: { eyebrow: 'Crafted', tagline: 'A tea routine.', icon: 'cafe-outline' },
+  15: { eyebrow: 'Created', tagline: 'A tea routine.', icon: 'cafe-outline' },
   20: { eyebrow: 'Indulgent', tagline: 'Slow Sunday energy.', icon: 'sunny-outline' },
   25: { eyebrow: 'Studio', tagline: 'Apothecary mode.', icon: 'flask-outline' },
   30: { eyebrow: 'Maker', tagline: 'Full artisan workshop.', icon: 'leaf-outline' },
@@ -121,14 +121,14 @@ export default function TimePref() {
           trailingIcon="sparkles"
           onPress={() => {
             void patchOnboardingAnswers({ routine: { time_minutes: value } });
-            router.push('/onboarding/stores');
+            router.push('/onboarding/loading');
           }}
         />
         <Pressable
           hitSlop={8}
           onPress={() => {
             void patchOnboardingAnswers({ routine: { time_minutes: value } });
-            router.push('/onboarding/stores');
+            router.push('/onboarding/loading');
           }}
         >
           <Text style={styles.skip}>Skip for now</Text>

@@ -53,15 +53,19 @@ export default function OnboardingIntro({ navigation, onGetStarted }: Props) {
   }, [contentFade, contentLift, heroFade]);
 
   const handleGetStarted = () => {
+    console.log('[OnboardingIntro] Get Started pressed v2');
     tapLight();
     if (onGetStarted) {
+      console.log('[OnboardingIntro] calling onGetStarted prop');
       onGetStarted();
       return;
     }
     if (navigation) {
+      console.log('[OnboardingIntro] calling navigation.navigate');
       navigation.navigate('OnboardingStep1');
       return;
     }
+    console.log('[OnboardingIntro] falling back to router.push intent');
     router.push('/onboarding/intent');
   };
 

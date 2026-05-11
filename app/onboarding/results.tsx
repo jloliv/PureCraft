@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -191,6 +192,7 @@ export default function Results() {
             accessibilityRole="button"
             accessibilityLabel="Open PureCraft+ membership"
             onPress={() => router.push('/premium')}
+            android_ripple={null}
             style={({ pressed }) => [
               styles.upgrade,
               pressed && { transform: [{ scale: 0.99 }], opacity: 0.96 },
@@ -219,7 +221,7 @@ export default function Results() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label="Start Crafting"
+          label="Start Creating"
           trailingIcon="arrow-forward"
           onPress={() => {
             setOnboardingComplete(true);
@@ -369,9 +371,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
     padding: 18,
     borderRadius: 20,
-    backgroundColor: 'rgba(199,169,107,0.07)',
+    // iOS keeps the original translucent gold wash over the page background
+    // so it reads as a warm tint. Android's hardware-rendered elevation
+    // shadow washes that translucency out, so we use a slightly more
+    // opaque solid cream that matches the visual weight on iOS.
+    backgroundColor: Platform.select({
+      ios: 'rgba(199,169,107,0.07)',
+      android: '#F7EFDD',
+      default: 'rgba(199,169,107,0.07)',
+    }),
     borderWidth: 1,
-    borderColor: 'rgba(199,169,107,0.22)',
+    // iOS unchanged. Android border bumped slightly to keep the same
+    // perceived edge weight after the background change.
+    borderColor: Platform.select({
+      ios: 'rgba(199,169,107,0.22)',
+      android: 'rgba(199,169,107,0.32)',
+      default: 'rgba(199,169,107,0.22)',
+    }),
     gap: 4,
     shadowColor: '#1F1F1F',
     shadowOpacity: 0.04,

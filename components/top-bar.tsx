@@ -88,9 +88,14 @@ export function TopBar({
         <View style={styles.leadingSlot}>{leadingNode}</View>
       ) : null}
       {/* Title renders only when a non-empty string is passed. Same
-          "no ghost UI" rule as the trailing slot. */}
+          "no ghost UI" rule as the trailing slot.
+          pointerEvents="none" is essential — the title's bounding box
+          spans the full bar width (textAlign:center + horizontal
+          padding), so without it the Text silently swallows taps that
+          should hit the absolute-positioned back button on its left.
+          That bug made the back chevron feel completely dead. */}
       {title ? (
-        <Text style={styles.title} numberOfLines={1}>
+        <Text style={styles.title} numberOfLines={1} pointerEvents="none">
           {title}
         </Text>
       ) : null}

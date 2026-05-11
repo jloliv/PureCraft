@@ -73,7 +73,7 @@ export default function Loading() {
           </Animated.View>
         </View>
 
-        <Text style={styles.eyebrow}>Crafting your formula</Text>
+        <Text style={styles.eyebrow}>Creating your formula</Text>
         <Text style={styles.title}>{product.title}</Text>
 
         <View style={styles.stageList}>

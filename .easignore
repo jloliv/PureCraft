@@ -1,0 +1,48 @@
+# .easignore — files excluded from the project tarball uploaded to EAS Build.
+# Without this file, EAS falls back to .gitignore, which doesn't list .claude/
+# or .git/ — both unnecessary for the build and together >1 GB on disk.
+
+# Dependencies (EAS reinstalls these from package-lock.json on the builder)
+node_modules/
+
+# Build / dev caches
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Version control
+.git/
+.github/
+
+# OS / editor noise
+.DS_Store
+.vscode/
+
+# Env files — EAS reads secrets from its own dashboard, never from these
+.env
+.env.*
+
+# Agent / IDE parallel worktrees (huge: ~1.2 GB)
+.claude/
+.cursor/
+
+# Supabase local state
+supabase/.temp/
+
+# Internal tooling not used by the build
+forge-hq/
+
+# Documentation
+docs/
+README.md
+
+# Local dev scripts that aren't part of the runtime
+test-search.mjs
+push-backup.command
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*

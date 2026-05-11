@@ -38,7 +38,7 @@ const APP_ENV: 'development' | 'production' =
 // inside a release).
 const expoConfig = Constants.expoConfig;
 const APP_VERSION = expoConfig?.version ?? '0.0.0';
-const APP_NAME = expoConfig?.slug ?? 'purecraftapp';
+const APP_NAME = expoConfig?.slug ?? 'purecraft';
 const RELEASE = `${APP_NAME}@${APP_VERSION}`;
 const DIST =
   (expoConfig?.ios?.buildNumber as string | undefined) ??

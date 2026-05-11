@@ -113,7 +113,7 @@ export default function Welcome() {
           <Text style={styles.eyebrow}>Elevated everyday essentials</Text>
           <Text style={styles.headline}>Make everything{`\n`}you use feel cleaner.</Text>
           <Text style={styles.sub}>
-            Thoughtfully crafted recipes for home, body, and routine. Fewer
+            Thoughtfully created recipes for home, body, and routine. Fewer
             ingredients. More beauty in the everyday.
           </Text>
         </View>

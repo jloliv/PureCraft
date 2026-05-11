@@ -89,7 +89,7 @@ const CATEGORIES: Category[] = [
   {
     key: 'beauty-skincare',
     label: 'Beauty',
-    image: require('../assets/beauty-card.png'),
+    image: require('../assets/images/beauty-card.png'),
   },
   {
     key: 'home-air-freshening',

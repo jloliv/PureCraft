@@ -194,8 +194,8 @@ export async function resendVerification(
 // recovery session that lets `updatePassword` work.
 //
 // The redirectTo URL is generated from the app's scheme (set in app.json
-// under `expo.scheme` — currently `purecraftapp`). For this to work,
-// `purecraftapp://auth/reset-password` MUST be added to the Supabase
+// under `expo.scheme` — currently `purecraft`). For this to work,
+// `purecraft://auth/reset-password` MUST be added to the Supabase
 // dashboard's Auth → URL Configuration → Redirect URLs allowlist.
 export async function sendPasswordReset(
   email: string,
