@@ -1085,6 +1085,29 @@
     "costSavings": "$10 saved"
   },
   {
+    "id": "citrus-countertop-cleaner",
+    "title": "Citrus Countertop Cleaner",
+    "category": "Cleaning",
+    "difficulty": "Easy",
+    "time": "3 min",
+    "ingredients": [
+      "1 cup distilled water",
+      "1/2 cup white vinegar",
+      "1 tbsp castile soap",
+      "10 drops lemon essential oil",
+      "5 drops orange essential oil"
+    ],
+    "instructions": [
+      "Add distilled water and white vinegar to a clean spray bottle.",
+      "Add castile soap and essential oils.",
+      "Shake gently to combine.",
+      "Spray lightly on countertops.",
+      "Wipe with a clean cloth."
+    ],
+    "safeForKids": true,
+    "costSavings": "$4 saved"
+  },
+  {
     "id": "citrus-glow-scrub",
     "title": "Citrus Glow Scrub",
     "category": "Beauty & Skincare",
