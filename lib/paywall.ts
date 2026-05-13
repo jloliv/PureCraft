@@ -31,11 +31,19 @@ type PaywallState = {
   offerings: PaywallOffering[];
 };
 
+export type PaywallIntroPrice = {
+  priceString: string;
+  periodUnit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+  periodNumberOfUnits: number;
+  cycles: number;
+};
+
 export type PaywallOffering = {
   identifier: string;
   description: string;
   priceString: string;
   cadence: 'monthly' | 'yearly' | 'lifetime' | 'unknown';
+  introPrice: PaywallIntroPrice | null;
 };
 
 let state: PaywallState = { isPremium: false, loading: !!KEY, offerings: [] };
@@ -62,7 +70,16 @@ interface PurchasesLike {
 interface PurchasesPackage {
   identifier: string;
   packageType: string;
-  product: { description: string; priceString: string };
+  product: {
+    description: string;
+    priceString: string;
+    introPrice: {
+      priceString: string;
+      periodUnit: 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
+      periodNumberOfUnits: number;
+      cycles: number;
+    } | null;
+  };
 }
 
 let client: PurchasesLike | null = null;
@@ -111,6 +128,14 @@ async function refreshState(): Promise<void> {
               : p.packageType === 'LIFETIME'
                 ? 'lifetime'
                 : 'unknown',
+        introPrice: p.product.introPrice
+          ? {
+              priceString: p.product.introPrice.priceString,
+              periodUnit: p.product.introPrice.periodUnit,
+              periodNumberOfUnits: p.product.introPrice.periodNumberOfUnits,
+              cycles: p.product.introPrice.cycles,
+            }
+          : null,
       })) ?? [];
     state = {
       isPremium: !!info.entitlements.active[ENTITLEMENT],
