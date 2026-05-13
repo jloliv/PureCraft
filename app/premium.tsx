@@ -1,15 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { events } from '@/lib/analytics';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+import {
+  purchase,
+  restorePurchases,
+  usePaywall,
+  type PaywallIntroPrice,
+  type PaywallOffering,
+} from '@/lib/paywall';
 
 const UNLOCK_ITEMS: string[] = [
   'Unlimited recipes',
@@ -25,38 +40,185 @@ const PREMIUM_PREVIEW = {
   image: require('../assets/images/luxury-glass-cleaner.png'),
 };
 
-const PLANS = [
-  {
-    id: 'monthly' as const,
-    label: 'Monthly',
-    priceUsd: 4.99,
-    cadence: '/ mo',
-    badge: undefined as string | undefined,
-  },
-  {
-    id: 'yearly' as const,
-    label: 'Yearly',
-    priceUsd: 29.99,
-    cadence: '/ yr',
-    badge: 'Best Value' as string | undefined,
-  },
-  {
-    id: 'lifetime' as const,
-    label: 'Lifetime',
-    priceUsd: 49,
-    cadence: 'once',
-    badge: 'Founding Member Offer' as string | undefined,
-  },
+type Cadence = 'monthly' | 'yearly' | 'lifetime';
+
+type DerivedPlan = {
+  identifier: string;
+  cadence: Cadence;
+  label: string;
+  badge?: string;
+  priceString: string;
+  cadenceSuffix: string;
+  subtitle: string;
+  introCopy?: string;
+};
+
+// Used when RevenueCat offerings aren't loaded yet (e.g. dev without keys).
+// Lets the screen stay runnable; real prices/trials come from the store once
+// `usePaywall().offerings` populates.
+const FALLBACK_USD: Array<{
+  cadence: Cadence;
+  label: string;
+  priceUsd: number;
+  badge?: string;
+}> = [
+  { cadence: 'monthly', label: 'Monthly', priceUsd: 4.99 },
+  { cadence: 'yearly', label: 'Yearly', priceUsd: 29.99, badge: 'Best Value' },
+  { cadence: 'lifetime', label: 'Lifetime', priceUsd: 49, badge: 'Founding Member Offer' },
 ];
+
+function badgeFor(c: Cadence): string | undefined {
+  if (c === 'yearly') return 'Best Value';
+  if (c === 'lifetime') return 'Founding Member Offer';
+  return undefined;
+}
+
+function suffixFor(c: Cadence): string {
+  if (c === 'monthly') return '/ mo';
+  if (c === 'yearly') return '/ yr';
+  return 'once';
+}
+
+function labelFor(c: Cadence): string {
+  if (c === 'monthly') return 'Monthly';
+  if (c === 'yearly') return 'Yearly';
+  return 'Lifetime';
+}
+
+function formatIntroPeriod(intro: PaywallIntroPrice): string {
+  const n = intro.periodNumberOfUnits;
+  const unit = intro.periodUnit.toLowerCase();
+  const word = n === 1 ? unit : `${unit}s`;
+  const isFree = /^[^\d]*0([.,]0+)?[^\d]*$/.test(intro.priceString);
+  return isFree ? `${n} ${word} free` : `${intro.priceString} for ${n} ${word}`;
+}
+
+function planFromOffering(o: PaywallOffering): DerivedPlan | null {
+  if (o.cadence === 'unknown') return null;
+  return {
+    identifier: o.identifier,
+    cadence: o.cadence,
+    label: labelFor(o.cadence),
+    badge: badgeFor(o.cadence),
+    priceString: o.priceString,
+    cadenceSuffix: suffixFor(o.cadence),
+    subtitle:
+      o.cadence === 'monthly'
+        ? 'Cancel anytime'
+        : o.cadence === 'yearly'
+          ? 'Best value vs monthly'
+          : 'Pay once, keep forever',
+    introCopy: o.introPrice ? formatIntroPeriod(o.introPrice) : undefined,
+  };
+}
+
+const CADENCE_ORDER: Cadence[] = ['monthly', 'yearly', 'lifetime'];
 
 export default function Premium() {
   const { currency } = useCurrency();
-  const [plan, setPlan] = useState<(typeof PLANS)[number]['id']>('yearly');
+  const { offerings, loading: paywallLoading } = usePaywall();
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
+  const plans = useMemo<DerivedPlan[]>(() => {
+    const fromOfferings = offerings
+      .map(planFromOffering)
+      .filter((p): p is DerivedPlan => p !== null)
+      .sort(
+        (a, b) =>
+          CADENCE_ORDER.indexOf(a.cadence) - CADENCE_ORDER.indexOf(b.cadence),
+      );
+    if (fromOfferings.length > 0) return fromOfferings;
+    return FALLBACK_USD.map((p) => ({
+      identifier: `fallback-${p.cadence}`,
+      cadence: p.cadence,
+      label: p.label,
+      badge: p.badge,
+      priceString: formatMoney(p.priceUsd, {
+        currency,
+        decimals: p.cadence === 'lifetime' ? 0 : 2,
+      }),
+      cadenceSuffix: suffixFor(p.cadence),
+      subtitle:
+        p.cadence === 'monthly'
+          ? 'Cancel anytime'
+          : p.cadence === 'yearly'
+            ? `Just ${formatMoney(p.priceUsd / 12, { currency })} / mo · save 50%`
+            : 'Pay once, keep forever',
+      introCopy: p.cadence !== 'lifetime' ? '7 days free' : undefined,
+    }));
+  }, [offerings, currency]);
+
+  const usingRealOfferings = offerings.length > 0;
+  const defaultPlanId = useMemo(() => {
+    const yearly = plans.find((p) => p.cadence === 'yearly');
+    return yearly?.identifier ?? plans[0]?.identifier ?? '';
+  }, [plans]);
+  const [planId, setPlanId] = useState<string>(defaultPlanId);
+
+  // If offerings load after mount, snap selection to the (now valid) default.
+  useEffect(() => {
+    if (!plans.some((p) => p.identifier === planId) && defaultPlanId) {
+      setPlanId(defaultPlanId);
+    }
+  }, [plans, planId, defaultPlanId]);
+
+  const selectedPlan = plans.find((p) => p.identifier === planId) ?? plans[0];
 
   // Paywall view is the most important conversion event — fire on mount.
   useEffect(() => {
     events.paywallViewed();
   }, []);
+
+  const onPurchase = async () => {
+    if (!selectedPlan) return;
+    if (!usingRealOfferings) {
+      // No store-backed offerings available — dev mode without RC keys.
+      Alert.alert(
+        'Paywall not configured',
+        'RevenueCat keys are not set in this environment. Configure EXPO_PUBLIC_REVENUECAT_KEY_IOS / _ANDROID to enable purchases.',
+      );
+      return;
+    }
+    setPurchasing(true);
+    const res = await purchase(selectedPlan.identifier);
+    setPurchasing(false);
+    if (res.purchased) {
+      router.back();
+      return;
+    }
+    if (res.error && !/cancel/i.test(res.error)) {
+      Alert.alert('Purchase failed', res.error);
+    }
+  };
+
+  const onRestore = async () => {
+    setRestoring(true);
+    const res = await restorePurchases();
+    setRestoring(false);
+    if (res.error) {
+      Alert.alert('Restore failed', res.error);
+      return;
+    }
+    // Success path: the global paywall state will flip isPremium on its own.
+    // Surface a confirmation so the user knows the tap did something.
+    Alert.alert('Restore complete', 'Your purchases have been restored.');
+  };
+
+  const ctaLabel =
+    selectedPlan?.cadence === 'lifetime'
+      ? 'Become a Founding Member'
+      : selectedPlan?.introCopy
+        ? 'Start Free Trial'
+        : 'Continue';
+
+  const fineprint = selectedPlan
+    ? selectedPlan.cadence === 'lifetime'
+      ? `${selectedPlan.priceString} once · no recurring billing`
+      : selectedPlan.introCopy
+        ? `${selectedPlan.introCopy} · then ${selectedPlan.priceString} ${selectedPlan.cadenceSuffix} · cancel anytime`
+        : `${selectedPlan.priceString} ${selectedPlan.cadenceSuffix} · cancel anytime`
+    : '';
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -69,8 +231,16 @@ export default function Premium() {
         >
           <Ionicons name="close" size={20} color={Colors.light.text} />
         </Pressable>
-        <Pressable hitSlop={8} onPress={() => {}}>
-          <Text style={styles.restore}>Restore</Text>
+        <Pressable
+          hitSlop={8}
+          onPress={onRestore}
+          disabled={restoring}
+          accessibilityRole="button"
+          accessibilityLabel="Restore purchases"
+        >
+          <Text style={[styles.restore, restoring && { opacity: 0.5 }]}>
+            {restoring ? 'Restoring…' : 'Restore'}
+          </Text>
         </Pressable>
       </View>
 
@@ -131,12 +301,12 @@ export default function Premium() {
 
         <Text style={styles.sectionTitle}>Choose your PureCraft plan</Text>
         <View style={styles.plans}>
-          {PLANS.map((p) => {
-            const isActive = plan === p.id;
+          {plans.map((p) => {
+            const isActive = planId === p.identifier;
             return (
               <Pressable
-                key={p.id}
-                onPress={() => setPlan(p.id)}
+                key={p.identifier}
+                onPress={() => setPlanId(p.identifier)}
                 style={({ pressed }) => [
                   styles.plan,
                   isActive && styles.planActive,
@@ -153,22 +323,11 @@ export default function Premium() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.planLabel}>{p.label}</Text>
-                  <Text style={styles.planSub}>
-                    {p.id === 'yearly'
-                      ? `Just ${formatMoney(p.priceUsd / 12, { currency })} / mo · save 50%`
-                      : p.id === 'lifetime'
-                        ? 'Pay once, keep forever'
-                        : 'Cancel anytime'}
-                  </Text>
+                  <Text style={styles.planSub}>{p.subtitle}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.planPrice}>
-                    {formatMoney(p.priceUsd, {
-                      currency,
-                      decimals: p.id === 'lifetime' ? 0 : 2,
-                    })}
-                  </Text>
-                  <Text style={styles.planCadence}>{p.cadence}</Text>
+                  <Text style={styles.planPrice}>{p.priceString}</Text>
+                  <Text style={styles.planCadence}>{p.cadenceSuffix}</Text>
                 </View>
               </Pressable>
             );
@@ -187,22 +346,13 @@ export default function Premium() {
 
       <View style={styles.footer}>
         <PrimaryButton
-          label={plan === 'lifetime' ? 'Become a Founding Member' : 'Start Free Trial'}
+          label={ctaLabel}
           trailingIcon="arrow-forward"
-          onPress={() => {
-            // TODO: hook to RevenueCat purchase flow once paywall product
-            // IDs are configured. For now, capture the intent and show a
-            // success affordance via the back transition.
-            router.back();
-          }}
+          loading={purchasing || paywallLoading}
+          disabled={!selectedPlan}
+          onPress={onPurchase}
         />
-        <Text style={styles.fineprint}>
-          {plan === 'lifetime'
-            ? `${formatMoney(49, { currency, decimals: 0 })} once · no recurring billing`
-            : plan === 'yearly'
-              ? `7 days free · then ${formatMoney(29.99, { currency })} / yr · cancel anytime`
-              : `7 days free · then ${formatMoney(4.99, { currency })} / mo · cancel anytime`}
-        </Text>
+        <Text style={styles.fineprint}>{fineprint}</Text>
       </View>
     </SafeAreaView>
   );
