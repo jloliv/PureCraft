@@ -122,7 +122,7 @@ export async function saveRecipe(
   const userId = s.session?.user?.id;
   if (!userId) return { error: 'Not signed in' };
 
-  // Freemium gate — free users get LIMITS.savedRecipes (5) saves total.
+  // Freemium gate — free users get LIMITS.savedRecipes (10) saves total.
   // Caller can read `gated: true` to know whether to show the paywall.
   const gate = checkSaveGate();
   if (!gate.allow) {

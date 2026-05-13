@@ -27,9 +27,9 @@ export const LIMITS = {
   /** Bonus scan unlocked after the soft modal on attempt #N+1. */
   bonusScans: 1,
   /** Max recipes a free user can save before the soft gate. */
-  savedRecipes: 5,
+  savedRecipes: 10,
   /** After this many recipe views, additional recipes are locked behind blur. */
-  freeBrowseRecipes: 10,
+  freeBrowseRecipes: 20,
 } as const;
 
 // ---------- Storage abstraction --------------------------------------------
@@ -203,8 +203,8 @@ export async function markSoftScanModalShown(): Promise<void> {
 
 // ---------- Save gate -------------------------------------------------------
 //
-// Free users can save up to LIMITS.savedRecipes (5) recipes total. The 6th
-// attempt opens a paywall.
+// Free users can save up to LIMITS.savedRecipes (10) recipes total. The
+// (N+1)th attempt opens a paywall.
 
 export function checkSaveGate(): Gate {
   if (isPremium()) return { allow: true, remaining: Infinity };
@@ -226,7 +226,7 @@ export async function recordUnsave(): Promise<void> {
 
 // ---------- Recipe browse lock ---------------------------------------------
 //
-// Free users see the first LIMITS.freeBrowseRecipes (10) recipes in any
+// Free users see the first LIMITS.freeBrowseRecipes (20) recipes in any
 // list. Items past that index are visually present but blurred + lock icon.
 // `isRecipeLocked(idx)` is intended for callers iterating a sorted list.
 
