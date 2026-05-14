@@ -3,13 +3,14 @@ import { useFonts } from 'expo-font';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BACKGROUND_PRIMARY, Colors } from '@/constants/theme';
+import { initPaywall } from '@/lib/paywall';
 import * as Sentry from '@sentry/react-native';
 
 // Native-backed integrations (mobileReplay, feedback) are only added
@@ -62,6 +63,13 @@ export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({
     ...Ionicons.font,
   });
+
+  // Boot RevenueCat once on mount. Idempotent — safe even if a HMR remount
+  // fires this again. Without API keys in env it resolves immediately and
+  // leaves the SDK disabled so the rest of the app stays runnable in dev.
+  useEffect(() => {
+    void initPaywall();
+  }, []);
 
   const navTheme = useMemo(
     () => ({

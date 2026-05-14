@@ -6,17 +6,19 @@
 // your server, and reconcile subscription state — months of work.
 //
 // To enable in production:
-//   1. `npx expo install react-native-purchases`
+//   1. `npx expo install react-native-purchases react-native-purchases-ui`
 //   2. Create a RevenueCat project + get the public API keys (one per platform)
 //   3. Set EXPO_PUBLIC_REVENUECAT_KEY_IOS and EXPO_PUBLIC_REVENUECAT_KEY_ANDROID in `.env`
 //   4. Configure your "purecraft_plus" entitlement and Apple/Google products
 //      in the RevenueCat dashboard
 //
-// Without keys, every export here is a no-op and isPremium() returns false
-// so the app stays runnable in dev.
+// Startup is explicit — call `initPaywall()` once from app/_layout.tsx
+// after Sentry init. Without keys, every export here is a no-op and
+// isPremium() returns false so the app stays runnable in dev.
 
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 
 const KEY =
   Platform.OS === 'ios'
@@ -83,26 +85,57 @@ interface PurchasesPackage {
 }
 
 let client: PurchasesLike | null = null;
+let initPromise: Promise<void> | null = null;
 
-async function loadClient(): Promise<void> {
-  if (!KEY || client) return;
-  try {
-    const mod = (await import('react-native-purchases')) as unknown as {
-      default?: PurchasesLike;
-    } & PurchasesLike;
-    // Real SDK has more parameters on purchasePackage etc. — our local
-    // interface is a strict subset, so cast through unknown.
-    const Purchases = (mod.default ?? mod) as unknown as PurchasesLike;
-    Purchases.configure({ apiKey: KEY });
-    client = Purchases;
-    await refreshState();
-  } catch {
-    // Init failed — stay disabled.
-    state = { isPremium: false, loading: false, offerings: [] };
-    emit();
-  }
+/**
+ * Initialize the RevenueCat SDK. Safe to call multiple times — the first
+ * call kicks off the dynamic import + `Purchases.configure`, subsequent
+ * calls await the same promise. Call once from app/_layout.tsx after
+ * Sentry.init so any failures are reported with full context.
+ *
+ * Without `EXPO_PUBLIC_REVENUECAT_KEY_IOS` / `_ANDROID` set in env, this
+ * resolves immediately with `client` still null — the app stays runnable
+ * in dev without burning a paywall configuration.
+ */
+export function initPaywall(): Promise<void> {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    if (!KEY) {
+      Sentry.addBreadcrumb({
+        category: 'paywall',
+        message: 'init skipped: no RevenueCat key in env',
+        level: 'info',
+      });
+      state = { isPremium: false, loading: false, offerings: [] };
+      emit();
+      return;
+    }
+    try {
+      const mod = (await import('react-native-purchases')) as unknown as {
+        default?: PurchasesLike;
+      } & PurchasesLike;
+      // Real SDK has more parameters on purchasePackage etc. — our local
+      // interface is a strict subset, so cast through unknown.
+      const Purchases = (mod.default ?? mod) as unknown as PurchasesLike;
+      Purchases.configure({ apiKey: KEY });
+      client = Purchases;
+      Sentry.addBreadcrumb({
+        category: 'paywall',
+        message: 'RevenueCat configured',
+        level: 'info',
+        data: { platform: Platform.OS },
+      });
+      await refreshState();
+    } catch (e) {
+      Sentry.captureException(e, {
+        tags: { paywall: 'init-failed' },
+      });
+      state = { isPremium: false, loading: false, offerings: [] };
+      emit();
+    }
+  })();
+  return initPromise;
 }
-void loadClient();
 
 async function refreshState(): Promise<void> {
   if (!client) {
@@ -168,14 +201,19 @@ export function isPremium(): boolean {
 }
 
 // Identify the current user with RevenueCat so entitlements travel across
-// devices. Call after sign-in.
+// devices. Call from the auth state listener after SIGNED_IN.
 export async function identifyPaywallUser(userId: string): Promise<void> {
   if (!client) return;
   try {
     await client.logIn(userId);
     await refreshState();
-  } catch {
-    // ignore
+    Sentry.addBreadcrumb({
+      category: 'paywall',
+      message: 'RevenueCat user identified',
+      level: 'info',
+    });
+  } catch (e) {
+    Sentry.captureException(e, { tags: { paywall: 'identify-failed' } });
   }
 }
 
@@ -184,8 +222,13 @@ export async function logOutPaywallUser(): Promise<void> {
   try {
     await client.logOut();
     await refreshState();
-  } catch {
-    // ignore
+    Sentry.addBreadcrumb({
+      category: 'paywall',
+      message: 'RevenueCat user logged out',
+      level: 'info',
+    });
+  } catch (e) {
+    Sentry.captureException(e, { tags: { paywall: 'logout-failed' } });
   }
 }
 
@@ -193,6 +236,12 @@ export async function purchase(
   offeringIdentifier: string,
 ): Promise<{ purchased: boolean; error: string | null }> {
   if (!client) return { purchased: false, error: 'Paywall not configured' };
+  Sentry.addBreadcrumb({
+    category: 'paywall',
+    message: 'purchase: started',
+    level: 'info',
+    data: { identifier: offeringIdentifier },
+  });
   try {
     // The SDK exposes packages on the offering — fetch fresh to ensure we
     // pass an actual package object, not just an identifier.
@@ -200,30 +249,61 @@ export async function purchase(
     const pkg = offers.current?.availablePackages.find(
       (p) => p.identifier === offeringIdentifier,
     );
-    if (!pkg) return { purchased: false, error: 'Offering not found' };
+    if (!pkg) {
+      Sentry.addBreadcrumb({
+        category: 'paywall',
+        message: 'purchase: offering not found',
+        level: 'warning',
+        data: { identifier: offeringIdentifier },
+      });
+      return { purchased: false, error: 'Offering not found' };
+    }
     const res = await client.purchasePackage(pkg);
     const isActive = !!res.customerInfo.entitlements.active[ENTITLEMENT];
     await refreshState();
+    Sentry.addBreadcrumb({
+      category: 'paywall',
+      message: isActive ? 'purchase: success' : 'purchase: completed but entitlement inactive',
+      level: isActive ? 'info' : 'warning',
+      data: { identifier: offeringIdentifier },
+    });
     return { purchased: isActive, error: null };
   } catch (e) {
-    return {
-      purchased: false,
-      error: e instanceof Error ? e.message : 'Purchase failed',
-    };
+    const message = e instanceof Error ? e.message : 'Purchase failed';
+    // Cancels aren't errors worth reporting — but track other failures.
+    if (!/cancel/i.test(message)) {
+      Sentry.captureException(e, {
+        tags: { paywall: 'purchase-failed' },
+        extra: { identifier: offeringIdentifier },
+      });
+    }
+    return { purchased: false, error: message };
   }
 }
 
 export async function restorePurchases(): Promise<{ error: string | null }> {
   if (!client) return { error: 'Paywall not configured' };
+  Sentry.addBreadcrumb({
+    category: 'paywall',
+    message: 'restore: started',
+    level: 'info',
+  });
   try {
     const info = await client.restorePurchases();
+    const isActive = !!info.entitlements.active[ENTITLEMENT];
     state = {
       ...state,
-      isPremium: !!info.entitlements.active[ENTITLEMENT],
+      isPremium: isActive,
     };
     emit();
+    Sentry.addBreadcrumb({
+      category: 'paywall',
+      message: isActive ? 'restore: entitlement restored' : 'restore: no entitlement found',
+      level: 'info',
+    });
     return { error: null };
   } catch (e) {
+    Sentry.captureException(e, { tags: { paywall: 'restore-failed' } });
     return { error: e instanceof Error ? e.message : 'Restore failed' };
   }
 }

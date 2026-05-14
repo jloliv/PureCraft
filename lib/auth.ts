@@ -18,6 +18,7 @@ import { events, identify, resetAnalytics } from './analytics';
 import { supabase, supabaseConfigured } from './supabase';
 import { flushGuestSaves } from './guest-saves';
 import { flushOnboardingAnswers } from './onboarding-answers';
+import { identifyPaywallUser, logOutPaywallUser } from './paywall';
 import { setSentryUser } from './sentry';
 
 type AuthState = {
@@ -59,6 +60,9 @@ if (supabase) {
         id: session.user.id,
         email: session.user.email ?? undefined,
       });
+      // Pin the user's RevenueCat customer to the same Supabase user id so
+      // entitlements travel across devices and reinstalls.
+      void identifyPaywallUser(session.user.id);
       events.signedIn();
       // Flush any locally-buffered onboarding answers into the profile row.
       void flushOnboardingAnswers();
@@ -68,6 +72,9 @@ if (supabase) {
       events.signedOut();
       resetAnalytics();
       setSentryUser(null);
+      // Cycle RC to an anonymous appUserID so a new sign-in on the same
+      // device doesn't inherit the previous user's entitlement state.
+      void logOutPaywallUser();
     }
   });
 }
