@@ -28,7 +28,10 @@
       "ios": {
         "appleId": "juana.l.oliver@gmail.com",
         "ascAppId": "6767575264",
-        "appleTeamId": "QG6HB8Z887"
+        "appleTeamId": "QG6HB8Z887",
+        "ascApiKeyPath": "~/.appstoreconnect/AuthKey_92DDGV4MMK.p8",
+        "ascApiKeyId": "92DDGV4MMK",
+        "ascApiKeyIssuerId": "215eed77-31d1-426a-816f-94d4e9575b8a"
       }
     }
   }
