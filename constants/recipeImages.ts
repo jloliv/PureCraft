@@ -26,6 +26,7 @@ export const RECIPE_IMAGES: Record<string, ImageSourcePropType> = {
   'carpet-deodorizing-powder': require('../assets/Recipes/carpet-deodorizing-powder.png'),
   'carpet-powder': require('../assets/Recipes/dog-paw-balm.png'),
   'castile-soap-floor-cleaner': require('../assets/Recipes/castile-soap-floor-cleaner.png'),
+  'citrus-countertop-cleaner': require('../assets/Recipes/citrus-vinegar-cleaner.png'),
   'citrus-glow-scrub': require('../assets/Recipes/citrus-glow-scrub.png'),
   'citrus-room-spray': require('../assets/Recipes/dog-paw-balm.png'),
   'citrus-vinegar-cleaner': require('../assets/Recipes/citrus-vinegar-cleaner.png'),

@@ -72,7 +72,7 @@ export function computeMatch(
 
 /** UI copy variants per status. Kept here so screens render consistent labels. */
 export const MATCH_COPY: Record<MatchStatus, { label: string; sub: string }> = {
-  ready: { label: 'Ready to Make', sub: 'You have everything you need' },
+  ready: { label: 'Ready to Create', sub: 'You have everything you need' },
   almost: { label: 'Almost ready', sub: 'Just a couple of items to grab' },
   partial: { label: 'Partial match', sub: 'Several items needed to make this' },
 };

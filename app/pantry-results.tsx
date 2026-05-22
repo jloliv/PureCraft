@@ -1,10 +1,13 @@
-// Pantry Magic — "What you can make right now."
+// Ready to Create — recipes the user can build from ingredients they already
+// have, plus close-but-not-ready and "worth stocking for" buckets. Formerly
+// branded "Pantry Magic"; renamed for a calmer, more editorial tone that
+// matches the rest of the premium positioning.
 //
 // Personalized landing screen that scores every recipe against the
 // user's pantry (lib/pantry-match.ts) and groups the results into
 // three actionable buckets:
 //
-//   1. Ready to make   — user has every ingredient. Top of the page.
+//   1. Ready to create — user has every ingredient. Top of the page.
 //   2. Almost there    — missing 1–2 ingredients (status === 'almost').
 //   3. Explore more    — everything else, capped so the screen stays
 //                        scannable; users go to /categories for the full list.
@@ -76,10 +79,10 @@ export default function PantryResults() {
         >
           <Ionicons name="chevron-back" size={20} color={Colors.light.text} />
         </Pressable>
-        <Text style={styles.topTitle}>Pantry Magic</Text>
+        <Text style={styles.topTitle}>Ready to Create</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Edit pantry"
+          accessibilityLabel="Manage ingredients"
           onPress={() => router.push('/pantry')}
           style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
         >
@@ -92,30 +95,27 @@ export default function PantryResults() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.heroBlock}>
-          <Text style={styles.heroEyebrow}>Pantry Magic</Text>
-          <Text style={styles.heroTitle}>What you can make now</Text>
+          <Text style={styles.heroTitle}>Ready to Create</Text>
           <Text style={styles.heroSub}>
-            Based on your pantry of {pantry.size}{' '}
-            {pantry.size === 1 ? 'item' : 'items'}
+            Based on ingredients you already have
           </Text>
           <Pressable
             onPress={() => router.push('/pantry')}
+            accessibilityRole="button"
+            accessibilityLabel="Manage ingredients"
             style={({ pressed }) => [
               styles.editLink,
-              pressed && { opacity: 0.6 },
+              pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
             ]}
           >
-            <Ionicons
-              name="add-circle-outline"
-              size={14}
-              color={Colors.light.sageDeep}
-            />
-            <Text style={styles.editLinkText}>Edit pantry</Text>
+            <Ionicons name="add-circle" size={18} color="#FFFFFF" />
+            <Text style={styles.editLinkText}>Manage Ingredients</Text>
+            <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
           </Pressable>
         </View>
 
         <Section
-          title="Ready to make"
+          title="Ready to create"
           caption="You have everything you need"
           accent="ready"
           count={buckets.ready.length}
@@ -221,10 +221,15 @@ function Section({
 
 function RecipeRow({ scored }: { scored: Scored }) {
   const { recipe, match } = scored;
+  // Status copy in plain English. Previously "Ready · 3 ingredients" was
+  // ambiguous — readers couldn't tell whether 3 was the count needed or
+  // the count owned. Now: ready states declare completeness; partial
+  // states declare what's still required.
+  const missingCount = match.missing.length;
   const matchLine =
     match.status === 'ready'
-      ? `Ready · ${match.total} ingredient${match.total === 1 ? '' : 's'}`
-      : `${match.matched.length} of ${match.total} ingredients`;
+      ? 'Fully Ready'
+      : `${missingCount} ingredient${missingCount === 1 ? '' : 's'} needed`;
   return (
     <Pressable
       accessibilityRole="button"
@@ -351,12 +356,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.sm,
     paddingBottom: Spacing.lg,
   },
-  heroEyebrow: {
-    ...Type.caption,
-    color: Colors.light.sageDeep,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
   heroTitle: {
     fontSize: 28,
     fontWeight: '700',
@@ -369,23 +368,31 @@ const styles = StyleSheet.create({
     color: Colors.light.textMuted,
     marginTop: 4,
   },
+  // Promoted from a ghost pill to a filled sage CTA — the old treatment
+  // was easy to miss under the hero copy. Now reads as the primary
+  // action on this screen, matching the visual weight of `PrimaryButton`
+  // elsewhere in the app.
   editLink: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.light.surface,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    backgroundColor: Colors.light.sageDeep,
+    shadowColor: Colors.light.sageDeep,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   editLinkText: {
-    ...Type.caption,
-    color: Colors.light.sageDeep,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
 
   section: { marginTop: Spacing.xl },

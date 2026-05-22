@@ -140,6 +140,11 @@ export function MakeNav({ active }: { active: MakeNavTab }) {
           icon="home-outline"
           label="Home"
           active={false}
+          // Home tab is fully inert when we're already on /home — no
+          // visual selected state, no haptic, no navigation. Once the
+          // nav appears on screens other than /home, the disabled flag
+          // flips automatically.
+          disabled={active === 'home'}
           onPress={() => {
             tapLight();
             router.push('/home');
@@ -330,6 +335,16 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
     }
   }, [visible, fade, translate, dragY, items, screenH, mounted]);
 
+  // MakeSheet's close animation runs Animated.parallel where the longer
+  // timing (translate) is 240ms — Modal `visible={mounted}` only flips off
+  // when `setMounted(false)` fires in the .start() callback at 240ms. If a
+  // follow-up Modal (PantrySheet, FreemiumModal) is opened BEFORE that
+  // dismissal completes, iOS holds two transparent modals on screen at
+  // once and the second slide-in can deadlock — the whole UI freezes.
+  // 320ms gives us ~80ms safety margin past the close animation + one
+  // render frame.
+  const SHEET_HANDOFF_MS = 320;
+
   const go = (action: MakeAction) => {
     tapSoft();
     // Manage My Pantry — open the sub-sheet rather than routing. We
@@ -337,7 +352,7 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
     // cleanly before the sub-sheet slides up.
     if (action.managePantry) {
       onClose();
-      setTimeout(() => setPantrySheetVisible(true), 220);
+      setTimeout(() => setPantrySheetVisible(true), SHEET_HANDOFF_MS);
       return;
     }
     // Premium-gated actions show the soft preview modal first; only after
@@ -346,12 +361,12 @@ function MakeSheet({ visible, onClose }: { visible: boolean; onClose: () => void
       const gate = checkPantryScanGate();
       if (!gate.allow) {
         onClose();
-        setTimeout(() => setPantryGate(true), 220);
+        setTimeout(() => setPantryGate(true), SHEET_HANDOFF_MS);
         return;
       }
     }
     onClose();
-    setTimeout(() => router.push(action.route as never), 200);
+    setTimeout(() => router.push(action.route as never), SHEET_HANDOFF_MS);
   };
 
   // Keep the host mounted while EITHER follow-up sheet (freemium gate
@@ -499,15 +514,28 @@ function NavItem({
   icon,
   label,
   active,
+  disabled,
   onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   active?: boolean;
+  /** When true, the Pressable swallows taps (no haptic, no navigation)
+   *  and the icon + label render at reduced opacity so the user can see
+   *  the tab is intentionally non-interactive. Used for the Home tab on
+   *  /home — tapping a button that brings you to where you already are
+   *  was confusing per tester feedback. */
+  disabled?: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.navItem} onPress={onPress} hitSlop={6}>
+    <Pressable
+      style={[styles.navItem, disabled && styles.navItemDisabled]}
+      onPress={onPress}
+      hitSlop={6}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
+    >
       <Ionicons
         name={icon}
         size={20}
@@ -550,6 +578,11 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   navItem: { width: 64, alignItems: 'center', gap: 3 },
+  // 0.5 mutes the icon + label enough to read as "not interactive" but
+  // keeps them legible — closer to disabled toolbar items in Apple Mail
+  // than a hidden item. We don't hide the Home tab entirely so the user
+  // still has the affordance of where they are within the nav.
+  navItemDisabled: { opacity: 0.5 },
   navLabel: {
     fontSize: 10,
     lineHeight: 12,

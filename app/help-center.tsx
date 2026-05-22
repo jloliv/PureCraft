@@ -62,8 +62,8 @@ const SECTIONS: Section[] = [
     title: 'Features',
     items: [
       {
-        q: 'What is Pantry Magic?',
-        a: 'Pantry Magic suggests recipes based on ingredients you already have.',
+        q: 'What does "Ready to Create" mean?',
+        a: 'Ready to Create surfaces recipes you can build right now from ingredients you already have, plus close-but-not-ready and worth-stocking-up suggestions.',
       },
       {
         q: 'How do I save recipes?',

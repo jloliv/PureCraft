@@ -337,7 +337,7 @@ function ResultView({ onReset }: { onReset: () => void }) {
     <View>
       <View style={styles.resultBadge}>
         <View style={styles.resultPulse} />
-        <Text style={styles.resultBadgeText}>Draft formula · ready to make</Text>
+        <Text style={styles.resultBadgeText}>Draft formula · ready to create</Text>
       </View>
       <Text style={styles.resultTitle}>{SUGGESTED_RECIPE.title}</Text>
       <Text style={styles.resultBlurb}>{SUGGESTED_RECIPE.blurb}</Text>

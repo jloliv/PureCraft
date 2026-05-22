@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -115,10 +116,10 @@ export default function Preferences() {
   const [strength, setStrength] = useState<'gentle' | 'balanced' | 'strong'>('balanced');
 
   // Smart three-section split:
-  //   inPantry    — recipe ingredients the user already has
+  //   inPantry    — the user's full pantry (persistent across recipes)
   //   recommended — catalog items matching the recipe's intent tags (mold,
   //                 wood, baby, etc.) the user could add for a better result
-  //   missing     — recipe ingredients the user is missing
+  //   missing     — recipe ingredients the user doesn't have yet
   // Strength toggle biases `recommended` toward / away from strengthBoost
   // ingredients so the suggestions feel responsive to the segmented control
   // above. Memoised so we don't re-score on every unrelated re-render.
@@ -126,7 +127,6 @@ export default function Preferences() {
     () => recommendForRecipe({ recipe, pantry, strength }),
     [recipe, pantry, strength],
   );
-  const pantryTotalForRecipe = inPantry.length;
 
   const toggle = (set: string[], setSet: (v: string[]) => void, key: string) => {
     setSet(set.includes(key) ? set.filter((k) => k !== key) : [...set, key]);
@@ -164,11 +164,17 @@ export default function Preferences() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Hero-card layout: clean 50/50 split — image fills the left
-            half, text sits on solid product.swatch on the right half.
-            No gradient overlay; the boundary is a hard edge between
-            the photo and the swatch. */}
-        <View style={[styles.productCard, { backgroundColor: product.swatch }]}>
+        {/* Hero-card layout: image fills the left ~40%, text sits on a
+            warm cream → sage diagonal gradient on the right. Same color
+            stops as the "Live Match" hero on /pantry to keep the visual
+            language consistent — previously each recipe had its own
+            solid swatch, which fragmented the palette across products. */}
+        <LinearGradient
+          colors={['#E4EDE5', '#EFE7D2', '#F7F2E7']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.productCard}
+        >
           <Image
             source={recipeHeroImage(product.id)}
             testID="pc-recipe-icon"
@@ -184,7 +190,7 @@ export default function Preferences() {
               {product.time} • save {formatMoney(product.savingsUsd, { currency })}
             </Text>
           </View>
-        </View>
+        </LinearGradient>
 
         <Text style={styles.sectionTitle}>How should we tailor it?</Text>
         <Text style={styles.sectionSub}>Pick anything that fits your home.</Text>
@@ -302,7 +308,7 @@ export default function Preferences() {
             <Ionicons name="sparkles" size={16} color={Colors.light.sageDeep} />
           </View>
           <Text style={styles.summaryText}>
-            We&apos;ll mix {selected.length} preferences and {pantryTotalForRecipe} pantry items into your formula.
+            We&apos;ll factor in {selected.length} preferences and {inPantry.length} pantry items.
           </Text>
         </View>
 
@@ -347,8 +353,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     position: 'relative',
     overflow: 'hidden',
-    // backgroundColor is applied inline with product.swatch so each
-    // recipe keeps its themed color and the gradient terminus matches.
   },
   productImage: {
     position: 'absolute',

@@ -15,12 +15,19 @@
 //   strength — optional Tailor It strength control; biases recommendations
 //              toward / away from strengthBoost ingredients.
 //
-// Outputs three disjoint groups of canonical Ingredient objects:
-//   inPantry    — pantry items that are required by this recipe.
+// Outputs three groups of canonical Ingredient objects:
+//   inPantry    — the user's full pantry (excluding tools/vessels), sorted
+//                 alphabetically. This is intentionally NOT scoped to the
+//                 current recipe — the user wants to see what they own no
+//                 matter which formula they're tailoring.
 //   recommended — catalog items NOT in pantry and NOT in the recipe's
 //                 literal ingredient list, whose useCases match the
 //                 recipe's intent tags. The "smart additions" bucket.
 //   missing     — recipe-required ingredients the user doesn't have yet.
+// `inPantry` and `missing` are disjoint by construction (an item is either
+// in the pantry or it isn't). `recommended` excludes anything already in
+// the recipe AND anything already in the pantry, so it's disjoint from
+// both.
 
 import {
   INGREDIENTS,
@@ -191,15 +198,20 @@ export function recommendForRecipe(
   const intent = intentTagsFromRecipe(recipe);
   const recipeIds = recipeIngredientIds(recipe);
 
-  // 1. inPantry = pantry items required by this recipe.
-  const inPantry: Ingredient[] = [];
-  for (const id of recipeIds) {
-    if (!pantry.has(id)) continue;
-    const ing = INGREDIENTS.find((i) => i.id === id);
-    if (!ing) continue;
-    if (!passesPreferences(ing, preferences)) continue;
-    inPantry.push(ing);
-  }
+  // 1. inPantry = the full set of ingredients the user owns (across all
+  //    recipes), sorted alphabetically. Earlier this scoped to "pantry
+  //    items also in THIS recipe", but that hid the user's persistent
+  //    pantry on screens where the recipe didn't happen to use any of
+  //    their items — tapping a Missing row appeared to "vanish" the
+  //    ingredient because it landed in a pantry section that filtered
+  //    it out. Tools (spray bottles, jars, funnels) are excluded —
+  //    they're vessels, not ingredients in the chemistry sense.
+  const inPantry: Ingredient[] = INGREDIENTS.filter(
+    (i) =>
+      pantry.has(i.id) &&
+      i.group !== 'tools' &&
+      passesPreferences(i, preferences),
+  ).sort((a, b) => a.name.localeCompare(b.name));
 
   // 2. missing = recipe ingredients NOT in pantry.
   const missing: Ingredient[] = [];

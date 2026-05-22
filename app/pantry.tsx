@@ -31,6 +31,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import {
+  type PanGestureHandlerGestureEvent,
+  type PanGestureHandlerStateChangeEvent,
+  PanGestureHandler,
+  State,
+} from 'react-native-gesture-handler';
 
 // Reveal-the-next-card sizing: each horizontal recipe card is ~80% of screen
 // width so the second card always peeks in from the right edge, signalling
@@ -332,12 +338,10 @@ export default function PantryMagic() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Text style={styles.headerEyebrow}>YOUR HOME · TONIGHT</Text>
-        <Text style={styles.headerTitle}>
-          Pantry Magic <Text style={styles.headerSparkle}>✨</Text>
-        </Text>
+        <Text style={styles.headerEyebrow}>YOUR INGREDIENTS</Text>
+        <Text style={styles.headerTitle}>Ready to Create</Text>
         <Text style={styles.headerSub}>
-          Turn ingredients you already own into useful products.
+          Based on ingredients you already have
         </Text>
 
         {/* Hero stats card */}
@@ -769,17 +773,90 @@ function ManageSheet({
   pantry: Set<string>;
 }) {
   const [query, setQuery] = useState('');
-  const fade = useState(() => new Animated.Value(0))[0];
+  const [mounted, setMounted] = useState(false);
 
-  // Drive the modal in/out animation.
-  useState(() => {
-    Animated.timing(fade, {
-      toValue: visible ? 1 : 0,
-      duration: 220,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
+  // Swipe-to-dismiss animation rig — mirrors the pattern in
+  // components/make-nav.tsx so both sheets feel identical.
+  //   `translate` carries the slide-in / slide-out animation.
+  //   `dragY` carries the finger drag offset (clamped to downward).
+  //   `sheetY = translate + dragY` is what we actually apply to the
+  //                transform, so entry animation and gesture share one
+  //                position.
+  const screenH = Dimensions.get('window').height;
+  const translate = useRef(new Animated.Value(screenH)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
+  const sheetY = useRef(Animated.add(translate, dragY)).current;
+
+  const onGestureEvent = (event: PanGestureHandlerGestureEvent) => {
+    const dy = event.nativeEvent.translationY;
+    // Clamp to downward motion only — pulling the sheet UP shouldn't
+    // distort the open layout; the entry animation already handled
+    // that direction.
+    dragY.setValue(Math.max(0, dy));
+  };
+
+  const onHandlerStateChange = (event: PanGestureHandlerStateChangeEvent) => {
+    if (event.nativeEvent.state !== State.END) return;
+    const dy = event.nativeEvent.translationY;
+    // Past 120px → user committed to dismissal. Pre-seed translate
+    // with the current visual position so the close animation slides
+    // smoothly from the finger's release point instead of snapping
+    // back to top first.
+    if (dy > 120) {
+      translate.setValue(dy);
+      dragY.setValue(0);
+      onClose();
+      return;
+    }
+    // Under threshold — spring back to rest.
+    Animated.spring(dragY, {
+      toValue: 0,
+      useNativeDriver: false,
+      damping: 22,
+      stiffness: 250,
+      mass: 0.9,
     }).start();
-  });
+  };
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      dragY.setValue(0);
+      Animated.parallel([
+        Animated.timing(fade, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.spring(translate, {
+          toValue: 0,
+          damping: 22,
+          stiffness: 220,
+          mass: 0.9,
+          useNativeDriver: false,
+        }),
+      ]).start();
+    } else if (mounted) {
+      Animated.parallel([
+        Animated.timing(fade, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(translate, {
+          toValue: screenH,
+          duration: 240,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start(({ finished }) => {
+        if (finished) setMounted(false);
+      });
+    }
+  }, [visible, fade, translate, dragY, screenH, mounted]);
 
   const toggle = (key: string) => {
     tapLight();
@@ -803,19 +880,39 @@ function ManageSheet({
     return groups;
   }, [filtered]);
 
+  if (!mounted && !visible) return null;
+
   return (
     <Modal
       transparent
-      visible={visible}
+      visible={mounted}
       onRequestClose={onClose}
-      animationType="slide"
+      animationType="none"
       statusBarTranslucent
     >
-      <View style={styles.sheetOverlay}>
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          { backgroundColor: 'rgba(15,18,16,0.5)', opacity: fade },
+        ]}
+      >
         <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <View style={styles.sheetHeader}>
+      </Animated.View>
+
+      <Animated.View
+        style={[styles.sheet, { transform: [{ translateY: sheetY }] }]}
+      >
+        {/* Only the handle + header are gesture-bound. The ScrollView
+            below keeps its own scroll gestures — wrapping the whole
+            sheet would fight with vertical scroll inside the list. */}
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetY={[-1, 8]}
+        >
+          <Animated.View>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
             <View>
               <Text style={styles.sheetEyebrow}>YOUR PANTRY</Text>
               <Text style={styles.sheetTitle}>What do you have?</Text>
@@ -831,6 +928,8 @@ function ManageSheet({
               <Ionicons name="close" size={18} color={PALETTE.text} />
             </Pressable>
           </View>
+          </Animated.View>
+        </PanGestureHandler>
 
           <View style={styles.sheetSearchWrap}>
             <Ionicons name="search" size={18} color={PALETTE.textWarm} />
@@ -918,8 +1017,7 @@ function ManageSheet({
               <Ionicons name="checkmark" size={16} color="#FFFFFF" />
             </Pressable>
           </View>
-        </View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }
@@ -988,7 +1086,6 @@ const styles = StyleSheet.create({
     color: PALETTE.text,
     letterSpacing: -1.1,
   },
-  headerSparkle: { fontSize: 28 },
   headerSub: {
     marginTop: 8,
     fontSize: 15,
@@ -1355,12 +1452,14 @@ const styles = StyleSheet.create({
   },
 
   // -- Manage sheet ------------------------------------------------------
-  sheetOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15,18,16,0.5)',
-    justifyContent: 'flex-end',
-  },
+  // Absolutely positioned at the bottom so the swipe-to-dismiss
+  // translateY transform can carry it off-screen smoothly. The backdrop
+  // is a sibling Animated.View — see ManageSheet for the rig.
   sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     maxHeight: '88%',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
