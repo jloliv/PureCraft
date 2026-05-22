@@ -62,6 +62,16 @@ export type IngredientIconKey =
   | 'salt'
   | 'oil';
 
+/** Scent family — drives fragrance-profile filtering / pairing logic. */
+export type ScentProfile =
+  | 'fresh'
+  | 'citrus'
+  | 'floral'
+  | 'herbal'
+  | 'earthy'
+  | 'minty'
+  | 'sweet';
+
 export type Ingredient = {
   id: string;
   name: string;
@@ -72,6 +82,32 @@ export type Ingredient = {
   group: IngredientGroup;
   defaultIn?: boolean;
   aliases: string[];
+  // ---------------- Smart-recommendation metadata (all optional) ----------
+  // Drives the Recommended / Missing sections on the Tailor It screen and
+  // future intent-based search. Fields are intentionally OPTIONAL so older
+  // catalog entries keep working unchanged while we backfill metadata
+  // ingredient-by-ingredient.
+  /** Short canonical use-case tags. Matched against intent tags derived
+   *  from a recipe (title + categoryKey) to power recommendations. Stick
+   *  to lowercase singular nouns: 'mold', 'glass', 'wood', 'bathroom', etc. */
+  useCases?: string[];
+  /** Recipe ids this ingredient is particularly suited for. Optional —
+   *  most recommendations should fall out of useCases-vs-intent matching,
+   *  but this lets us hand-curate when needed. */
+  compatibleRecipes?: string[];
+  /** Family of scent the ingredient lends to a formula. Null for
+   *  scent-neutral items (water, baking soda). */
+  scentProfile?: ScentProfile | null;
+  /** True for ingredients that meaningfully push a formula toward
+   *  "stronger" cleaning power (tea tree, hydrogen peroxide, washing
+   *  soda). Used to bias the Strength = strong control. */
+  strengthBoost?: boolean;
+  /** True for ingredients considered safe in the standard allergy-aware
+   *  preset (fragrance-free, no common irritants). */
+  allergySafe?: boolean;
+  /** True for ingredients with a strong eco/sustainability story —
+   *  used by the future sustainability-mode filter. */
+  ecoFriendly?: boolean;
 };
 
 export const INGREDIENTS: Ingredient[] = [
@@ -86,6 +122,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['baking soda'],
+    useCases: ['odor', 'grease', 'scrub', 'bathroom', 'kitchen', 'drain'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'white-vinegar',
@@ -97,6 +138,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['white vinegar', 'vinegar'],
+    useCases: ['mold', 'glass', 'bathroom', 'kitchen', 'odor', 'disinfect'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'castile-soap',
@@ -107,6 +153,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🫧',
     group: 'pantry',
     aliases: ['castile soap'],
+    useCases: ['bathroom', 'kitchen', 'floor', 'baby', 'general'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'hydrogen-peroxide',
@@ -117,6 +168,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧴',
     group: 'pantry',
     aliases: ['hydrogen peroxide', 'peroxide'],
+    useCases: ['mold', 'disinfect', 'stain', 'bathroom', 'laundry'],
+    scentProfile: null,
+    strengthBoost: true,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'rubbing-alcohol',
@@ -127,6 +183,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧴',
     group: 'pantry',
     aliases: ['rubbing alcohol', 'isopropyl alcohol'],
+    useCases: ['disinfect', 'glass', 'electronics'],
+    scentProfile: null,
+    strengthBoost: true,
+    allergySafe: false,
+    ecoFriendly: false,
   },
   {
     id: 'witch-hazel',
@@ -137,6 +198,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌿',
     group: 'pantry',
     aliases: ['witch hazel'],
+    useCases: ['skin', 'face', 'toner'],
+    scentProfile: 'herbal',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'distilled-water',
@@ -148,6 +214,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['distilled water', 'water'],
+    useCases: ['solvent', 'glass', 'spray', 'baby', 'face'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
 
   // ============================ ESSENTIAL OILS ===========================
@@ -160,6 +231,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🍋',
     group: 'oils',
     aliases: ['lemon essential oil', 'lemon eo'],
+    useCases: ['odor', 'grease', 'kitchen', 'home-scent'],
+    scentProfile: 'citrus',
+    strengthBoost: false,
+    allergySafe: false,
+    ecoFriendly: true,
   },
   {
     id: 'lavender-oil',
@@ -170,6 +246,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🪻',
     group: 'oils',
     aliases: ['lavender oil', 'lavender essential oil'],
+    useCases: ['home-scent', 'laundry', 'skin', 'baby', 'odor'],
+    scentProfile: 'floral',
+    strengthBoost: false,
+    allergySafe: false,
+    ecoFriendly: true,
   },
   {
     id: 'tea-tree-oil',
@@ -180,6 +261,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌱',
     group: 'oils',
     aliases: ['tea tree oil'],
+    useCases: ['mold', 'bathroom', 'odor', 'disinfect', 'skin'],
+    scentProfile: 'herbal',
+    strengthBoost: true,
+    allergySafe: false,
+    ecoFriendly: true,
   },
   {
     id: 'peppermint-oil',
@@ -190,6 +276,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌿',
     group: 'oils',
     aliases: ['peppermint oil', 'peppermint essential oil'],
+    useCases: ['pest', 'home-scent', 'odor'],
+    scentProfile: 'minty',
+    strengthBoost: false,
+    allergySafe: false,
+    ecoFriendly: true,
   },
   {
     id: 'eucalyptus-oil',
@@ -200,6 +291,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌿',
     group: 'oils',
     aliases: ['eucalyptus oil'],
+    useCases: ['pest', 'home-scent', 'mold', 'bathroom'],
+    scentProfile: 'herbal',
+    strengthBoost: false,
+    allergySafe: false,
+    ecoFriendly: true,
   },
   {
     id: 'rosemary-oil',
@@ -210,6 +306,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌾',
     group: 'oils',
     aliases: ['rosemary oil'],
+    useCases: ['hair', 'home-scent'],
+    scentProfile: 'herbal',
+    strengthBoost: false,
+    allergySafe: false,
+    ecoFriendly: true,
   },
 
   // ============================ BEAUTY / BODY ============================
@@ -223,6 +324,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['coconut oil'],
+    useCases: ['skin', 'hair', 'lotion', 'lip', 'baby'],
+    scentProfile: 'sweet',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'aloe-vera',
@@ -233,6 +339,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌵',
     group: 'pantry',
     aliases: ['aloe vera', 'aloe'],
+    useCases: ['skin', 'face', 'baby', 'hair'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'shea-butter',
@@ -243,6 +354,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧈',
     group: 'pantry',
     aliases: ['shea butter'],
+    useCases: ['skin', 'lotion', 'baby', 'lip', 'body-butter'],
+    scentProfile: 'earthy',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'honey',
@@ -253,6 +369,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🍯',
     group: 'pantry',
     aliases: ['honey'],
+    useCases: ['skin', 'face', 'lip', 'hair'],
+    scentProfile: 'sweet',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
 
   // =========================== KITCHEN CROSSOVER =========================
@@ -265,6 +386,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🌽',
     group: 'pantry',
     aliases: ['cornstarch'],
+    useCases: ['glass', 'polish', 'baby'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'sea-salt',
@@ -275,6 +401,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧂',
     group: 'pantry',
     aliases: ['sea salt', 'salt'],
+    useCases: ['scrub', 'odor', 'drain', 'bath'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'sugar',
@@ -286,6 +417,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['sugar', 'cane sugar', 'brown sugar'],
+    useCases: ['scrub', 'skin', 'lip'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'olive-oil',
@@ -297,6 +433,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['olive oil'],
+    useCases: ['wood', 'polish', 'leather', 'skin', 'hair'],
+    scentProfile: 'earthy',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'lemon',
@@ -308,6 +449,11 @@ export const INGREDIENTS: Ingredient[] = [
     group: 'pantry',
     defaultIn: true,
     aliases: ['lemon', 'lemon peels', 'lemon juice'],
+    useCases: ['kitchen', 'grease', 'odor', 'glass', 'wood'],
+    scentProfile: 'citrus',
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
 
   // ================================ LAUNDRY ==============================
@@ -320,6 +466,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧂',
     group: 'pantry',
     aliases: ['washing soda', 'sodium carbonate'],
+    useCases: ['laundry', 'stain', 'grease'],
+    scentProfile: null,
+    strengthBoost: true,
+    allergySafe: true,
+    ecoFriendly: true,
   },
   {
     id: 'epsom-salt',
@@ -330,6 +481,11 @@ export const INGREDIENTS: Ingredient[] = [
     emoji: '🧂',
     group: 'pantry',
     aliases: ['epsom salt', 'epsom salts'],
+    useCases: ['laundry', 'bath', 'scrub'],
+    scentProfile: null,
+    strengthBoost: false,
+    allergySafe: true,
+    ecoFriendly: true,
   },
 
   // ================================= TOOLS ===============================

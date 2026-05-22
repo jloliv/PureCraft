@@ -1,14 +1,39 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  Image,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { formatMoney, useCurrency } from '@/constants/currency';
-import { findProduct } from '@/constants/products';
+import type { Ingredient } from '@/constants/ingredients';
+import { findProduct, findRecipe } from '@/constants/products';
+import { useAllRecipes } from '@/constants/recipes-remote';
 import { recipeHeroImage } from '@/constants/recipeHeroImages';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
+import { tapLight } from '@/lib/haptics';
+import { recommendForRecipe } from '@/lib/ingredient-recommendations';
+import { togglePantryItem, usePantry } from '@/lib/pantry-store';
+
+// LayoutAnimation is enabled by default on iOS; Android needs the
+// experimental flag flipped once per app. Matches the pattern used in
+// app/help-center.tsx so we stay consistent across screens.
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type Pref = { key: string; label: string; icon: keyof typeof Ionicons.glyphMap };
 
@@ -22,27 +47,102 @@ const PREFS: Pref[] = [
   { key: 'strongest', label: 'Strongest cleaning', icon: 'flash-outline' },
 ];
 
-const PANTRY = [
-  { key: 'water', label: 'Distilled water', emoji: '💧' },
-  { key: 'vinegar', label: 'White vinegar', emoji: '🧴' },
-  { key: 'baking-soda', label: 'Baking soda', emoji: '🧂' },
-  { key: 'castile', label: 'Castile soap', emoji: '🫧' },
-  { key: 'lemon', label: 'Lemon', emoji: '🍋' },
-  { key: 'tea-tree', label: 'Tea tree oil', emoji: '🌱' },
-  { key: 'lavender', label: 'Lavender oil', emoji: '🪻' },
-];
+type PantryRowVariant = 'selected' | 'recommended' | 'missing';
+
+/** Single row in the three-section pantry list. Visual treatment varies
+ *  by variant; section labels (rendered above the list) carry the meaning
+ *  so each row stays minimal — just an icon, the ingredient name, and a
+ *  chevron, per the premium / Apple Health-style direction. */
+function renderPantryRow(
+  ing: Ingredient,
+  variant: PantryRowVariant,
+  onToggle: (key: string) => void,
+) {
+  const isSelected = variant === 'selected';
+  const a11yLabel = isSelected
+    ? `${ing.name}, in pantry. Tap to remove.`
+    : variant === 'missing'
+      ? `${ing.name}, missing from pantry. Tap to add.`
+      : `${ing.name}, recommended for this formula. Tap to add.`;
+  return (
+    <Pressable
+      key={ing.id}
+      onPress={() => onToggle(ing.id)}
+      style={({ pressed }) => [
+        styles.pantryRow,
+        variant === 'selected' && styles.pantryRowSelected,
+        variant === 'missing' && styles.pantryRowMissing,
+        pressed && { opacity: 0.85 },
+      ]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={a11yLabel}
+    >
+      <View
+        style={[
+          styles.pantryRowIcon,
+          isSelected && styles.pantryRowIconSelected,
+        ]}
+      >
+        {isSelected ? (
+          <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+        ) : (
+          <Ionicons name="add" size={16} color={Colors.light.sageDeep} />
+        )}
+      </View>
+      <Text style={styles.pantryRowLabel}>{ing.name}</Text>
+      <Ionicons
+        name="chevron-forward"
+        size={16}
+        color={Colors.light.textSubtle}
+      />
+    </Pressable>
+  );
+}
 
 export default function Preferences() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  // Subscribe so curated/Supabase recipes that arrive after first paint
+  // re-render this screen (otherwise the ingredient list falls back to
+  // bathroom-cleaner until the user pops + re-enters).
+  useAllRecipes();
   const product = findProduct(id);
+  const recipe = findRecipe(id);
   const { currency } = useCurrency();
+  const pantry = usePantry();
 
   const [selected, setSelected] = useState<string[]>(['baby-safe', 'pet-safe']);
-  const [pantry, setPantry] = useState<string[]>(['water', 'vinegar', 'baking-soda']);
   const [strength, setStrength] = useState<'gentle' | 'balanced' | 'strong'>('balanced');
+
+  // Smart three-section split:
+  //   inPantry    — recipe ingredients the user already has
+  //   recommended — catalog items matching the recipe's intent tags (mold,
+  //                 wood, baby, etc.) the user could add for a better result
+  //   missing     — recipe ingredients the user is missing
+  // Strength toggle biases `recommended` toward / away from strengthBoost
+  // ingredients so the suggestions feel responsive to the segmented control
+  // above. Memoised so we don't re-score on every unrelated re-render.
+  const { inPantry, recommended, missing } = useMemo(
+    () => recommendForRecipe({ recipe, pantry, strength }),
+    [recipe, pantry, strength],
+  );
+  const pantryTotalForRecipe = inPantry.length;
 
   const toggle = (set: string[], setSet: (v: string[]) => void, key: string) => {
     setSet(set.includes(key) ? set.filter((k) => k !== key) : [...set, key]);
+  };
+
+  const togglePantryRow = (key: string) => {
+    tapLight();
+    // Spring-like easeInEaseOut for the move between Selected / Add More
+    // sections. Snappy enough to feel responsive, long enough to read.
+    LayoutAnimation.configureNext({
+      duration: 240,
+      create: { type: 'easeInEaseOut', property: 'opacity' },
+      update: { type: 'easeInEaseOut' },
+      delete: { type: 'easeInEaseOut', property: 'opacity' },
+    });
+    void togglePantryItem(key);
   };
 
   return (
@@ -137,39 +237,72 @@ export default function Preferences() {
           })}
         </View>
 
-        <Text style={styles.sectionTitle}>Ingredients I already have</Text>
-        <Text style={styles.sectionSub}>We&apos;ll prefer these so you can make it now.</Text>
-        <View style={styles.pantryGrid}>
-          {PANTRY.map((p) => {
-            const isSelected = pantry.includes(p.key);
-            return (
-              <Pressable
-                key={p.key}
-                onPress={() => toggle(pantry, setPantry, p.key)}
-                style={({ pressed }) => [
-                  styles.pantryCell,
-                  isSelected && styles.pantryCellSelected,
-                  pressed && { transform: [{ scale: 0.98 }] },
-                ]}
-              >
-                <Text style={styles.pantryEmoji}>{p.emoji}</Text>
-                <Text style={styles.pantryLabel} numberOfLines={2}>
-                  {p.label}
-                </Text>
-                <View style={[styles.pantryCheck, isSelected && styles.pantryCheckSelected]}>
-                  {isSelected ? <Ionicons name="checkmark" size={11} color="#FFFFFF" /> : null}
+        {inPantry.length + recommended.length + missing.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <Text style={styles.sectionSub}>
+              Tailored to this formula — tap to add or remove.
+            </Text>
+
+            {inPantry.length > 0 ? (
+              <>
+                <Text style={styles.pantryListLabel}>Your pantry</Text>
+                <View style={styles.pantryList}>
+                  {inPantry.map((ing) =>
+                    renderPantryRow(ing, 'selected', togglePantryRow),
+                  )}
                 </View>
-              </Pressable>
-            );
-          })}
-        </View>
+              </>
+            ) : null}
+
+            {recommended.length > 0 ? (
+              <>
+                <View
+                  style={[
+                    styles.pantryListLabelRow,
+                    inPantry.length > 0 && { marginTop: Spacing.xl },
+                  ]}
+                >
+                  <Text style={styles.pantryListLabel}>
+                    Recommended for this formula
+                  </Text>
+                </View>
+                <View style={styles.pantryList}>
+                  {recommended.map((ing) =>
+                    renderPantryRow(ing, 'recommended', togglePantryRow),
+                  )}
+                </View>
+              </>
+            ) : null}
+
+            {missing.length > 0 ? (
+              <>
+                <Text
+                  style={[
+                    styles.pantryListLabel,
+                    (inPantry.length > 0 || recommended.length > 0) && {
+                      marginTop: Spacing.xl,
+                    },
+                  ]}
+                >
+                  Missing for best results
+                </Text>
+                <View style={styles.pantryList}>
+                  {missing.map((ing) =>
+                    renderPantryRow(ing, 'missing', togglePantryRow),
+                  )}
+                </View>
+              </>
+            ) : null}
+          </>
+        ) : null}
 
         <View style={styles.summary}>
           <View style={styles.summaryIcon}>
             <Ionicons name="sparkles" size={16} color={Colors.light.sageDeep} />
           </View>
           <Text style={styles.summaryText}>
-            We&apos;ll mix {selected.length} preferences and {pantry.length} pantry items into your formula.
+            We&apos;ll mix {selected.length} preferences and {pantryTotalForRecipe} pantry items into your formula.
           </Text>
         </View>
 
@@ -296,64 +429,70 @@ const styles = StyleSheet.create({
   },
   strengthLabel: { ...Type.caption, color: Colors.light.textMuted },
   strengthLabelActive: { color: Colors.light.text, fontWeight: '600' },
-  // 3-column grid — values match app/pantry.tsx sheetCard so both
-  // ingredient surfaces (Tailor It here, Manage Pantry there) feel
-  // visually identical. If you change one, change both.
-  //
-  // IMPORTANT: do NOT add `gap` to this row. Combining 31.5% width
-  // with a 12px gap overflows the container by ~5px on phone-sized
-  // viewports (3 × 31.5% = 94.5%, plus 2 × 12px gap doesn't fit in
-  // the remaining 5.5%), which forces the third card to wrap and
-  // produces a 2-column layout. `justifyContent: space-between`
-  // auto-computes the horizontal gap so all three cards fit on the
-  // same row regardless of screen width. Vertical spacing comes
-  // from marginBottom on the cell.
-  pantryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  // Premium list-based pantry UI — replaced the old 3-column emoji grid.
+  // Design language reference: Apple Health row cells, Notion blocks.
+  // Text-only (no emoji/images), generous padding, subtle borders, and
+  // section labels small + uppercase for scanability.
+  pantryListLabel: {
+    fontSize: 11,
+    letterSpacing: 1.4,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    color: Colors.light.textMuted,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
-  pantryCell: {
-    width: '31.5%',
-    aspectRatio: 1,
-    marginBottom: 12,
-    backgroundColor: Colors.light.surface,
-    borderRadius: 16,
-    padding: 10,
+  pantryListLabelRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Spacing.sm,
+  },
+  pantryList: {
+    gap: 8,
+  },
+  pantryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    height: 60,
+    paddingHorizontal: Spacing.lg,
+    backgroundColor: Colors.light.surface,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: Colors.light.border,
-    justifyContent: 'center',
-    position: 'relative',
   },
-  pantryCellSelected: {
+  pantryRowSelected: {
     backgroundColor: Colors.light.sageSoft,
     borderColor: Colors.light.sage,
   },
-  pantryEmoji: { fontSize: 28, marginBottom: 6 },
-  pantryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.light.text,
-    textAlign: 'center',
-    paddingHorizontal: 2,
+  // Warm-cream tint on the Missing section so it reads as "you'll want
+  // this" without using a louder accent. Same row geometry, just a
+  // subtle background shift to differentiate from Recommended.
+  pantryRowMissing: {
+    backgroundColor: Colors.light.cream,
+    borderColor: Colors.light.creamDeep,
   },
-  pantryCheck: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 18,
-    height: 18,
+  pantryRowIcon: {
+    width: 30,
+    height: 30,
     borderRadius: Radius.pill,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Colors.light.border,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pantryCheckSelected: {
+  pantryRowIconSelected: {
     backgroundColor: Colors.light.sageDeep,
     borderColor: Colors.light.sageDeep,
+  },
+  pantryRowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.light.text,
+    letterSpacing: -0.1,
   },
   summary: {
     flexDirection: 'row',
