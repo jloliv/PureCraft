@@ -342,14 +342,8 @@ export default function Saved() {
             pointerEvents="none"
           />
           <View style={styles.heroContent}>
-            <Text style={styles.heroLabel}>LIBRARY</Text>
-            {/* Header reads as a personal space, not a generic bookmark
-                bin — and explicitly DOESN'T repeat the section names
-                ("Saved", "My Recipes") that appear below it. */}
-            <Text style={styles.heroTitle}>Your Collection</Text>
-            <Text style={styles.heroSubtitle}>
-              Your curated PureCraft collection
-            </Text>
+            <Text style={styles.heroLabel}>YOUR LIBRARY</Text>
+            <Text style={styles.heroTitle}>Collection</Text>
           </View>
         </View>
 
@@ -877,12 +871,6 @@ const styles = StyleSheet.create({
     color: '#1E1E1E',
     letterSpacing: -0.5,
   },
-  heroSubtitle: {
-    fontSize: 14,
-    color: '#6B6B6B',
-    marginTop: 4,
-  },
-
   // Search + filter row. Taller (56) pill controls with 12pt gap.
   // marginHorizontal is 0 because the parent ScrollView already
   // contributes the 20pt inset the spec calls for.

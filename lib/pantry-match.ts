@@ -10,6 +10,7 @@
 // `extractIngredientName` from smart-swaps + a per-pantry-item alias list
 // so "Lemon peels" hits the "lemon" pantry slot, etc.
 
+import { INGREDIENTS } from '@/constants/ingredients';
 import { extractIngredientName } from '@/constants/smart-swaps';
 
 export type MatchStatus = 'ready' | 'almost' | 'partial';
@@ -27,32 +28,15 @@ export type PantryMatch = {
   status: MatchStatus;
 };
 
-/** Default aliases per pantry item — matches the canonical PANTRY list in
- *  app/pantry.tsx. Kept here as a separate copy so `pantry-match.ts` has no
- *  circular dependency on the pantry screen. Update both when adding items. */
-const PANTRY_ALIASES: Record<string, string[]> = {
-  'baking-soda': ['baking soda'],
-  'white-vinegar': ['white vinegar', 'vinegar'],
-  lemon: ['lemon', 'lemon peels', 'lemon juice'],
-  'coconut-oil': ['coconut oil'],
-  'olive-oil': ['olive oil'],
-  sugar: ['sugar', 'cane sugar', 'brown sugar'],
-  'castile-soap': ['castile soap'],
-  'witch-hazel': ['witch hazel'],
-  'distilled-water': ['distilled water', 'water'],
-  'sea-salt': ['sea salt', 'salt'],
-  cornstarch: ['cornstarch'],
-  honey: ['honey'],
-  'rubbing-alcohol': ['rubbing alcohol', 'isopropyl alcohol'],
-  'lavender-oil': ['lavender oil', 'lavender essential oil'],
-  'tea-tree-oil': ['tea tree oil'],
-  'eucalyptus-oil': ['eucalyptus oil'],
-  'rosemary-oil': ['rosemary oil'],
-  'lemon-eo': ['lemon essential oil', 'lemon eo'],
-  'spray-bottles': ['spray bottle'],
-  'glass-jars': ['glass jar', 'jar'],
-  funnel: ['funnel'],
-};
+/** Pantry id → free-text aliases, derived from the canonical INGREDIENTS
+ *  catalog so adding an ingredient (e.g. shea butter) automatically makes
+ *  recipe → pantry matching work for it. Previously this was a hand-curated
+ *  subset, which is why ingredients added to the catalog later (shea butter,
+ *  hydrogen peroxide, peppermint oil, etc.) were silently invisible to the
+ *  matcher. */
+const PANTRY_ALIASES: Record<string, string[]> = Object.fromEntries(
+  INGREDIENTS.map((i) => [i.id, i.aliases]),
+);
 
 /** Map a recipe ingredient string to the matching pantry key, or null. */
 export function pantryKeyForIngredient(ingredientText: string): string | null {

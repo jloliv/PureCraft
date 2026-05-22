@@ -16,7 +16,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -202,13 +202,18 @@ function applyFilter(matches: RecipeMatch[], filter: FilterKey): RecipeMatch[] {
 let hasAnimatedManageBtn = false;
 
 export default function PantryMagic() {
+  // When the user arrives here from the Make Hub's "Add ingredient manually"
+  // row, we want them to see the ingredient grid immediately — not the
+  // recipe-match landing. The PantrySheet sets ?manage=1 for that path so
+  // we boot the Manage modal open. Only honored on initial mount.
+  const { manage: manageParam } = useLocalSearchParams<{ manage?: string }>();
   const { currency } = useCurrency();
   // Pantry is now a shared, persistent store so opening a recipe from any
   // screen sees the same set + edits survive app restarts.
   const pantry = usePantry();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('all');
-  const [manageOpen, setManageOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(manageParam === '1');
 
   // Subtle one-time pulse on the Manage Pantry button so first-time users
   // notice it. 800ms delay → scale 1 → 1.05 → 1 over 700ms with ease-in-out.

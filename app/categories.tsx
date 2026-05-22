@@ -1,13 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-// Drop your photo at assets/images/sugar-scrub-hero.jpg, then change this
-// require to point at it. Salts gif is a stand-in until then.
-const BEAUTY_HERO = require('../assets/images/PureCraftSalts.gif');
 
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct } from '@/constants/products';
@@ -231,17 +226,6 @@ export default function Categories() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {filter === 'beauty-skincare' ? (
-          <View style={styles.hero}>
-            <Image source={BEAUTY_HERO} style={styles.heroImage} resizeMode="cover" />
-            <LinearGradient
-              colors={['rgba(0,0,0,0.04)', 'rgba(0,0,0,0.18)']}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
-          </View>
-        ) : null}
-
         <Text style={styles.sub}>{headlineCaption}</Text>
 
         {activeFilterPill ? (
@@ -577,17 +561,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  hero: {
-    height: 240,
-    marginHorizontal: -Spacing.xl,
-    marginTop: -Spacing.sm,
-    marginBottom: Spacing.lg,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: 'hidden',
-    alignSelf: 'stretch',
-  },
-  heroImage: { width: '100%', height: '100%' },
   // Premium-feel page title. Larger than the default bodyStrong so it
   // reads as a screen heading; numberOfLines/adjustsFontSizeToFit on
   // the JSX side keep long category labels (e.g. "Home & Air

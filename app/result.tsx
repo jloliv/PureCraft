@@ -14,7 +14,6 @@ import { autoBullets, benefitsFor } from '@/constants/recipe-benefits';
 import { findRecipeById, useAllRecipes } from '@/constants/recipes-remote';
 import { shelfLifeFor } from '@/constants/recipe-shelf-life';
 import { computeSavings, formatRange } from '@/constants/savings';
-import { AuthPromptModal } from '@/components/auth-prompt-modal';
 import { FreemiumModal, type FreemiumKind } from '@/components/freemium-modal';
 import { events } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
@@ -30,7 +29,7 @@ import {
 } from '@/constants/ingredient-intel';
 import { extractIngredientName, getSmartSwaps, type SmartSwap } from '@/constants/smart-swaps';
 import { tapLight, tapSoft } from '@/lib/haptics';
-import { computeMatch, MATCH_COPY } from '@/lib/pantry-match';
+import { computeMatch, MATCH_COPY, pantryKeyForIngredient } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
 import { recordRecipeView } from '@/lib/recent-recipes';
 import { recipeHeroImage } from '@/constants/recipeHeroImages';
@@ -51,10 +50,10 @@ type BatchSize = (typeof BATCH_OPTIONS)[number];
 const SECONDARY_ACTION_COLOR = '#6B7D73';
 
 export default function Result() {
-  // `save` is set by AuthPromptModal's email-signup return URL — when
-  // the user signs up via that flow, AuthForm replaces back to
-  // /result?id=…&save=<id>, and the useEffect below picks that up to
-  // resume the save the user originally tried to make.
+  // `save` is set by the /auth/sign-up return URL — when a guest taps
+  // the heart we route them straight to sign-up with next=/result?id=…
+  // &save=<id>, AuthForm replaces back here on success, and the useEffect
+  // below picks the param up to resume the save the user started.
   const { id, save: saveTrigger } = useLocalSearchParams<{
     id?: string;
     save?: string;
@@ -96,14 +95,13 @@ export default function Result() {
   }, [product.id]);
 
   const [gateModal, setGateModal] = useState<FreemiumKind | null>(null);
-  const [authPromptOpen, setAuthPromptOpen] = useState(false);
   const [saveSheetOpen, setSaveSheetOpen] = useState(false);
   const [savedToast, setSavedToast] = useState<string | null>(null);
   // Auth gate on save — when a guest taps the heart we stash the id of
-  // the recipe they wanted to save and pop the AuthPromptModal. After
-  // a successful auth (OAuth modal-close OR email signup return), the
-  // resume effect below re-opens the collection sheet so the save
-  // completes without the user having to re-tap.
+  // the recipe they wanted to save and route straight to /auth/sign-up
+  // with a return URL. After successful auth (OAuth in-place OR email
+  // signup return with ?save=<id>), the resume effect below completes
+  // the save automatically so the user doesn't have to re-tap.
   const { user } = useAuth();
   const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
   // Single-fire guard for the resume effect — prevents firing the save
@@ -144,7 +142,11 @@ export default function Result() {
       void (async () => {
         const { gated, needsAuth } = await toggleSaved(product.id);
         if (gated) setGateModal('save');
-        else if (needsAuth) setAuthPromptOpen(true);
+        else if (needsAuth)
+          router.push({
+            pathname: '/auth/sign-up',
+            params: { next: `/result?id=${encodeURIComponent(product.id)}` },
+          });
         // If we just unsaved via the legacy flow, also strip the recipe
         // out of every collection so the visual state stays consistent.
         const { getCollections, removeRecipeFromCollection } = await import(
@@ -158,15 +160,21 @@ export default function Result() {
       })();
       return;
     }
-    // Guest add — gate behind AuthPromptModal. Stash the recipe id so
-    // the resume effect below re-opens the collection sheet once the
-    // user finishes signing up. Skips the lib/guest-saves buffer that
-    // used to allow N free guest saves; the new flow is "sign in to
-    // save anything" per spec.
+    // Guest add — route straight to /auth/sign-up. We stash the recipe
+    // id so the resume effect below auto-completes the save once the
+    // user lands back here via the ?save=<id> return URL. The
+    // intermediate "Save this recipe" modal was removed because tapping
+    // any of its buttons routed here anyway — one extra tap with no
+    // signal value.
     if (!user) {
       setPendingSaveId(product.id);
       resumedSaveRef.current = false;
-      setAuthPromptOpen(true);
+      router.push({
+        pathname: '/auth/sign-up',
+        params: {
+          next: `/result?id=${encodeURIComponent(product.id)}&save=${encodeURIComponent(product.id)}`,
+        },
+      });
       return;
     }
     setSaveSheetOpen(true);
@@ -188,10 +196,10 @@ export default function Result() {
     return () => clearTimeout(t);
   }, [listToast]);
 
-  // Resume-after-auth: when the user signs in (OAuth path inside
-  // AuthPromptModal stays mounted; email path replaces back here with
-  // ?save=<id>), the recipe they originally tapped to save lands in
-  // their library AUTOMATICALLY — no second tap, no collection picker.
+  // Resume-after-auth: when the user signs in (OAuth lands them back
+  // here directly; email signup replaces back via ?save=<id>), the
+  // recipe they originally tapped to save lands in their library
+  // AUTOMATICALLY — no second tap, no collection picker.
   // That's the spec's "frictionless" point: by the time the user is
   // signed in, the recipe is already saved.
   //
@@ -334,26 +342,6 @@ export default function Result() {
         visible={gateModal !== null}
         kind={gateModal ?? 'save'}
         onClose={() => setGateModal(null)}
-      />
-      <AuthPromptModal
-        visible={authPromptOpen}
-        onClose={() => setAuthPromptOpen(false)}
-        // Custom copy when the modal is triggered by a guest tapping the
-        // heart on a recipe — feels like an invitation, not a wall.
-        title={pendingSaveId ? 'Save this recipe' : 'Save your recipes'}
-        subtitle={
-          pendingSaveId
-            ? 'Create a free account to save recipes and access them anytime.'
-            : undefined
-        }
-        // Email-signup return URL — round-trips back to this same recipe
-        // with ?save=<id> so the resume effect re-opens the collection
-        // sheet after AuthForm.replace() lands the user back here.
-        next={
-          pendingSaveId
-            ? `/result?id=${encodeURIComponent(product.id)}&save=${encodeURIComponent(product.id)}`
-            : undefined
-        }
       />
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <Pressable
@@ -623,17 +611,29 @@ export default function Result() {
                 : scaleAmount(ing.amount, batch);
               const helpQuery = `${displayAmount} ${displayName}`.trim();
               const showHelp = hasIngredientHelp(helpQuery);
+              // "In your pantry" reflects LIVE pantry state, not the static
+              // `haveIt` flag on the recipe. The static flag was demo data
+              // that never updated when a tester added items to their pantry
+              // (e.g. eucalyptus oil), so recipes appeared to ignore what
+              // the user already owned. We resolve the canonical pantry key
+              // via the same alias logic computeMatch() uses so detail
+              // view and PantryMatchPill stay in sync.
+              const ingredientText = ing.amount
+                ? `${ing.amount} ${ing.name}`
+                : ing.name;
+              const pantryKey = pantryKeyForIngredient(ingredientText);
+              const haveIt = pantryKey ? pantry.has(pantryKey) : false;
               return (
                 <View
                   key={ing.name}
                   style={[styles.ingredientRow, i === 0 && { borderTopWidth: 0 }]}
                 >
-                  <View style={[styles.ingDot, ing.haveIt && styles.ingDotHave]} />
+                  <View style={[styles.ingDot, haveIt && styles.ingDotHave]} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ingName}>{displayName}</Text>
                     <Text style={styles.ingMeta}>
                       {displayAmount}
-                      {ing.haveIt
+                      {haveIt
                         ? `${displayAmount ? ' · ' : ''}in your pantry`
                         : ''}
                     </Text>

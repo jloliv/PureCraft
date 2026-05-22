@@ -98,9 +98,12 @@ export default function Scan() {
     }
   }, [permission, requestPermission]);
 
-  // Scanning line animation while aiming or detecting.
+  // Scanning line animation — only during the actual `detecting` phase so
+  // the aim screen doesn't look like it's already scanning. Testers were
+  // sitting on the aim screen watching the line move, expecting it to
+  // auto-detect and never realizing they had to tap the shutter.
   useEffect(() => {
-    if (phase !== 'aim' && phase !== 'detecting') return;
+    if (phase !== 'detecting') return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(scanY, {
@@ -324,7 +327,7 @@ export default function Scan() {
             <View style={[styles.corner, styles.cornerBL]} />
             <View style={[styles.corner, styles.cornerBR]} />
 
-            {phase !== 'matched' ? (
+            {phase === 'detecting' ? (
               <Animated.View
                 style={[
                   styles.scanLine,
@@ -360,7 +363,7 @@ export default function Scan() {
               />
               <Text style={styles.statusText}>
                 {phase === 'aim'
-                  ? 'Looking for ingredients…'
+                  ? 'Aim at label · tap to scan'
                   : phase === 'detecting'
                     ? 'Reading ingredients…'
                     : phase === 'matched' && result

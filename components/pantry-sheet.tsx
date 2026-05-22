@@ -29,7 +29,7 @@ type Action = {
   label: string;
   sub: string;
   /** Path the user is sent to after the sheet dismisses. */
-  route: '/pantry-results' | '/pantry' | '/scan';
+  route: string;
 };
 
 const ACTIONS: Action[] = [
@@ -43,7 +43,11 @@ const ACTIONS: Action[] = [
     icon: 'add-circle-outline',
     label: 'Add ingredient manually',
     sub: 'Search and tap to add a single item',
-    route: '/pantry',
+    // Land on the Pantry Magic screen with the Manage sheet pre-opened so
+    // the user sees the ingredient grid immediately. Without `?manage=1`
+    // they hit the hero + recipe-match landing and have to find the
+    // "Manage Pantry" button to actually add anything.
+    route: '/pantry?manage=1',
   },
   {
     icon: 'scan-outline',
@@ -54,10 +58,10 @@ const ACTIONS: Action[] = [
 ];
 
 export function PantrySheet({ visible, onClose }: Props) {
-  const go = (route: Action['route']) => {
+  const go = (route: string) => {
     tapLight();
     onClose();
-    router.push(route);
+    router.push(route as never);
   };
 
   return (

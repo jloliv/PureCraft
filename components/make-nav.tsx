@@ -137,9 +137,9 @@ export function MakeNav({ active }: { active: MakeNavTab }) {
     <>
       <View style={styles.bottomNav}>
         <NavItem
-          icon={active === 'home' ? 'home' : 'home-outline'}
+          icon="home-outline"
           label="Home"
-          active={active === 'home'}
+          active={false}
           onPress={() => {
             tapLight();
             router.push('/home');
@@ -511,9 +511,17 @@ function NavItem({
       <Ionicons
         name={icon}
         size={20}
-        color={active ? PALETTE.sageDeep : PALETTE.textSubtle}
+        color={active ? PALETTE.sageDeep : PALETTE.textMuted}
       />
-      <Text style={[styles.navLabel, active && styles.navLabelActive]}>{label}</Text>
+      <Text
+        style={[styles.navLabel, active && styles.navLabelActive]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}
+        allowFontScaling={false}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -541,12 +549,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 14 },
     elevation: 6,
   },
-  navItem: { width: 56, alignItems: 'center', gap: 3 },
+  navItem: { width: 64, alignItems: 'center', gap: 3 },
   navLabel: {
     fontSize: 10,
     lineHeight: 12,
     fontWeight: '600',
-    color: PALETTE.textSubtle,
+    color: PALETTE.textMuted,
   },
   navLabelActive: { color: PALETTE.sageDeep },
 
