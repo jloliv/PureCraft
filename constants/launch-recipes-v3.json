@@ -1005,18 +1005,6 @@
     "costSavings": "$7 saved"
   },
   {
-    "id": 94,
-    "slug": "wall-spot-cleaner-soap",
-    "title": "Wall Spot Cleaner",
-    "category": "Cleaning",
-    "difficulty": "Easy",
-    "time": "3 min",
-    "ingredients": ["1 cup water", "1 tsp dish soap"],
-    "instructions": ["Dampen cloth with solution", "Blot wall marks gently", "Dry with towel"],
-    "safeForKids": true,
-    "costSavings": "$5 saved"
-  },
-  {
     "id": 95,
     "slug": "whites-brightener-vinegar",
     "title": "Whites Brightener",
