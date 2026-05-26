@@ -21,7 +21,7 @@ const PERMS: Perm[] = [
     key: 'camera',
     icon: 'camera-outline',
     title: 'Camera',
-    why: 'Used only when you tap "Scan product" to recreate a store-bought formula. Photos stay on-device — nothing is uploaded.',
+    why: 'Used only when you tap "Scan product" to recreate a store-bought formula. Photos are sent to our AI to extract the recipe — they are not stored.',
     used: 'Off by default',
   },
   {

@@ -19,7 +19,7 @@ const SECTIONS: ArticleSection[] = [
   },
   {
     heading: 'Account responsibilities',
-    body: 'You are responsible for keeping your login credentials secure and for any activity under your account. If you believe your account has been accessed without your permission, contact support@purecraft.app immediately and we will help secure it.',
+    body: 'You are responsible for keeping your login credentials secure and for any activity under your account. If you believe your account has been accessed without your permission, contact support@purecraftliving.com immediately and we will help secure it.',
   },
   {
     heading: 'Intellectual property',
@@ -31,7 +31,7 @@ const SECTIONS: ArticleSection[] = [
   },
   {
     heading: 'Contact support',
-    body: 'For questions about these terms, billing, or your account, email support@purecraft.app — a real person will respond within two business days.',
+    body: 'For questions about these terms, billing, or your account, email support@purecraftliving.com — a real person will respond within two business days.',
   },
 ];
 
@@ -43,7 +43,7 @@ export default function Terms() {
       intro="The rules of the road for using PureCraft. Plain language, no surprises, written to be read."
       effectiveDate="April 1, 2026"
       sections={SECTIONS}
-      contactLine="Questions? Email support@purecraft.app — a real person responds within 2 business days."
+      contactLine="Questions? Email support@purecraftliving.com — a real person responds within 2 business days."
     />
   );
 }

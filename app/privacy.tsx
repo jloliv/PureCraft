@@ -31,7 +31,7 @@ const SECTIONS: ArticleSection[] = [
   },
   {
     heading: 'Contact support',
-    body: 'Questions, requests to access or delete your data, or anything that doesn’t feel right — email privacy@purecraft.app and a real person will respond within two business days.',
+    body: 'Questions, requests to access or delete your data, or anything that doesn’t feel right — email privacy@purecraftliving.com and a real person will respond within two business days.',
   },
 ];
 
@@ -43,7 +43,7 @@ export default function Privacy() {
       intro="A short, plain-English summary of what we collect, what we don’t, and the choices you have."
       effectiveDate="April 1, 2026"
       sections={SECTIONS}
-      contactLine="Questions? Email privacy@purecraft.app — a real person responds within 2 business days."
+      contactLine="Questions? Email privacy@purecraftliving.com — a real person responds within 2 business days."
     />
   );
 }
