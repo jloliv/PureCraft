@@ -11,9 +11,7 @@
 // batching ("Weekend cleaning run") is a 1-screen change away.
 //
 // Pricing and store integrations are deliberately ABSENT from this
-// flow per the product call. lib/store-actions.ts and friends remain
-// in the codebase for the deferred "store mode" work but are not
-// reachable from this surface.
+// flow per the product call.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useSyncExternalStore } from 'react';

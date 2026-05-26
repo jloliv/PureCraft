@@ -11,9 +11,7 @@
 //   - Empty state nudges back to recipe browsing.
 //
 // What's intentionally NOT here: pricing, savings cards, "Search on
-// Amazon", store-cart drop-ups. The store-action infrastructure remains
-// in the codebase (lib/store-actions.ts, etc.) for the deferred
-// "store mode" feature, but is not wired into this surface.
+// Amazon", store-cart drop-ups.
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';

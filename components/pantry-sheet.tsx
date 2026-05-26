@@ -7,10 +7,8 @@
 //   into one card + sheet keeps Home tidy and gives users a single
 //   mental model for "anything pantry."
 //
-// Visual language matches components/store-action.tsx — backdrop slide,
-// rounded top, sage-soft icon badges. Side note: each row dismisses the
-// sheet BEFORE navigating, so a back-swipe from the destination screen
-// returns to a clean Home (not Home + open sheet).
+// Each row dismisses the sheet BEFORE navigating, so a back-swipe from
+// the destination screen returns to a clean Home (not Home + open sheet).
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
