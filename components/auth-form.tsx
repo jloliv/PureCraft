@@ -311,60 +311,56 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
                   <View style={styles.field}>
                     <Text style={styles.label}>PASSWORD</Text>
-                    <View
+                    {/* Structurally mirrors the email field — TextInput is
+                        a direct child of `field` and owns its own border/
+                        background/focus styles. Wrapping the input in an
+                        intermediate View with a sibling Pressable was
+                        breaking focus on iOS (keyboard would briefly
+                        appear then dismiss). The eye toggle is positioned
+                        absolutely over the right edge instead. */}
+                    <TextInput
+                      value={password}
+                      onChangeText={setPassword}
+                      onFocus={() => setFocused('password')}
+                      onBlur={() => setFocused(null)}
+                      placeholder={
+                        isSignUp
+                          ? 'Create a password (6+ characters)'
+                          : 'Enter your password'
+                      }
+                      placeholderTextColor={COLORS.textSubtle}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      autoComplete="off"
+                      textContentType="none"
+                      returnKeyType="done"
                       style={[
-                        styles.inputWrap,
+                        styles.input,
+                        styles.inputWithEye,
                         focused === 'password' && styles.inputFocused,
                       ]}
+                    />
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        showPassword ? 'Hide password' : 'Show password'
+                      }
+                      hitSlop={6}
+                      onPress={() => setShowPassword((p) => !p)}
+                      style={({ pressed }) => [
+                        styles.eyeBtnAbsolute,
+                        pressed && { opacity: 0.5 },
+                      ]}
                     >
-                      {/* iOS Password AutoFill (textContentType=password /
-                          newPassword + autoComplete current/new-password) flickers
-                          the keyboard on this field because the bundle has no
-                          Associated Domains entitlement — iOS tries to surface
-                          saved credentials for an unverified domain, fails, and
-                          the autofill UI dismount takes the keyboard with it.
-                          Re-enable these props once apple-app-site-association
-                          is hosted on purecraftliving.com. */}
-                      <TextInput
-                        value={password}
-                        onChangeText={setPassword}
-                        onFocus={() => setFocused('password')}
-                        onBlur={() => setFocused(null)}
-                        placeholder={
-                          isSignUp
-                            ? 'Create a password (6+ characters)'
-                            : 'Enter your password'
+                      <Ionicons
+                        name={
+                          showPassword ? 'eye-off-outline' : 'eye-outline'
                         }
-                        placeholderTextColor={COLORS.textSubtle}
-                        secureTextEntry={!showPassword}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        autoComplete="off"
-                        textContentType="none"
-                        returnKeyType="done"
-                        style={styles.inputBare}
+                        size={18}
+                        color={COLORS.muted}
                       />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          showPassword ? 'Hide password' : 'Show password'
-                        }
-                        hitSlop={6}
-                        onPress={() => setShowPassword((p) => !p)}
-                        style={({ pressed }) => [
-                          styles.eyeBtn,
-                          pressed && { opacity: 0.5 },
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            showPassword ? 'eye-off-outline' : 'eye-outline'
-                          }
-                          size={18}
-                          color={COLORS.muted}
-                        />
-                      </Pressable>
-                    </View>
+                    </Pressable>
                     {isSignUp && password.length > 0 && password.length < 6 ? (
                       <Text style={styles.fieldHint}>
                         Use at least 6 characters.
@@ -709,24 +705,10 @@ const styles = StyleSheet.create({
     color: COLORS.deep,
     fontWeight: '500',
   },
-  inputWrap: {
-    height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 18,
-    paddingRight: 8,
-    borderRadius: 999,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  inputBare: {
-    flex: 1,
-    height: '100%',
-    fontSize: 14.5,
-    color: COLORS.deep,
-    fontWeight: '500',
-    paddingVertical: 0,
+  // Right-padding bump that reserves space for the absolutely-positioned
+  // eye toggle in the password field. Layered on top of styles.input.
+  inputWithEye: {
+    paddingRight: 48,
   },
   inputFocused: {
     borderColor: COLORS.sage,
@@ -737,12 +719,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  eyeBtn: {
+  // Absolute-positioned show/hide-password toggle. Sits over the right
+  // edge of the password input — the TextInput keeps full focus
+  // ownership over the rest of its area, which prevents the
+  // sibling-Pressable focus issue we hit with the previous flex-row
+  // layout.
+  eyeBtnAbsolute: {
+    position: 'absolute',
+    right: 6,
+    bottom: 0,
     width: 40,
-    height: 40,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 999,
   },
   fieldHint: {
     fontSize: 12,
