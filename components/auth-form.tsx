@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -200,10 +199,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.content}>
+          <View style={styles.content}>
               {/* ===================== HERO ===================== */}
               <View style={styles.hero}>
                 <Image source={LOGO} style={styles.logo} resizeMode="contain" />
@@ -315,6 +314,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
                         focused === 'password' && styles.inputFocused,
                       ]}
                     >
+                      {/* iOS Password AutoFill (textContentType=password /
+                          newPassword + autoComplete current/new-password) flickers
+                          the keyboard on this field because the bundle has no
+                          Associated Domains entitlement — iOS tries to surface
+                          saved credentials for an unverified domain, fails, and
+                          the autofill UI dismount takes the keyboard with it.
+                          Re-enable these props once apple-app-site-association
+                          is hosted on purecraftliving.com. */}
                       <TextInput
                         value={password}
                         onChangeText={setPassword}
@@ -329,11 +336,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
                         secureTextEntry={!showPassword}
                         autoCapitalize="none"
                         autoCorrect={false}
-                        autoComplete={
-                          isSignUp ? 'new-password' : 'current-password'
-                        }
-                        textContentType={isSignUp ? 'newPassword' : 'password'}
-                        passwordRules="minlength: 6;"
+                        autoComplete="off"
+                        textContentType="none"
                         returnKeyType="done"
                         style={styles.inputBare}
                       />
@@ -563,8 +567,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   </Pressable>
                 </View>
               )}
-            </View>
-          </TouchableWithoutFeedback>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
