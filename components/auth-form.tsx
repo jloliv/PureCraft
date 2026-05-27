@@ -295,8 +295,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
                       placeholder="you@example.com"
                       placeholderTextColor={COLORS.textSubtle}
                       autoCapitalize="none"
+                      autoCorrect={false}
                       autoComplete="email"
+                      textContentType="emailAddress"
                       keyboardType="email-address"
+                      returnKeyType="next"
                       style={[
                         styles.input,
                         focused === 'email' && styles.inputFocused,
@@ -325,9 +328,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
                         placeholderTextColor={COLORS.textSubtle}
                         secureTextEntry={!showPassword}
                         autoCapitalize="none"
+                        autoCorrect={false}
                         autoComplete={
                           isSignUp ? 'new-password' : 'current-password'
                         }
+                        textContentType={isSignUp ? 'newPassword' : 'password'}
+                        passwordRules="minlength: 6;"
+                        returnKeyType="done"
                         style={styles.inputBare}
                       />
                       <Pressable
