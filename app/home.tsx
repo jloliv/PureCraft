@@ -36,6 +36,7 @@ import { tapLight } from '@/lib/haptics';
 import { computeMatch } from '@/lib/pantry-match';
 import { usePantry } from '@/lib/pantry-store';
 import { usePaywall } from '@/lib/paywall';
+import { useRequirePremium } from '@/lib/premium-gate';
 import { recipeIcon } from '@/lib/recipe-icons';
 import { useMemo, useState } from 'react';
 
@@ -230,6 +231,7 @@ export default function HomeScreen() {
 
 function Header() {
   const { isPremium } = usePaywall();
+  const requirePremium = useRequirePremium();
   return (
     <View style={styles.header}>
       <View style={{ flex: 1 }} />
@@ -238,7 +240,7 @@ function Header() {
         accessibilityLabel={isPremium ? 'PureCraft+ membership' : 'Upgrade to PureCraft+'}
         onPress={() => {
           tapLight();
-          router.push('/premium');
+          requirePremium();
         }}
         style={({ pressed }) => [
           styles.plusBadge,

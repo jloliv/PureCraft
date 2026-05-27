@@ -115,7 +115,20 @@ export default Sentry.wrap(function RootLayout() {
               contentStyle: { backgroundColor: BACKGROUND_PRIMARY },
               animation: 'slide_from_right',
             }}
-          />
+          >
+            {/* Upsell explainer that gates guests heading to the paywall.
+                Must be registered as modal here so the slide-up animation
+                takes effect at navigation time — declaring it inline via
+                <Stack.Screen> inside the route only applies AFTER mount. */}
+            <Stack.Screen
+              name="auth/upsell"
+              options={{
+                presentation: 'modal',
+                animation: 'slide_from_bottom',
+                gestureEnabled: true,
+              }}
+            />
+          </Stack>
           <StatusBar style="dark" backgroundColor={BACKGROUND_PRIMARY} />
         </ThemeProvider>
       </SafeAreaProvider>

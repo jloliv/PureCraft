@@ -24,6 +24,7 @@ import { events } from '@/lib/analytics';
 import { useAuth } from '@/lib/auth';
 import { useOnboardingAnswers } from '@/lib/onboarding-answers';
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
+import { useRequirePremium } from '@/lib/premium-gate';
 import { completeOnboarding, useProfile } from '@/lib/profile';
 import { recipeIcon } from '@/lib/recipe-icons';
 
@@ -63,6 +64,7 @@ const FALLBACK_PREFS = {
 export default function Results() {
   const fade = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(20)).current;
+  const requirePremium = useRequirePremium();
   const { height: screenHeight } = useWindowDimensions();
   // Fall back to 380 on first paint — RNW hydrates useWindowDimensions
   // with height 0, which would otherwise collapse the hero to nothing.
@@ -191,7 +193,7 @@ export default function Results() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Open PureCraft+ membership"
-            onPress={() => router.push('/premium')}
+            onPress={() => requirePremium()}
             android_ripple={null}
             style={({ pressed }) => [
               styles.upgrade,

@@ -7,7 +7,6 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import {
   Animated,
   Easing,
@@ -20,6 +19,7 @@ import {
 import { useEffect, useRef } from 'react';
 
 import { tapLight, tapMedium } from '@/lib/haptics';
+import { useRequirePremium } from '@/lib/premium-gate';
 
 const PALETTE = {
   bg: '#F8F6F1',
@@ -143,6 +143,7 @@ export function FreemiumModal({
   onUseBonusScan,
 }: FreemiumModalProps) {
   const copy = COPY[kind];
+  const requirePremium = useRequirePremium();
   const fade = useRef(new Animated.Value(0)).current;
   const lift = useRef(new Animated.Value(40)).current;
 
@@ -171,12 +172,9 @@ export function FreemiumModal({
   const onPrimary = () => {
     tapMedium();
     onClose();
-    if (kind === 'pantry-preview') {
-      // Preview path → still routes to paywall on Continue.
-      router.push('/premium');
-    } else {
-      router.push('/premium');
-    }
+    // requirePremium() handles the guest auth-gate: signed-out users land
+    // on /auth/upsell first; signed-in users go straight to /premium.
+    requirePremium();
   };
 
   const onSecondary = () => {

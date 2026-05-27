@@ -9,6 +9,7 @@ import { signOut, useAuth } from '@/lib/auth';
 import { tapLight, tapSoft, warning } from '@/lib/haptics';
 import { useOnboardingAnswers } from '@/lib/onboarding-answers';
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
+import { useRequirePremium } from '@/lib/premium-gate';
 import { useProfile } from '@/lib/profile';
 import { Colors, Radius, Shadow, Spacing, Type } from '@/constants/theme';
 
@@ -60,6 +61,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const localAnswers = useOnboardingAnswers();
+  const requirePremium = useRequirePremium();
   // Profile (when signed-in) is canonical; local buffer covers guest mode.
   const intentKeys =
     profile?.intent_categories?.length
@@ -137,7 +139,7 @@ export default function Settings() {
           style={({ pressed }) => [styles.planCard, pressed && { transform: [{ scale: 0.99 }] }]}
           onPress={() => {
             tapSoft();
-            router.push('/premium');
+            requirePremium();
           }}
         >
           <View style={styles.planLeft}>

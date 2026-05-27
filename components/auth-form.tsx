@@ -267,11 +267,14 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   <Pressable
                     accessibilityRole="button"
                     hitSlop={10}
-                    onPress={() =>
-                      router.replace(
-                        isSignUp ? '/auth/sign-in' : '/auth/sign-up',
-                      )
-                    }
+                    onPress={() => {
+                      // Preserve ?next= when toggling between forms so the
+                      // post-auth redirect (e.g. back to /premium from the
+                      // upsell gate) survives the switch.
+                      const target = isSignUp ? '/auth/sign-in' : '/auth/sign-up';
+                      const qs = next ? `?next=${encodeURIComponent(next)}` : '';
+                      router.replace(`${target}${qs}` as never);
+                    }}
                     style={{ marginTop: 16 }}
                   >
                     <Text style={styles.switchText}>

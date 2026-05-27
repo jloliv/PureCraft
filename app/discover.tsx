@@ -33,6 +33,7 @@ import { MakeNav } from '@/components/make-nav';
 import { formatMoney, useCurrency } from '@/constants/currency';
 import { findProduct, RECIPES } from '@/constants/products';
 import { tapLight } from '@/lib/haptics';
+import { useRequirePremium } from '@/lib/premium-gate';
 import { recipeIcon, RECIPE_ICON_BLEND } from '@/lib/recipe-icons';
 
 // ---------- Tokens ---------------------------------------------------------
@@ -165,6 +166,7 @@ function recipeCostUsd(productId: string): number {
 export default function Discover() {
   const { currency } = useCurrency();
   const [query, setQuery] = useState('');
+  const requirePremium = useRequirePremium();
 
   // Mount-in animation: hero fades + lifts. Other content drops in slightly
   // staggered to feel premium, not theatrical.
@@ -491,7 +493,7 @@ export default function Discover() {
         <Pressable
           onPress={() => {
             tapLight();
-            router.push('/premium');
+            requirePremium();
           }}
           style={({ pressed }) => [
             styles.premiumWrap,

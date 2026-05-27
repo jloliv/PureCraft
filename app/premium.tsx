@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 
 import { events } from '@/lib/analytics';
+import { useAuth } from '@/lib/auth';
 import {
   Alert,
   Image,
@@ -116,6 +117,7 @@ const CADENCE_ORDER: Cadence[] = ['monthly', 'yearly', 'lifetime'];
 
 export default function Premium() {
   const { currency } = useCurrency();
+  const { user, loading: authLoading } = useAuth();
   const { offerings, loading: paywallLoading } = usePaywall();
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -169,6 +171,16 @@ export default function Premium() {
   useEffect(() => {
     events.paywallViewed();
   }, []);
+
+  // Guest auth-gate. Guests should never land on the purchase screen
+  // directly — entitlements must map to a Supabase user. Redirect to the
+  // upsell explainer, which routes them through sign-up/sign-in and back
+  // here. We wait for auth state to hydrate so a returning Plus user
+  // doesn't get bounced on cold start. Placed after all hooks to keep
+  // hook order stable across renders.
+  if (!authLoading && !user) {
+    return <Redirect href={'/auth/upsell?next=/premium' as never} />;
+  }
 
   const onPurchase = async () => {
     if (!selectedPlan) return;
