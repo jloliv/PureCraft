@@ -214,31 +214,26 @@ export function AuthForm({ mode }: { mode: Mode }) {
               {panel === 'options' ? (
                 /* =============== PRIMARY OPTIONS =============== */
                 <View style={styles.optionsBlock}>
+                  {/* Apple + Google OAuth buttons hidden for v1.0.
+                      handleOAuth() stubs still exist for future wiring.
+                      Re-enable when signInWithApple / signInWithGoogle
+                      are implemented in lib/auth.ts. */}
+
                   <Pressable
                     accessibilityRole="button"
-                    onPress={() => handleOAuth('apple')}
+                    onPress={() => {
+                      setError(null);
+                      setPanel('email');
+                    }}
                     style={({ pressed }) => [
                       styles.oauthBtn,
                       styles.oauthApple,
                       pressed && { opacity: 0.92 },
                     ]}
                   >
-                    <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                    <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
-                  </Pressable>
-
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => handleOAuth('google')}
-                    style={({ pressed }) => [
-                      styles.oauthBtn,
-                      styles.oauthGoogle,
-                      pressed && { opacity: 0.92 },
-                    ]}
-                  >
-                    <Ionicons name="logo-google" size={18} color={COLORS.deep} />
-                    <Text style={styles.oauthTextLight}>
-                      Sign in with Google
+                    <Ionicons name="mail-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.oauthTextDark}>
+                      {isSignUp ? 'Sign up with email' : 'Sign in with email'}
                     </Text>
                   </Pressable>
 
@@ -272,26 +267,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Use email instead"
-                    hitSlop={10}
-                    onPress={() => {
-                      setError(null);
-                      setPanel('email');
-                    }}
-                    style={styles.emailLinkWrap}
-                  >
-                    <Text style={styles.emailLink}>Use email instead</Text>
-                  </Pressable>
-
-                  <Pressable
-                    accessibilityRole="button"
                     hitSlop={10}
                     onPress={() =>
                       router.replace(
                         isSignUp ? '/auth/sign-in' : '/auth/sign-up',
                       )
                     }
-                    style={{ marginTop: 4 }}
+                    style={{ marginTop: 16 }}
                   >
                     <Text style={styles.switchText}>
                       {isSignUp
