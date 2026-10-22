@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import { tapLight } from '@/lib/haptics';
-import { setOnboardingComplete } from '@/lib/onboarding-storage';
 
 const HERO = require('../../assets/images/welcome-hero.png');
 
@@ -99,27 +98,6 @@ export default function OnboardingIntro({ navigation, onGetStarted }: Props) {
           <Text style={styles.buttonText}>Get Started</Text>
         </TouchableOpacity>
       </Animated.View>
-
-      {/* DEV-ONLY: bypass onboarding for faster iteration. Stripped from
-          production builds because the entire JSX is gated by __DEV__,
-          which Metro statically replaces with `false` on release. */}
-      {__DEV__ ? (
-        <TouchableOpacity
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Skip onboarding (dev only)"
-          style={styles.devSkipButton}
-          onPress={() => {
-            // Persist completion so the splash gate (app/index.tsx) sends
-            // us straight to /home on the next launch instead of bouncing
-            // back to /onboarding/intro.
-            setOnboardingComplete(true);
-            router.replace('/home');
-          }}
-        >
-          <Text style={styles.devSkipText}>Skip Onboarding (DEV)</Text>
-        </TouchableOpacity>
-      ) : null}
     </View>
   );
 }
@@ -169,25 +147,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  // DEV-ONLY skip pill. Top-right so it never overlaps with the real
-  // "Get Started" CTA at the bottom. Clearly labeled and visually
-  // distinct (solid black pill) so nobody mistakes it for production UI.
-  // Search "Skip Onboarding" to find / remove this before launch.
-  devSkipButton: {
-    position: 'absolute',
-    top: 56,
-    right: 16,
-    backgroundColor: '#000',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    opacity: 0.8,
-  },
-  devSkipText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.4,
   },
 });
