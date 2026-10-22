@@ -8,6 +8,7 @@
 //
 // Pure function — call from a memo, never on render.
 
+import { ingredientMatchesAvoidance } from '@/constants/avoidance-catalog';
 import type { Recipe } from '@/constants/recipes';
 import { extractIngredientName } from '@/constants/smart-swaps';
 import type { Profile } from './profile';
@@ -39,7 +40,7 @@ export function rankRecipes(
   const hasYoungKids =
     household.includes('baby') || household.includes('young');
   const intent = new Set(profile.intent_categories ?? []);
-  const avoidances = (profile.avoidances ?? []).map((a) => a.toLowerCase());
+  const avoidances = profile.avoidances ?? [];
   const scentPrefs = profile.scent_preferences ?? [];
   const wantsLowScent = scentPrefs.some((s) =>
     /low|sensitive|unscented|fragrance.?free/i.test(s),
@@ -87,11 +88,13 @@ export function rankRecipes(
 
     // --- Penalties ------------------------------------------------------
 
-    // Hard avoidance: recipe ingredient name overlaps with an avoidance term.
+    // Hard avoidance: any recipe ingredient matches any of the user's
+    // avoidance terms (handles preset aliases, custom: entries, and
+    // partial matches like "aloe" → "aloe vera juice").
     for (const a of avoidances) {
       if (
         recipe.ingredients.some((i) =>
-          extractIngredientName(i).includes(a),
+          ingredientMatchesAvoidance(extractIngredientName(i), a),
         )
       ) {
         score += AVOIDANCE_PENALTY;

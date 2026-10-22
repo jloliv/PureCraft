@@ -11,6 +11,7 @@
 // recipe-categories.ts, and stable `tags` are derived from title + ingredients
 // so search and Quick-Tools filtering work without hand-tagging every entry.
 
+import { ingredientMatchesAvoidance } from './avoidance-catalog';
 import recipesJson from './launch-recipes-v3.json';
 import {
   CATEGORY_LABEL_TO_KEY,
@@ -177,21 +178,14 @@ export function getRecommendedRecipes(
         }
       }
 
-      // Specific ingredient avoidances
-      if (AVOIDS(prefs.avoidances, 'coconut')) {
-        if (recipe.ingredients.some((i) => /coconut/i.test(i))) return false;
-      }
-      if (AVOIDS(prefs.avoidances, 'beeswax')) {
-        if (recipe.ingredients.some((i) => /beeswax/i.test(i))) return false;
-      }
-      if (AVOIDS(prefs.avoidances, 'vinegar')) {
-        if (recipe.ingredients.some((i) => /vinegar/i.test(i))) return false;
-      }
-      if (AVOIDS(prefs.avoidances, 'baking soda')) {
-        if (recipe.ingredients.some((i) => /baking soda/i.test(i))) return false;
-      }
-      if (AVOIDS(prefs.avoidances, 'citric acid')) {
-        if (recipe.ingredients.some((i) => /citric acid/i.test(i))) return false;
+      // Generic avoidance pass — covers every preset key and `custom:` entry
+      // via the catalog's alias + substring matching (e.g. "aloe" blocks
+      // recipes containing "aloe vera juice").
+      if (prefs.avoidances?.length) {
+        const hit = prefs.avoidances.some((av) =>
+          recipe.ingredients.some((i) => ingredientMatchesAvoidance(i, av)),
+        );
+        if (hit) return false;
       }
 
       return true;

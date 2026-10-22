@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -12,6 +13,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingHeader } from '@/components/onboarding-header';
+import {
+  ALL_AVOIDANCES,
+  PRIMARY_AVOIDANCES,
+  toCustomAvoidanceKey,
+  type AvoidanceItem,
+} from '@/constants/avoidance-catalog';
 import { BACKGROUND_PRIMARY } from '@/constants/theme';
 import { tapLight } from '@/lib/haptics';
 import { patchOnboardingAnswers } from '@/lib/onboarding-answers';
@@ -26,31 +33,7 @@ const PALETTE = {
   sageDeep: '#5F876A',
 };
 
-type AvoidanceItem = {
-  key: string;
-  label: string;
-};
-
-const AVOIDANCE_OPTIONS: AvoidanceItem[] = [
-  { key: 'fragrance', label: 'Fragrance' },
-  { key: 'eo', label: 'Essential Oils' },
-  { key: 'chemical', label: 'Sensitive to chemicals' },
-  { key: 'coconut', label: 'Coconut' },
-  { key: 'vinegar', label: 'Vinegar' },
-  { key: 'baking-soda', label: 'Baking Soda' },
-  { key: 'castile-soap', label: 'Castile Soap' },
-  { key: 'hydrogen-peroxide', label: 'Hydrogen Peroxide' },
-  { key: 'rubbing-alcohol', label: 'Rubbing Alcohol' },
-  { key: 'witch-hazel', label: 'Witch Hazel' },
-  { key: 'nuts', label: 'Nuts' },
-  { key: 'gluten', label: 'Gluten' },
-];
-
 const NONE_KEY = '__none__';
-
-function toCustomKey(value: string) {
-  return `custom:${value.trim().toLowerCase().replace(/\s+/g, '-')}`;
-}
 
 export default function Avoidances() {
   const [selected, setSelected] = useState<string[]>([]);
@@ -58,13 +41,31 @@ export default function Avoidances() {
   const [customItems, setCustomItems] = useState<AvoidanceItem[]>([]);
   const [customOpen, setCustomOpen] = useState(false);
   const [customValue, setCustomValue] = useState('');
+  const [seeAllOpen, setSeeAllOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [confirmedLabel, setConfirmedLabel] = useState<string | null>(null);
+  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toggle = (key: string) => {
+  useEffect(() => {
+    return () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    };
+  }, []);
+
+  const flashConfirmation = (label: string) => {
+    setConfirmedLabel(label);
+    if (confirmTimer.current) clearTimeout(confirmTimer.current);
+    confirmTimer.current = setTimeout(() => setConfirmedLabel(null), 2000);
+  };
+
+  const toggle = (key: string, label: string) => {
     tapLight();
     setNoneSelected(false);
-    setSelected((prev) =>
-      prev.includes(key) ? prev.filter((item) => item !== key) : [...prev, key],
-    );
+    setSelected((prev) => {
+      const isAdding = !prev.includes(key);
+      if (isAdding) flashConfirmation(label);
+      return isAdding ? [...prev, key] : prev.filter((item) => item !== key);
+    });
   };
 
   const selectNone = () => {
@@ -82,19 +83,83 @@ export default function Avoidances() {
     const label = customValue.trim();
     if (!label) return;
 
-    const key = toCustomKey(label);
+    const key = toCustomAvoidanceKey(label);
     tapLight();
     setCustomItems((prev) =>
       prev.some((item) => item.key === key) ? prev : [...prev, { key, label }],
     );
     setSelected((prev) => (prev.includes(key) ? prev : [...prev, key]));
     setNoneSelected(false);
+    flashConfirmation(label);
     setCustomValue('');
     setCustomOpen(false);
   };
 
+  const closeSeeAll = () => {
+    setSeeAllOpen(false);
+    setSearchValue('');
+  };
+
+  const seeAllResults = useMemo(() => {
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return ALL_AVOIDANCES;
+    return ALL_AVOIDANCES.filter(
+      (item) =>
+        item.label.toLowerCase().includes(query) ||
+        item.key.replace(/-/g, ' ').includes(query) ||
+        item.matchTerms?.some((t) => t.toLowerCase().includes(query)),
+    );
+  }, [searchValue]);
+
+  const trimmedSearch = searchValue.trim();
+  const canAddSearchAsCustom =
+    trimmedSearch.length > 0 &&
+    !ALL_AVOIDANCES.some(
+      (it) => it.label.toLowerCase() === trimmedSearch.toLowerCase(),
+    );
+
+  const addFromSearch = () => {
+    if (!trimmedSearch) return;
+    const key = toCustomAvoidanceKey(trimmedSearch);
+    tapLight();
+    setCustomItems((prev) =>
+      prev.some((item) => item.key === key)
+        ? prev
+        : [...prev, { key, label: trimmedSearch }],
+    );
+    setSelected((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    setNoneSelected(false);
+    flashConfirmation(trimmedSearch);
+    closeSeeAll();
+  };
+
   const hasSelections = selected.length > 0 || noneSelected;
-  const allChips: AvoidanceItem[] = [...AVOIDANCE_OPTIONS, ...customItems];
+
+  // The chip grid shows curated primary chips + any custom additions + any
+  // extended catalog items the user has already selected (from "See all").
+  const visibleChips: AvoidanceItem[] = useMemo(() => {
+    const seen = new Set<string>();
+    const list: AvoidanceItem[] = [];
+    for (const item of PRIMARY_AVOIDANCES) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        list.push(item);
+      }
+    }
+    for (const item of ALL_AVOIDANCES) {
+      if (selected.includes(item.key) && !seen.has(item.key)) {
+        seen.add(item.key);
+        list.push(item);
+      }
+    }
+    for (const item of customItems) {
+      if (!seen.has(item.key)) {
+        seen.add(item.key);
+        list.push(item);
+      }
+    }
+    return list;
+  }, [customItems, selected]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -106,14 +171,22 @@ export default function Avoidances() {
       >
         <Text style={styles.timeHint}>Takes less than 30 seconds</Text>
         <Text style={styles.eyebrow}>Step 2</Text>
-        <Text style={styles.headline}>Let&apos;s personalize your recipes</Text>
-        <Text style={styles.sub}>
-          We&apos;ll automatically avoid these ingredients in every recipe.
-        </Text>
-        <Text style={styles.instruction}>Select anything you want to avoid.</Text>
+        <Text style={styles.headline}>Avoid ingredients in your recipes</Text>
+        <Text style={styles.sub}>Tap anything you want us to leave out.</Text>
+
+        <View style={styles.helperRow}>
+          {confirmedLabel ? (
+            <View style={styles.confirmation}>
+              <Ionicons name="checkmark-circle" size={14} color={PALETTE.sageDeep} />
+              <Text style={styles.confirmationText}>{confirmedLabel} will be avoided</Text>
+            </View>
+          ) : (
+            <Text style={styles.helperLabel}>Tap to exclude</Text>
+          )}
+        </View>
 
         <View style={styles.chipWrap}>
-          {allChips.map((item) => {
+          {visibleChips.map((item) => {
             const isSelected = selected.includes(item.key);
             return (
               <Pressable
@@ -121,13 +194,21 @@ export default function Avoidances() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={item.label}
-                onPress={() => toggle(item.key)}
+                onPress={() => toggle(item.key, item.label)}
                 style={({ pressed }) => [
                   styles.chip,
                   isSelected && styles.chipSelected,
                   pressed && { transform: [{ scale: 0.97 }] },
                 ]}
               >
+                {isSelected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={14}
+                    color="#FFFFFF"
+                    style={styles.chipIcon}
+                  />
+                )}
                 <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
                   {item.label}
                 </Text>
@@ -139,7 +220,7 @@ export default function Avoidances() {
             key={NONE_KEY}
             accessibilityRole="button"
             accessibilityState={{ selected: noneSelected }}
-            accessibilityLabel="I don't avoid anything"
+            accessibilityLabel="I'm okay with all ingredients"
             onPress={selectNone}
             style={({ pressed }) => [
               styles.chip,
@@ -147,22 +228,38 @@ export default function Avoidances() {
               pressed && { transform: [{ scale: 0.97 }] },
             ]}
           >
+            {noneSelected && (
+              <Ionicons name="checkmark" size={14} color="#FFFFFF" style={styles.chipIcon} />
+            )}
             <Text style={[styles.chipText, noneSelected && styles.chipTextSelected]}>
-              I don&apos;t avoid anything
+              I&apos;m okay with all ingredients
             </Text>
           </Pressable>
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            tapLight();
-            setCustomOpen(true);
-          }}
-          style={({ pressed }) => [styles.addCustom, pressed && { opacity: 0.72 }]}
-        >
-          <Text style={styles.addCustomText}>+ Add custom ingredient</Text>
-        </Pressable>
+        <View style={styles.linkRow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              tapLight();
+              setSeeAllOpen(true);
+            }}
+            style={({ pressed }) => [styles.linkButton, pressed && { opacity: 0.72 }]}
+          >
+            <Text style={styles.linkText}>+ See all ingredients</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              tapLight();
+              setCustomOpen(true);
+            }}
+            style={({ pressed }) => [styles.linkButton, pressed && { opacity: 0.72 }]}
+          >
+            <Text style={styles.linkText}>+ Add something else to avoid</Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -183,9 +280,10 @@ export default function Avoidances() {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Add custom ingredient</Text>
+            <Text style={styles.modalTitle}>Add something else to avoid</Text>
             <Text style={styles.modalSub}>
-              We&apos;ll avoid it when tailoring future recipes.
+              We&apos;ll match it across recipe ingredients (e.g.&nbsp;&quot;aloe&quot; blocks
+              aloe vera, aloe extract, and aloe juice).
             </Text>
             <TextInput
               autoFocus
@@ -211,6 +309,103 @@ export default function Avoidances() {
                 <Text style={styles.modalSaveText}>Add</Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={seeAllOpen}
+        onRequestClose={closeSeeAll}
+      >
+        <View style={styles.sheetBackdrop}>
+          <View style={styles.sheetCard}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>All ingredients</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={closeSeeAll}
+                style={({ pressed }) => [styles.sheetClose, pressed && { opacity: 0.6 }]}
+              >
+                <Ionicons name="close" size={22} color={PALETTE.textMuted} />
+              </Pressable>
+            </View>
+
+            <View style={styles.searchRow}>
+              <Ionicons
+                name="search"
+                size={16}
+                color={PALETTE.textSubtle}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                autoFocus
+                value={searchValue}
+                onChangeText={setSearchValue}
+                placeholder="Search ingredients (e.g., aloe, shea, lavender)"
+                placeholderTextColor={PALETTE.textSubtle}
+                style={styles.searchInput}
+                returnKeyType="search"
+              />
+            </View>
+            <Text style={styles.searchHelp}>Search or add anything you want to avoid</Text>
+
+            <ScrollView
+              style={styles.sheetScroll}
+              contentContainerStyle={styles.sheetScrollContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+              {seeAllResults.length === 0 && !canAddSearchAsCustom && (
+                <Text style={styles.emptyText}>No matches.</Text>
+              )}
+
+              {seeAllResults.map((item) => {
+                const isSelected = selected.includes(item.key);
+                return (
+                  <Pressable
+                    key={item.key}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    onPress={() => toggle(item.key, item.label)}
+                    style={({ pressed }) => [
+                      styles.sheetRow,
+                      pressed && { opacity: 0.72 },
+                    ]}
+                  >
+                    <Text style={styles.sheetRowLabel}>{item.label}</Text>
+                    <View
+                      style={[
+                        styles.sheetCheck,
+                        isSelected && styles.sheetCheckActive,
+                      ]}
+                    >
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
+
+              {canAddSearchAsCustom && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={addFromSearch}
+                  style={({ pressed }) => [
+                    styles.sheetRow,
+                    styles.sheetAddRow,
+                    pressed && { opacity: 0.72 },
+                  ]}
+                >
+                  <Text style={styles.sheetAddLabel}>
+                    + Add &quot;{trimmedSearch}&quot; to avoid
+                  </Text>
+                </Pressable>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -252,34 +447,55 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   sub: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 23,
     color: PALETTE.textMuted,
-    marginTop: 6,
+    marginTop: 8,
   },
-  instruction: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 18,
+  helperRow: {
+    marginTop: 18,
+    minHeight: 18,
+    justifyContent: 'center',
+  },
+  helperLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.2,
     color: PALETTE.textSubtle,
+    textTransform: 'uppercase',
+  },
+  confirmation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  confirmationText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: PALETTE.sageDeep,
   },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
-    marginTop: 24,
+    marginTop: 12,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#F2EDE3',
-    borderWidth: 1,
-    borderColor: '#E6DFD2',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#D8D2C4',
   },
   chipSelected: {
     backgroundColor: PALETTE.sageDeep,
     borderColor: PALETTE.sageDeep,
+  },
+  chipIcon: {
+    marginRight: 6,
   },
   chipText: {
     fontSize: 14,
@@ -289,12 +505,15 @@ const styles = StyleSheet.create({
   chipTextSelected: {
     color: '#FFFFFF',
   },
-  addCustom: {
+  linkRow: {
     marginTop: 22,
-    alignSelf: 'flex-start',
+    gap: 4,
+    alignItems: 'flex-start',
+  },
+  linkButton: {
     paddingVertical: 10,
   },
-  addCustomText: {
+  linkText: {
     fontSize: 14,
     fontWeight: '500',
     color: PALETTE.sageDeep,
@@ -367,6 +586,114 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(26, 26, 26, 0.32)',
+    justifyContent: 'flex-end',
+  },
+  sheetCard: {
+    backgroundColor: PALETTE.bg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    maxHeight: '88%',
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D8D2C4',
+    marginBottom: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: PALETTE.text,
+    letterSpacing: -0.2,
+  },
+  sheetClose: {
+    padding: 6,
+    margin: -6,
+  },
+  searchRow: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+    backgroundColor: PALETTE.surfaceWarm,
+    paddingHorizontal: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: PALETTE.text,
+  },
+  searchHelp: {
+    marginTop: 8,
+    fontSize: 12,
+    color: PALETTE.textSubtle,
+  },
+  sheetScroll: {
+    marginTop: 12,
+  },
+  sheetScrollContent: {
+    paddingBottom: 12,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: PALETTE.border,
+  },
+  sheetRowLabel: {
+    fontSize: 15,
+    color: PALETTE.text,
+    flex: 1,
+  },
+  sheetCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#D8D2C4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetCheckActive: {
+    borderColor: PALETTE.sageDeep,
+    backgroundColor: PALETTE.sageDeep,
+  },
+  sheetAddRow: {
+    borderBottomWidth: 0,
+    paddingTop: 18,
+  },
+  sheetAddLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: PALETTE.sageDeep,
+  },
+  emptyText: {
+    paddingVertical: 24,
+    fontSize: 14,
+    color: PALETTE.textMuted,
+    textAlign: 'center',
   },
   cta: {
     width: '89%',
