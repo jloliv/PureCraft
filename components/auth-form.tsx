@@ -224,7 +224,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                     ]}
                   >
                     <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                    <Text style={styles.oauthTextDark}>Continue with Apple</Text>
+                    <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
                   </Pressable>
 
                   <Pressable
@@ -238,7 +238,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
                   >
                     <Ionicons name="logo-google" size={18} color={COLORS.deep} />
                     <Text style={styles.oauthTextLight}>
-                      Continue with Google
+                      Sign in with Google
                     </Text>
                   </Pressable>
 

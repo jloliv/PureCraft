@@ -19,9 +19,12 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const supabaseConfigured = !!(url && anonKey);
 
-if (!supabaseConfigured) {
+if (!supabaseConfigured && __DEV__) {
   // Don't crash in dev if env vars aren't set — the app still has the
-  // bundled JSON fallback in constants/recipes.ts.
+  // bundled JSON fallback in constants/recipes.ts. In production we
+  // stay silent: a missing-config build should never ship, and if it
+  // does we don't want a console.warn on every startup making it
+  // harder to spot real signal.
   // eslint-disable-next-line no-console
   console.warn(
     '[supabase] EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY are not set. ' +
