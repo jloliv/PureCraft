@@ -41,31 +41,24 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 // line-art illustration. Render sites can branch on this to use cover-fill
 // + skip the line-art `mix-blend-mode: darken` web hack.
 export const PHOTO_RECIPES: Set<string> = new Set([
-  // v3 launch-recipe numeric IDs
-  '1', // All Purpose Spray
-  '2', // Bathroom Scrub
-  '3', // Toilet Bombs
-  '5', // Stainless Steel Spray
-  '7', // Tile Cleaner
-  '8', // Shower Spray
-  '9', // Mold Vinegar Spray
-  '10', // Drain Freshener
-  '11', // Microwave Steam Cleaner
-  '14', // Dusting Spray
-  '15', // Wood Polish
-  '17', // Carpet Powder
-  '20', // Refrigerator Deodorizer
-  '26', // Sugar Body Scrub
-  '27', // Coffee Scrub
-  '38', // Shaving Scrub
-  '55', // Baby Lotion
-  '61', // Sink Scrub
-  '63', // Grease Cutter
+  // v3 launch-recipe numeric IDs (49 mapped)
+  '1', '2', '3', '4', '5', '7', '8', '9', '10', '11',
+  '13', '14', '15', '16', '17', '18', '20',
+  '26', '27', '28', '30', '31', '32', '33', '34', '35', '36',
+  '38', '39', '45', '52', '55', '56', '58', '60', '61', '63',
+  '71', '73', '75', '76', '77', '78', '79',
+  '82', '83', '84', '86', '87', '88', '97',
   // Catalog products with dedicated photos
+  'bathroom-cleaner',
+  'glass-cleaner',
+  'kitchen-spray',
   'floor-cleaner',
-  'citrus-glow-scrub',
-  'room-spray',
   'laundry-booster',
+  'room-spray',
+  'sugar-scrub',
+  'citrus-glow-scrub',
+  'candle',
+  'linen-spray',
 ]);
 
 export function isRecipePhoto(productId: string): boolean {
@@ -73,6 +66,7 @@ export function isRecipePhoto(productId: string): boolean {
 }
 
 const ICONS: Record<string, ImageSourcePropType> = {
+  // Onboarding intent tiles + non-recipe illustrations.
   'safer-cleaning': require('../assets/icons/safer-cleaning.png'),
   'better-skin-care': require('../assets/icons/better-skin-care.png'),
   'luxury-home-scents': require('../assets/icons/luxury-home-scents.png'),
@@ -81,40 +75,73 @@ const ICONS: Record<string, ImageSourcePropType> = {
   'eco-living': require('../assets/icons/eco-living.png'),
   'diy-beauty': require('../assets/icons/diy-beauty.png'),
   'wellness-routines': require('../assets/icons/wellness-routines.png'),
-  'bathroom-cleaner': require('../assets/icons/soap-icon.png'),
-  'glass-cleaner': require('../assets/icons/window-recipe-icon.png'),
-  'kitchen-spray': require('../assets/icons/lemonSpray-recipe-icon.png'),
+
+  // Catalog products — photos where available, else line-art fallback.
+  'bathroom-cleaner': require('../assets/Recipes/bathroom-cleaner.png'),
+  'glass-cleaner': require('../assets/Recipes/glass-cleaner3.png'),
+  'kitchen-spray': require('../assets/Recipes/kitchen-spray.png'),
   'floor-cleaner': require('../assets/Recipes/floor-cleaner.png'),
   'laundry-booster': require('../assets/Recipes/laundry-booster.png'),
   'room-spray': require('../assets/Recipes/room-spray.png'),
-  'sugar-scrub': require('../assets/icons/scrubs-icon.png'),
+  'sugar-scrub': require('../assets/Recipes/sugar-scrub.png'),
   'citrus-glow-scrub': require('../assets/Recipes/Citrus-glow-scrub.png'),
-  'body-butter': require('../assets/icons/lotion-icon.png'),
-  candle: require('../assets/icons/candle-icon.png'),
-  'linen-spray': require('../assets/icons/mist-icon.png'),
+  'body-butter': require('../assets/icons/lotion-icon.png'), // no photo yet
+  candle: require('../assets/Recipes/soy-candle.png'),
+  'linen-spray': require('../assets/Recipes/linen-mist.png'),
 
   // v3 launch recipes — numeric-string IDs paired with real photos.
   '1': require('../assets/Recipes/all-purpose-spray.png'),
   '2': require('../assets/Recipes/bathroom-scrub.png'),
   '3': require('../assets/Recipes/toilet-bombs.png'),
+  '4': require('../assets/Recipes/glass-cleaner3.png'),
   '5': require('../assets/Recipes/stainless-steel-spray.png'),
   '7': require('../assets/Recipes/tile-cleaner.png'),
   '8': require('../assets/Recipes/shower-spray.png'),
   '9': require('../assets/Recipes/mold-vinegar-spray.png'),
-  // Filename has a typo in the source assets ("refreshner") — keeping as-is
-  // to match disk; safe to rename when the asset is re-exported.
+  // Filename has a typo in the source assets ("refreshner") — keeping as-is.
   '10': require('../assets/Recipes/drain-refreshner.png'),
   '11': require('../assets/Recipes/microwave-steam-cleaner.png'),
+  '13': require('../assets/Recipes/baseboard-wipes.png'),
   '14': require('../assets/Recipes/dusting-spray.png'),
   '15': require('../assets/Recipes/wood-polish.png'),
+  '16': require('../assets/Recipes/floor-cleaner.png'),
   '17': require('../assets/Recipes/carpet-powder.png'),
+  '18': require('../assets/Recipes/mattress-refresh-powder.png'),
   '20': require('../assets/Recipes/refrigerator-deodorizer.png'),
   '26': require('../assets/Recipes/sugar-body-scrub.png'),
   '27': require('../assets/Recipes/coffee-scrub.png'),
+  '28': require('../assets/Recipes/lip-balm.png'),
+  '30': require('../assets/Recipes/oatmeal-face-mask.png'),
+  '31': require('../assets/Recipes/clay-mask.png'),
+  '32': require('../assets/Recipes/rosewater-toner.png'),
+  '33': require('../assets/Recipes/makeup-brush-cleaner.png'),
+  '34': require('../assets/Recipes/foot-soak.png'),
+  '35': require('../assets/Recipes/cuticle-oil.png'),
+  '36': require('../assets/Recipes/bath-salts.png'),
   '38': require('../assets/Recipes/shaving-scrub.png'),
+  '39': require('../assets/Recipes/aloe-gel-mist.png'),
+  '45': require('../assets/Recipes/dry-shampoo.png'),
+  '52': require('../assets/Recipes/toy-cleaner-spray.png'),
   '55': require('../assets/Recipes/baby-lotion.png'),
+  '56': require('../assets/Recipes/kids-bubble-bath.png'),
+  '58': require('../assets/Recipes/no-tear-shampoo.png'),
+  '60': require('../assets/Recipes/diaper-rash-balm.png'),
   '61': require('../assets/Recipes/sink-scrub.png'),
   '63': require('../assets/Recipes/grease-cutter.png'),
+  '71': require('../assets/Recipes/linen-mist.png'),
+  '73': require('../assets/Recipes/simmer-pot-spice-blend.png'),
+  '75': require('../assets/Recipes/candle-wax-melts.png'),
+  '76': require('../assets/Recipes/reed-diffuser.png'),
+  '77': require('../assets/Recipes/car-freshner.png'),
+  '78': require('../assets/Recipes/shoe-deodorizer.png'),
+  '79': require('../assets/Recipes/pet-bed-spray.png'),
+  '82': require('../assets/Recipes/litter-box-freshner.png'),
+  '83': require('../assets/Recipes/pet-toy-cleaner.png'),
+  '84': require('../assets/Recipes/weed-vinegar-spray.png'),
+  '86': require('../assets/Recipes/bug-repellant-spray.png'),
+  '87': require('../assets/Recipes/plant-leaf-shine.png'),
+  '88': require('../assets/Recipes/outdoor-furniture-wash.png'),
+  '97': require('../assets/Recipes/closet-moisture-absorber.png'),
 };
 
 const FALLBACK: ImageSourcePropType = require('../assets/icons/spray-recipe-icon.png');
