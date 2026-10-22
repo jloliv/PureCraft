@@ -18,13 +18,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setOnboardingComplete } from '@/lib/onboarding-storage';
-import {
-  resendVerification,
-  signIn,
-  signInWithApple,
-  signInWithGoogle,
-  signUp,
-} from '@/lib/auth';
+import { resendVerification, signIn, signUp } from '@/lib/auth';
+
+// Gate for Apple/Google sign-in. Both handlers in lib/auth.ts currently
+// return `*-not-configured` — showing the buttons would be misleading
+// (Apple Guideline 4.0/4.1) AND would trigger 4.8 because offering ANY
+// third-party sign-in requires Sign in with Apple to actually work.
+// Flip to true only after wiring expo-apple-authentication +
+// supabase.auth.signInWithIdToken and rebuilding the dev client.
+const OAUTH_ENABLED = false;
 
 const LOGO = require('../assets/images/PureCraftLogo.png');
 
@@ -146,19 +148,6 @@ export function AuthForm({ mode }: { mode: Mode }) {
     setResendState('sent');
   };
 
-  const handleOAuth = async (provider: 'apple' | 'google') => {
-    setError(null);
-    const fn = provider === 'apple' ? signInWithApple : signInWithGoogle;
-    const { error: e } = await fn();
-    if (e) {
-      setError(
-        provider === 'apple'
-          ? 'Apple sign-in is launching soon — use email for now.'
-          : 'Google sign-in is launching soon — use email for now.',
-      );
-    }
-  };
-
   // Guest path — let the user experience value before account-creation
   // friction. Marks onboarding complete so the splash gate routes home
   // on next launch, then drops them on Home.
@@ -214,33 +203,45 @@ export function AuthForm({ mode }: { mode: Mode }) {
               {panel === 'options' ? (
                 /* =============== PRIMARY OPTIONS =============== */
                 <View style={styles.optionsBlock}>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => handleOAuth('apple')}
-                    style={({ pressed }) => [
-                      styles.oauthBtn,
-                      styles.oauthApple,
-                      pressed && { opacity: 0.92 },
-                    ]}
-                  >
-                    <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                    <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
-                  </Pressable>
+                  {OAUTH_ENABLED ? (
+                    <>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => {
+                          setError(
+                            'Apple sign-in is launching soon — use email for now.',
+                          );
+                        }}
+                        style={({ pressed }) => [
+                          styles.oauthBtn,
+                          styles.oauthApple,
+                          pressed && { opacity: 0.92 },
+                        ]}
+                      >
+                        <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+                        <Text style={styles.oauthTextDark}>Sign in with Apple</Text>
+                      </Pressable>
 
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => handleOAuth('google')}
-                    style={({ pressed }) => [
-                      styles.oauthBtn,
-                      styles.oauthGoogle,
-                      pressed && { opacity: 0.92 },
-                    ]}
-                  >
-                    <Ionicons name="logo-google" size={18} color={COLORS.deep} />
-                    <Text style={styles.oauthTextLight}>
-                      Sign in with Google
-                    </Text>
-                  </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => {
+                          setError(
+                            'Google sign-in is launching soon — use email for now.',
+                          );
+                        }}
+                        style={({ pressed }) => [
+                          styles.oauthBtn,
+                          styles.oauthGoogle,
+                          pressed && { opacity: 0.92 },
+                        ]}
+                      >
+                        <Ionicons name="logo-google" size={18} color={COLORS.deep} />
+                        <Text style={styles.oauthTextLight}>
+                          Sign in with Google
+                        </Text>
+                      </Pressable>
+                    </>
+                  ) : null}
 
                   <Pressable
                     accessibilityRole="button"
