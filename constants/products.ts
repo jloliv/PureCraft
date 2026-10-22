@@ -18,6 +18,7 @@ export const PRODUCTS: Product[] = [
   { id: 'bathroom-cleaner', title: 'Bathroom Cleaner', group: 'cleaning', emoji: '🛁', swatch: '#E8EFE9', accent: '#5C7F6B', time: '4 min', savingsUsd: 3.20, storeBoughtUsd: 5.99, tags: ['Baby-safe', 'Pet-safe'], blurb: 'A gentle daily-use spray that lifts soap scum without harsh fumes.' },
   { id: 'glass-cleaner', title: 'Glass Cleaner', group: 'cleaning', emoji: '🪟', swatch: '#EAF2F8', accent: '#4F7186', time: '3 min', savingsUsd: 2.40, storeBoughtUsd: 4.49, tags: ['Streak-free'], blurb: 'Crystal-clear windows and mirrors with no streaks or chemical haze.' },
   { id: 'kitchen-spray', title: 'Kitchen Spray', group: 'cleaning', emoji: '🍋', swatch: '#F7F0DC', accent: '#9C7A4F', time: '4 min', savingsUsd: 3.80, storeBoughtUsd: 6.49, tags: ['Citrus'], blurb: 'A bright citrus degreaser that cuts through everyday kitchen grime.' },
+  { id: 'citrus-countertop-cleaner', title: 'Citrus Countertop Cleaner', group: 'cleaning', emoji: '🍋', swatch: '#FBEBD3', accent: '#C97A2D', time: '3 min', savingsUsd: 3.40, storeBoughtUsd: 5.49, tags: ['Citrus', 'Daily-use'], blurb: 'A fresh citrus countertop spray for daily wipe-downs and light kitchen messes.' },
   { id: 'floor-cleaner', title: 'Floor Cleaner', group: 'cleaning', emoji: '🧺', swatch: '#F2E9D7', accent: '#6B7872', time: '5 min', savingsUsd: 4.10, storeBoughtUsd: 7.20, tags: ['Pet-safe'], blurb: 'Pet-friendly all-floor cleaner that leaves a soft natural finish.' },
   { id: 'laundry-booster', title: 'Laundry Booster', group: 'cleaning', emoji: '🧼', swatch: '#E8EFF2', accent: '#7C5C2E', time: '2 min', savingsUsd: 2.80, storeBoughtUsd: 5.10, tags: ['Fragrance-free'], blurb: 'Brightens whites and softens fabrics — no synthetic fragrance.' },
   { id: 'room-spray', title: 'Room Spray', group: 'cleaning', emoji: '🌬️', swatch: '#ECE7F2', accent: '#6F5FA3', time: '3 min', savingsUsd: 5.20, storeBoughtUsd: 8.99, tags: ['Calming'], blurb: 'A botanical mist that resets a room in seconds — calm, never cloying.' },
@@ -147,6 +148,36 @@ export const RECIPES: Record<string, Recipe> = {
     substitutions: [
       { swap: 'Orange peels', for: 'Lemon peels' },
       { swap: 'Lemon essential oil', for: 'Sweet orange oil' },
+    ],
+  },
+
+  'citrus-countertop-cleaner': {
+    productId: 'citrus-countertop-cleaner',
+    title: 'Citrus Countertop Cleaner',
+    blurb: 'A fresh citrus countertop spray for daily wipe-downs and light kitchen messes.',
+    ingredients: [
+      { name: 'Distilled water', amount: '1 cup', haveIt: true, storePriceUsd: 0.20 },
+      { name: 'White vinegar', amount: '½ cup', haveIt: true, storePriceUsd: 0.20 },
+      { name: 'Castile soap', amount: '1 tbsp', storePriceUsd: 0.80 },
+      { name: 'Lemon essential oil', amount: '10 drops', storePriceUsd: 1.00 },
+      { name: 'Orange essential oil', amount: '5 drops', storePriceUsd: 0.90 },
+    ],
+    steps: [
+      'Add distilled water and white vinegar to a clean spray bottle.',
+      'Add castile soap and essential oils.',
+      'Shake gently to combine.',
+      'Spray lightly on countertops.',
+      'Wipe with a clean cloth.',
+    ],
+    warnings: [
+      'Do not use vinegar on natural stone (granite, marble, limestone, travertine) — it will etch the finish.',
+      'Test on a small hidden area first.',
+      'Avoid spraying directly near food.',
+      'Keep out of reach of children and pets.',
+    ],
+    substitutions: [
+      { swap: 'Apple cider vinegar', for: 'White vinegar' },
+      { swap: 'Bergamot essential oil', for: 'Orange essential oil' },
     ],
   },
 

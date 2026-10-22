@@ -69,8 +69,21 @@ const TAGLINES = [
   'Wellness begins at home',
 ] as const;
 
+// Resolve the canonical "Citrus Countertop Cleaner" recipe id, falling back
+// to any recipe whose title matches if the preferred slug isn't in the
+// catalog yet. Keeps the hero CTA opening the right recipe instead of
+// silently defaulting to PRODUCTS[0] via findProduct().
+function resolveRecipeId(preferred: string, titleNeedle: string): string {
+  if (RECIPES[preferred]) return preferred;
+  const lower = titleNeedle.toLowerCase();
+  const match = Object.entries(RECIPES).find(([, r]) =>
+    r.title.toLowerCase().includes(lower),
+  );
+  return match ? match[0] : preferred;
+}
+
 const WEEKLY_PICK = {
-  productId: 'citrus-countertop-cleaner',
+  productId: resolveRecipeId('citrus-countertop-cleaner', 'Citrus Countertop Cleaner'),
   eyebrow: 'Pick of the Week',
   title: 'Glow Routine',
   blurb: 'Citrus countertop cleaner with spa-level freshness',
